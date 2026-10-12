@@ -1,0 +1,22 @@
+{
+  "name": "@carchalabs/licensekit-quickstart",
+  "version": "0.1.0",
+  "description": "Try LicenseKit from a terminal: activate a trial key, then check the license offline",
+  "homepage": "https://licensekit.carchalabs.com/docs/",
+  "repository": { "type": "git", "url": "git+https://github.com/carcha-labs/licensekit-sdk.git", "directory": "packages/quickstart" },
+  "bugs": { "url": "https://github.com/carcha-labs/licensekit-sdk/issues" },
+  "main": "dist/cli.js",
+  "types": "dist/cli.d.ts",
+  "bin": { "licensekit-quickstart": "dist/bin.js" },
+  "files": ["dist", "src", "public-keys"],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "prepublishOnly": "npm run build"
+  },
+  "dependencies": {
+    "@carchalabs/licensekit-electron": "0.1.0"
+  },
+  "engines": { "node": ">=22.13" },
+  "publishConfig": { "access": "public" },
+  "license": "MIT"
+}

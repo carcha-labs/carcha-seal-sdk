@@ -1,0 +1,22 @@
+{
+  "name": "licensekit-sdk",
+  "private": true,
+  "description": "LicenseKit npm packages: lease format, Electron and Node SDK, terminal quickstart",
+  "workspaces": [
+    "packages/core",
+    "packages/sdk-electron",
+    "packages/quickstart"
+  ],
+  "scripts": {
+    "build": "npm run build -w packages/core -w packages/sdk-electron -w packages/quickstart",
+    "test": "npm run build && npm test -w packages/core -w packages/sdk-electron"
+  },
+  "engines": {
+    "node": ">=22.13"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "typescript": "^5.6.3"
+  }
+}
