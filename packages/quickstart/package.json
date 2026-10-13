@@ -1,6 +1,6 @@
 {
   "name": "@carchalabs/licensekit-quickstart",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Try LicenseKit from a terminal: activate a trial key, then check the license offline",
   "homepage": "https://licensekit.carchalabs.com/docs/",
   "repository": { "type": "git", "url": "git+https://github.com/carcha-labs/licensekit-sdk.git", "directory": "packages/quickstart" },
@@ -14,7 +14,7 @@
     "prepublishOnly": "npm run build"
   },
   "dependencies": {
-    "@carchalabs/licensekit-electron": "0.1.0"
+    "@carchalabs/licensekit-electron": "0.1.1"
   },
   "engines": { "node": ">=22.13" },
   "publishConfig": { "access": "public" },

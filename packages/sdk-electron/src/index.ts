@@ -3,11 +3,26 @@ import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { hostname, platform } from 'node:os';
 import { join } from 'node:path';
 import { hashFingerprint, keySet, LeaseClaims, LeaseFailure, verifyLease } from '@carchalabs/licensekit-core';
-import { readMachineId } from './fingerprint';
+import { MachineIdUnavailableError, readMachineId } from './fingerprint';
 
-export { readMachineId };
+export { MachineIdUnavailableError, readMachineId };
+
+/** This SDK's version, sent to the server so vendors can see (and require) which SDK each device runs. */
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+export const SDK_VERSION: string = require('../package.json').version;
 
 export type LicenseStatus = 'valid' | 'grace' | 'invalid' | 'unlicensed' | 'clock_suspect';
+
+/**
+ * Something the server asks the app to act on: sdk_update_recommended (update LicenseKit in the app) or
+ * app_update_recommended (the vendor's minimum app version), each with minimum and requiredFrom.
+ */
+export interface LicenseNotice {
+  code: string;
+  minimum?: string;
+  /** ISO date from which an older SDK is refused; null when the update is only recommended. */
+  requiredFrom?: string | null;
+}
 
 export interface LicenseState {
   status: LicenseStatus;
@@ -21,6 +36,8 @@ export interface LicenseState {
   maintenanceUntil?: string | null;
   revalidateBy?: string;
   keyHint?: string;
+  /** From the last successful check-in; kept while offline. The app decides how to show them. */
+  notices?: LicenseNotice[];
 }
 
 export interface SecureStore {
@@ -40,16 +57,27 @@ export interface LicenseKitOptions {
   requestTimeoutMs?: number;
   fetchImpl?: typeof fetch;
   machineId?: () => Promise<string>;
+  /** Use hostname + CPU + MAC when the OS machine id cannot be read (default false; see readMachineId). */
+  allowFallbackFingerprint?: boolean;
   now?: () => number;
 }
 
 interface Stored {
   licenseKey: string;
-  token: string;
+  /** Signed lease. Absent after the server refused this device: nothing is left to verify offline. */
+  token?: string;
   lastSeen?: number;
+  /** The server's last definitive refusal, kept so an offline check reports it instead of an old lease. */
+  refused?: { code: string; message: string; at: number };
+  notices?: LicenseNotice[];
 }
 
-const DEFINITIVE = new Set(['invalid_key', 'not_activated', 'license_suspended', 'license_revoked', 'license_expired']);
+type Leased = Stored & { token: string };
+
+const DEFINITIVE = new Set(['invalid_key', 'not_activated', 'license_suspended', 'license_revoked', 'license_expired', 'sdk_update_required', 'app_update_required']);
+/** The license itself is gone: forget the key too. The other refusals can be undone on the server (resume, renew,
+ *  re-activate), so the key is kept and the next successful online check restores the license on its own. */
+const FORGET_KEY = new Set(['invalid_key', 'license_revoked']);
 const CLOCK_TOLERANCE_SECONDS = 24 * 3600;
 const DEFAULT_GRACE_DAYS = 7;
 const CLOCK_MESSAGE = 'The date and time on this computer look wrong. Correct them, then connect to the internet.';
@@ -81,6 +109,11 @@ const REASON_TEXT: Record<LeaseFailure, string> = {
 
 const toIso = (seconds: number) => new Date(seconds * 1000).toISOString();
 
+function noticesFrom(response: any): { notices?: LicenseNotice[] } {
+  const list = Array.isArray(response?.notices) ? response.notices.filter((n: any) => n && typeof n.code === 'string') : [];
+  return list.length ? { notices: list } : {};
+}
+
 export class LicenseKit {
   private readonly file: string;
   private readonly keys: Map<string, KeyObject>;
@@ -106,7 +139,13 @@ export class LicenseKit {
 
   async fingerprint(): Promise<string> {
     if (!this.fingerprintCache) {
-      const raw = await (this.opts.machineId ?? readMachineId)();
+      let raw: string;
+      try {
+        raw = await (this.opts.machineId ?? (() => readMachineId({ allowFallback: this.opts.allowFallbackFingerprint })))();
+      } catch (e) {
+        if (e instanceof MachineIdUnavailableError) throw new LicenseError(e.code, e.message);
+        throw e;
+      }
       this.fingerprintCache = hashFingerprint(raw, this.opts.product);
     }
     return this.fingerprintCache;
@@ -153,7 +192,7 @@ export class LicenseKit {
     return { status, offline, storageProtected: this.storageProtected, features: [], expiresAt: null, ...extra };
   }
 
-  private stateFromLease(stored: Stored, offline: boolean): LicenseState {
+  private stateFromLease(stored: Leased, offline: boolean): LicenseState {
     const fingerprintHash = this.fingerprintCache!;
     const now = this.nowSec();
     const keyHint = `${stored.licenseKey.slice(0, 7)}…${stored.licenseKey.slice(-4)}`;
@@ -169,6 +208,7 @@ export class LicenseKit {
       maintenanceUntil: claims.mnt === undefined ? null : toIso(claims.mnt),
       storageProtected: this.storageProtected,
       keyHint,
+      ...(stored.notices ? { notices: stored.notices } : {}),
     });
     if (strict.ok) {
       return { status: 'valid', offline, ...fromClaims(strict.claims), revalidateBy: toIso(strict.claims.rev) };
@@ -203,8 +243,9 @@ export class LicenseKit {
       machineName: machineName.slice(0, 80),
       platform: platform(),
       appVersion: this.opts.appVersion,
+      sdkVersion: SDK_VERSION,
     });
-    const stored: Stored = { licenseKey: key, token: response.token, lastSeen: this.nowSec() };
+    const stored: Leased = { licenseKey: key, token: response.token, lastSeen: this.nowSec(), ...noticesFrom(response) };
     const state = this.stateFromLease(stored, false);
     if (state.status !== 'valid') throw new LicenseError(state.status === 'clock_suspect' ? 'clock_suspect' : state.reason ?? 'invalid', state.message ?? 'Server returned an unusable license');
     await this.save(stored);
@@ -212,7 +253,13 @@ export class LicenseKit {
   }
 
   async check(): Promise<LicenseState> {
-    await this.fingerprint();
+    try {
+      await this.fingerprint();
+    } catch (e) {
+      // Nothing is changed on disk: the next check tries to read the id again.
+      if (e instanceof LicenseError && e.code === 'machine_id_unavailable') return this.emptyState('invalid', false, { reason: e.code, message: e.message });
+      throw e;
+    }
     const stored = await this.load();
     if (!stored) return this.emptyState('unlicensed', false);
     try {
@@ -221,15 +268,24 @@ export class LicenseKit {
         product: this.opts.product,
         fingerprint: this.fingerprintCache,
         appVersion: this.opts.appVersion,
+        sdkVersion: SDK_VERSION,
       });
-      const fresh: Stored = { ...stored, token: response.token, lastSeen: this.nowSec() };
+      const fresh: Leased = { licenseKey: stored.licenseKey, token: response.token, lastSeen: this.nowSec(), ...noticesFrom(response) };
       await this.save(fresh);
       return this.stateFromLease(fresh, false);
     } catch (e) {
+      const keyHint = `${stored.licenseKey.slice(0, 7)}…${stored.licenseKey.slice(-4)}`;
       if (e instanceof LicenseError && DEFINITIVE.has(e.code)) {
-        return this.emptyState('invalid', false, { reason: e.code, message: e.message });
+        // Persist the refusal: drop the signed lease so going offline cannot bring the license back.
+        if (FORGET_KEY.has(e.code)) await this.clear();
+        else await this.save({ licenseKey: stored.licenseKey, lastSeen: stored.lastSeen, refused: { code: e.code, message: e.message, at: this.nowSec() } });
+        return this.emptyState('invalid', false, { reason: e.code, message: e.message, keyHint });
       }
-      const state = this.stateFromLease(stored, true);
+      if (!stored.token) {
+        const refused = stored.refused ?? { code: 'not_activated', message: 'This device is not activated for this license' };
+        return this.emptyState('invalid', true, { reason: refused.code, message: refused.message, keyHint });
+      }
+      const state = this.stateFromLease({ ...stored, token: stored.token }, true);
       if (state.status === 'valid' || state.status === 'grace') {
         await this.save({ ...stored, lastSeen: Math.max(stored.lastSeen ?? 0, this.nowSec()) });
       }
