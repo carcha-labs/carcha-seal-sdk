@@ -3,12 +3,14 @@ name = "licensekit_lease"
 version = "0.1.0"
 edition = "2024"
 rust-version = "1.85"
-description = "Verifies LicenseKit leases (Ed25519-signed JWS) with the same rules as @carchalabs/licensekit-core."
+description = "Verifies LicenseKit leases (Ed25519-signed JWS) and decrypts feature data, with the same rules as @carchalabs/licensekit-core."
 license = "MIT"
 publish = false
 
 [dependencies]
+aes-gcm = "0.10"
 base64 = "0.22"
+hkdf = "0.12"
 ed25519-dalek = "2"
 serde_json = "1"
 sha2 = "0.10"

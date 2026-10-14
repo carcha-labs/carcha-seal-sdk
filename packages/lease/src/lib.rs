@@ -143,7 +143,8 @@ fn valid_claims(claims: &Map<String, Value>) -> bool {
     let features = claims.get("feat").and_then(Value::as_array).is_some_and(|a| a.iter().all(Value::is_string));
     let customer = claims.get("cus").is_none_or(Value::is_string);
     let optional_times = ["grc", "mnt"].iter().all(|name| claims.get(*name).is_none_or(|v| finite(Some(v)).is_some_and(|n| n >= 0.0)));
-    strings && numbers && expiry && features && customer && optional_times
+    let feature_keys = claims.get("fk").is_none_or(|v| v.as_object().is_some_and(|m| m.values().all(Value::is_string)));
+    strings && numbers && expiry && features && customer && optional_times && feature_keys
 }
 
 pub fn verify(token: &str, options: &Options) -> Result<Verified, Refused> {
@@ -217,6 +218,109 @@ pub fn verify(token: &str, options: &Options) -> Result<Verified, Refused> {
         return Err((Failure::RevalidationRequired, Some(claims)));
     }
     Ok(Verified { kid: trusted.kid.clone(), claims })
+}
+
+// ---- Feature keys (same construction as the core library) ----------------------------------
+
+const FEATURE_WRAP_SALT: &[u8] = b"licensekit feature key v1";
+const ENCRYPTED_MAGIC: &[u8] = b"LKE1";
+const NONCE_BYTES: usize = 12;
+const TAG_BYTES: usize = 16;
+
+/// The core library's normalizeLicenseKey: upper case, no spaces or dashes, no "LK" prefix,
+/// I and L read as 1 and O as 0, then "LK-" and groups of four. License keys are ASCII.
+pub fn normalize_license_key(input: &str) -> String {
+    let mut body: String = input.to_uppercase().chars().filter(|c| !c.is_whitespace() && *c != '-').collect();
+    if let Some(rest) = body.strip_prefix("LK") {
+        body = rest.to_string();
+    }
+    let body: Vec<char> = body.chars().map(|c| match c {
+        'I' | 'L' => '1',
+        'O' => '0',
+        c => c,
+    }).collect();
+    let mut out = String::from("LK");
+    for group in body.chunks(4) {
+        out.push('-');
+        out.extend(group);
+    }
+    out
+}
+
+/// HKDF-SHA256 (RFC 5869) over the normalized license key; info = product, fingerprint, lease id.
+pub fn feature_wrap_key(license_key: &str, product: &str, fingerprint_hash: &str, lease_id: &str) -> [u8; 32] {
+    let ikm = normalize_license_key(license_key);
+    let info = format!("{product}\n{fingerprint_hash}\n{lease_id}");
+    let mut okm = [0u8; 32];
+    hkdf::Hkdf::<Sha256>::new(Some(FEATURE_WRAP_SALT), ikm.as_bytes())
+        .expand(info.as_bytes(), &mut okm)
+        .expect("32 bytes is a valid HKDF-SHA256 length");
+    okm
+}
+
+/// AES-256-GCM open of nonce || ciphertext || tag with associated data.
+fn open(key: &[u8; 32], sealed: &[u8], aad: &str) -> Option<Vec<u8>> {
+    use aes_gcm::aead::{Aead, KeyInit, Payload};
+    if sealed.len() < NONCE_BYTES + TAG_BYTES {
+        return None;
+    }
+    let (nonce, body) = sealed.split_at(NONCE_BYTES);
+    aes_gcm::Aes256Gcm::new(key.into())
+        .decrypt(aes_gcm::Nonce::from_slice(nonce), Payload { msg: body, aad: aad.as_bytes() })
+        .ok()
+}
+
+/// A lease's wrapped content key for `feature` (claims.fk[feature], base64url) opened with the wrap key.
+pub fn unwrap_feature_key(wrapped: &str, wrap_key: &[u8; 32], feature: &str) -> Option<[u8; 32]> {
+    if !is_base64url(wrapped) {
+        return None;
+    }
+    let sealed = b64().decode(wrapped).ok()?;
+    open(wrap_key, &sealed, &format!("fk:{feature}"))?.try_into().ok()
+}
+
+/// Data encrypted for a feature: "LKE1" || nonce || ciphertext || tag, the feature as associated data.
+pub fn decrypt_for_feature(content_key: &[u8; 32], feature: &str, encrypted: &[u8]) -> Option<Vec<u8>> {
+    let sealed = encrypted.strip_prefix(ENCRYPTED_MAGIC)?;
+    open(content_key, sealed, &format!("LKE1:{feature}"))
+}
+
+/// Why feature data could not be decrypted.
+#[derive(Debug, PartialEq, Eq)]
+pub enum DecryptError {
+    /// The lease itself was refused (same reasons as verify).
+    Lease(Failure),
+    /// The verified lease does not grant this feature or carries no key for it.
+    NotLicensed,
+    /// The key or the data did not authenticate (wrong license key or device, or modified data).
+    Failed,
+}
+
+impl DecryptError {
+    /// The core library's reason names (decryptFeature).
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            DecryptError::Lease(failure) => failure.as_str(),
+            DecryptError::NotLicensed => "not_licensed",
+            DecryptError::Failed => "decrypt_failed",
+        }
+    }
+}
+
+/// Verifies the lease, then unwraps the feature's content key for this license key and device and
+/// decrypts `encrypted` with it. The content key never leaves this function.
+pub fn decrypt_feature(token: &str, options: &Options, license_key: &str, feature: &str, encrypted: &[u8]) -> Result<Vec<u8>, DecryptError> {
+    let verified = verify(token, options).map_err(|(failure, _)| DecryptError::Lease(failure))?;
+    let claims = &verified.claims;
+    let licensed = claims.get("feat").and_then(Value::as_array).is_some_and(|f| f.iter().any(|x| x.as_str() == Some(feature)));
+    let wrapped = claims.get("fk").and_then(|fk| fk.get(feature)).and_then(Value::as_str);
+    let (true, Some(wrapped)) = (licensed, wrapped) else {
+        return Err(DecryptError::NotLicensed);
+    };
+    let lease_id = claims.get("jti").and_then(Value::as_str).unwrap_or_default();
+    let wrap_key = feature_wrap_key(license_key, options.product, options.fingerprint_hash, lease_id);
+    let content_key = unwrap_feature_key(wrapped, &wrap_key, feature).ok_or(DecryptError::Failed)?;
+    decrypt_for_feature(&content_key, feature, encrypted).ok_or(DecryptError::Failed)
 }
 
 #[cfg(test)]

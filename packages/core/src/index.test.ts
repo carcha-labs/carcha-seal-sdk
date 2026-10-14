@@ -2,6 +2,14 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createHash, createPrivateKey, createPublicKey, sign } from 'node:crypto';
 import {
+  decryptFeature,
+  decryptForFeature,
+  encryptForFeature,
+  FeatureCryptoError,
+  featureWrapKey,
+  generateFeatureKey,
+  unwrapFeatureKey,
+  wrapFeatureKey,
   generateSigningKeys,
   signLease,
   verifyLease,
@@ -226,4 +234,61 @@ test('the lease vectors the Rust verifier is tested with (packages/lease/tests/v
     const r = verifyLease(v.token, { keys: [file.publicKey], ...v.check });
     assert.deepEqual(r.ok ? { ok: true, kid: r.header.kid } : { ok: false, reason: r.reason }, v.expected, v.name);
   }
+  for (const v of file.features.normalize) assert.equal(normalizeLicenseKey(v.input), v.expected);
+  for (const v of file.features.wrapKeys) assert.equal(featureWrapKey(v.licenseKey, v.product, v.fingerprintHash, v.leaseId).toString('hex'), v.expected);
+  for (const v of file.features.decrypts) {
+    const r = decryptFeature(v.token, { keys: [file.publicKey], ...v.check }, v.licenseKey, v.feature, Buffer.from(v.data, 'base64'));
+    assert.deepEqual(r.ok ? { ok: true, data: r.data.toString('base64') } : { ok: false, reason: r.reason }, v.expected, v.name);
+  }
+});
+
+test('feature data: only the right content key and feature open it, and any change is detected', () => {
+  const key = generateFeatureKey();
+  const data = Buffer.from('premium');
+  const sealed = encryptForFeature(key, 'pro', data);
+  assert.deepEqual(sealed.subarray(0, 4), Buffer.from('LKE1'));
+  assert.notDeepEqual(encryptForFeature(key, 'pro', data), sealed, 'a fresh nonce each time');
+  assert.deepEqual(decryptForFeature(key, 'pro', sealed), data);
+  assert.throws(() => decryptForFeature(key, 'export', sealed), FeatureCryptoError);
+  assert.throws(() => decryptForFeature(generateFeatureKey(), 'pro', sealed), FeatureCryptoError);
+  const changed = Buffer.from(sealed);
+  changed[10] ^= 1;
+  assert.throws(() => decryptForFeature(key, 'pro', changed), FeatureCryptoError);
+  assert.throws(() => encryptForFeature(Buffer.alloc(16), 'pro', data), FeatureCryptoError);
+});
+
+test('a wrapped feature key opens only with the same license key, product, device and lease id', () => {
+  const content = generateFeatureKey();
+  const wrapKey = featureWrapKey('LK-AAAA-BBBB', 'studio', 'fp', 'lease-1');
+  const wrapped = wrapFeatureKey(content, wrapKey, 'pro');
+  assert.deepEqual(unwrapFeatureKey(wrapped, featureWrapKey('lk-aaaa-bbbb', 'studio', 'fp', 'lease-1'), 'pro'), content);
+  for (const other of [
+    featureWrapKey('LK-AAAA-BBBC', 'studio', 'fp', 'lease-1'),
+    featureWrapKey('LK-AAAA-BBBB', 'other', 'fp', 'lease-1'),
+    featureWrapKey('LK-AAAA-BBBB', 'studio', 'fp2', 'lease-1'),
+    featureWrapKey('LK-AAAA-BBBB', 'studio', 'fp', 'lease-2'),
+  ]) {
+    assert.throws(() => unwrapFeatureKey(wrapped, other, 'pro'), FeatureCryptoError);
+  }
+  assert.throws(() => unwrapFeatureKey(wrapped, wrapKey, 'export'), FeatureCryptoError, 'bound to its feature');
+});
+
+test('licensekit-encrypt writes data that decryptForFeature opens; the key never comes from the command line', async () => {
+  const { mkdtempSync, writeFileSync, readFileSync } = await import('node:fs');
+  const { join } = await import('node:path');
+  const { tmpdir } = await import('node:os');
+  const { runEncrypt } = await import('./encrypt-cli');
+  const dir = mkdtempSync(join(tmpdir(), 'lke-'));
+  const key = generateFeatureKey();
+  writeFileSync(join(dir, 'in.js'), 'module.exports = 42;');
+  const lines: string[] = [];
+  const io = { out: (s: string) => lines.push(s), err: (s: string) => lines.push(s) };
+  assert.equal(runEncrypt(['--feature', 'pro', join(dir, 'in.js'), join(dir, 'out.lke')], { LICENSEKIT_FEATURE_KEY: key.toString('base64url') }, io), 0);
+  assert.equal(decryptForFeature(key, 'pro', readFileSync(join(dir, 'out.lke'))).toString(), 'module.exports = 42;');
+  writeFileSync(join(dir, 'key.txt'), key.toString('base64url') + '\n');
+  assert.equal(runEncrypt(['--feature', 'pro', '--key-file', join(dir, 'key.txt'), join(dir, 'in.js'), join(dir, 'out2.lke')], {}, io), 0);
+  assert.equal(decryptForFeature(key, 'pro', readFileSync(join(dir, 'out2.lke'))).toString(), 'module.exports = 42;');
+  assert.equal(runEncrypt(['--feature', 'pro', join(dir, 'in.js'), join(dir, 'x')], {}, io), 2, 'no key');
+  assert.equal(runEncrypt(['--feature', 'pro', join(dir, 'in.js'), join(dir, 'x')], { LICENSEKIT_FEATURE_KEY: 'short' }, io), 2);
+  assert.equal(runEncrypt([join(dir, 'in.js'), join(dir, 'x')], { LICENSEKIT_FEATURE_KEY: key.toString('base64url') }, io), 2, 'no feature');
 });

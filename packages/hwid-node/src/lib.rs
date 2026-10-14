@@ -1,8 +1,8 @@
 //! Node-API layer over `licensekit_hwid` and `licensekit_lease` for Node.js and
 //! Electron.
 //!
-//! Exposes `collect(key)`, `verifyLease(token, options)`, `leaseKeyIds()` and
-//! `version()`. Only kinds, hashes, the VM flag and diagnostic notes cross into
+//! Exposes `collect(key)`, `verifyLease(token, options)`, `leaseKeyIds()`,
+//! `decryptFeature(token, options, licenseKey, feature, data)` and `version()`. Only kinds, hashes, the VM flag and diagnostic notes cross into
 //! JavaScript, never raw serials.
 
 use napi::bindgen_prelude::*;
@@ -106,10 +106,26 @@ pub struct LeaseVerdict {
 /// reasons as verifyLease in @carchalabs/licensekit-core.
 #[napi]
 pub fn verify_lease(token: String, check: LeaseCheck) -> LeaseVerdict {
+    match licensekit_lease::verify(&token, &lease_options(&check)) {
+        Ok(verified) => LeaseVerdict { ok: true, reason: None, kid: Some(verified.kid) },
+        Err((failure, _)) => LeaseVerdict { ok: false, reason: Some(failure.as_str().to_string()), kid: None },
+    }
+}
+
+#[napi(object)]
+pub struct FeatureDecrypt {
+    pub ok: bool,
+    /// The plaintext; present when ok.
+    pub data: Option<Buffer>,
+    /// A lease failure reason, "not_licensed" or "decrypt_failed"; absent when ok.
+    pub reason: Option<String>,
+}
+
+fn lease_options(check: &LeaseCheck) -> licensekit_lease::Options<'_> {
     let now = check.now.unwrap_or_else(|| {
         std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_secs() as f64).unwrap_or(0.0)
     });
-    let options = licensekit_lease::Options {
+    licensekit_lease::Options {
         keys: trusted_keys(),
         product: &check.product,
         fingerprint_hash: &check.fingerprint_hash,
@@ -117,10 +133,17 @@ pub fn verify_lease(token: String, check: LeaseCheck) -> LeaseVerdict {
         now,
         grace_seconds: check.grace_seconds.unwrap_or(0.0),
         leeway_seconds: check.leeway_seconds.unwrap_or(licensekit_lease::DEFAULT_LEEWAY_SECONDS),
-    };
-    match licensekit_lease::verify(&token, &options) {
-        Ok(verified) => LeaseVerdict { ok: true, reason: None, kid: Some(verified.kid) },
-        Err((failure, _)) => LeaseVerdict { ok: false, reason: Some(failure.as_str().to_string()), kid: None },
+    }
+}
+
+/// Verifies the lease with the compiled-in keys, unwraps the feature's content key for this license
+/// key and device, and decrypts data the vendor encrypted for the feature. The content key never
+/// reaches JavaScript.
+#[napi]
+pub fn decrypt_feature(token: String, check: LeaseCheck, license_key: String, feature: String, data: Buffer) -> FeatureDecrypt {
+    match licensekit_lease::decrypt_feature(&token, &lease_options(&check), &license_key, &feature, &data) {
+        Ok(plain) => FeatureDecrypt { ok: true, data: Some(plain.into()), reason: None },
+        Err(e) => FeatureDecrypt { ok: false, data: None, reason: Some(e.as_str().to_string()) },
     }
 }
 

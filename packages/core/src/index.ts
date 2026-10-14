@@ -1,5 +1,8 @@
 import {
+  createCipheriv,
+  createDecipheriv,
   createHash,
+  hkdfSync,
   createPrivateKey,
   createPublicKey,
   generateKeyPairSync,
@@ -34,6 +37,8 @@ export interface LeaseClaims {
   cus?: string;
   grc?: number;
   mnt?: number;
+  /** Wrapped feature content keys, by feature (see wrapFeatureKey). */
+  fk?: Record<string, string>;
 }
 
 export interface PublicJwk {
@@ -154,7 +159,8 @@ function isLeaseClaims(value: unknown): value is LeaseClaims {
   const features = Array.isArray(value.feat) && value.feat.every((feature) => typeof feature === 'string');
   const customer = value.cus === undefined || typeof value.cus === 'string';
   const optionalTimes = ['grc', 'mnt'].every((name) => value[name] === undefined || (Number.isFinite(value[name]) && (value[name] as number) >= 0));
-  return strings && numbers && expiry && features && customer && optionalTimes;
+  const featureKeys = value.fk === undefined || (isObject(value.fk) && Object.values(value.fk).every((wrapped) => typeof wrapped === 'string'));
+  return strings && numbers && expiry && features && customer && optionalTimes && featureKeys;
 }
 
 export function decodeLease(token: string): { header: LeaseHeader; claims: LeaseClaims } | null {
@@ -243,4 +249,102 @@ export function hashLicenseKey(input: string): string {
 
 export function legacyLicenseKeyHash(input: string): string {
   return createHash('sha256').update(input.trim().toUpperCase()).digest('hex');
+}
+
+// ---- Feature keys -------------------------------------------------------------------------
+//
+// Each feature of a product has a secret 256-bit content key on the server. The vendor encrypts
+// data for a feature with it (encryptForFeature). A lease carries every licensed feature's content
+// key wrapped for that lease (claim "fk"): AES-256-GCM (NIST SP 800-38D) under a key derived with
+// HKDF-SHA256 (RFC 5869) from the license key, the product, the device fingerprint and the lease id.
+// So only a holder of the license key, on the device the lease was issued to, can unwrap it.
+
+const FEATURE_WRAP_SALT = Buffer.from('licensekit feature key v1', 'utf8');
+const ENCRYPTED_MAGIC = Buffer.from('LKE1', 'ascii');
+const GCM_NONCE_BYTES = 12;
+const GCM_TAG_BYTES = 16;
+
+export class FeatureCryptoError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'FeatureCryptoError';
+  }
+}
+
+/** A new random content key for a feature (32 bytes). */
+export function generateFeatureKey(): Buffer {
+  return randomBytes(32);
+}
+
+/** The key a lease's feature keys are wrapped with: HKDF-SHA256 over the normalized license key. */
+export function featureWrapKey(licenseKey: string, product: string, fingerprintHash: string, leaseId: string): Buffer {
+  const info = Buffer.from(`${product}\n${fingerprintHash}\n${leaseId}`, 'utf8');
+  return Buffer.from(hkdfSync('sha256', Buffer.from(normalizeLicenseKey(licenseKey), 'utf8'), FEATURE_WRAP_SALT, info, 32));
+}
+
+function seal(key: Buffer, plaintext: Buffer, aad: string, nonce: Buffer): Buffer {
+  const cipher = createCipheriv('aes-256-gcm', key, nonce, { authTagLength: GCM_TAG_BYTES });
+  cipher.setAAD(Buffer.from(aad, 'utf8'));
+  return Buffer.concat([nonce, cipher.update(plaintext), cipher.final(), cipher.getAuthTag()]);
+}
+
+function open(key: Buffer, sealed: Buffer, aad: string): Buffer {
+  if (sealed.length < GCM_NONCE_BYTES + GCM_TAG_BYTES) throw new FeatureCryptoError('too short');
+  const nonce = sealed.subarray(0, GCM_NONCE_BYTES);
+  const tag = sealed.subarray(sealed.length - GCM_TAG_BYTES);
+  const decipher = createDecipheriv('aes-256-gcm', key, nonce, { authTagLength: GCM_TAG_BYTES });
+  decipher.setAAD(Buffer.from(aad, 'utf8'));
+  decipher.setAuthTag(tag);
+  try {
+    return Buffer.concat([decipher.update(sealed.subarray(GCM_NONCE_BYTES, sealed.length - GCM_TAG_BYTES)), decipher.final()]);
+  } catch {
+    throw new FeatureCryptoError('authentication failed');
+  }
+}
+
+/** Wraps a feature's content key for one lease (the value of claims.fk[feature]), base64url. */
+export function wrapFeatureKey(contentKey: Buffer, wrapKey: Buffer, feature: string, nonce: Buffer = randomBytes(GCM_NONCE_BYTES)): string {
+  if (contentKey.length !== 32) throw new FeatureCryptoError('a content key is 32 bytes');
+  return toBase64Url(seal(wrapKey, contentKey, `fk:${feature}`, nonce));
+}
+
+export function unwrapFeatureKey(wrapped: string, wrapKey: Buffer, feature: string): Buffer {
+  if (!BASE64URL.test(wrapped)) throw new FeatureCryptoError('not base64url');
+  const key = open(wrapKey, fromBase64Url(wrapped), `fk:${feature}`);
+  if (key.length !== 32) throw new FeatureCryptoError('a content key is 32 bytes');
+  return key;
+}
+
+/** Encrypts data for a feature: "LKE1" || nonce || AES-256-GCM ciphertext || tag, the feature as associated data. */
+export function encryptForFeature(contentKey: Buffer, feature: string, data: Buffer, nonce: Buffer = randomBytes(GCM_NONCE_BYTES)): Buffer {
+  if (contentKey.length !== 32) throw new FeatureCryptoError('a content key is 32 bytes');
+  return Buffer.concat([ENCRYPTED_MAGIC, seal(contentKey, data, `LKE1:${feature}`, nonce)]);
+}
+
+export function decryptForFeature(contentKey: Buffer, feature: string, encrypted: Buffer): Buffer {
+  if (encrypted.length < ENCRYPTED_MAGIC.length || !encrypted.subarray(0, ENCRYPTED_MAGIC.length).equals(ENCRYPTED_MAGIC)) {
+    throw new FeatureCryptoError('not LicenseKit-encrypted data');
+  }
+  return open(contentKey, encrypted.subarray(ENCRYPTED_MAGIC.length), `LKE1:${feature}`);
+}
+
+export type FeatureDecryptResult =
+  | { ok: true; data: Buffer }
+  | { ok: false; reason: LeaseFailure | 'not_licensed' | 'decrypt_failed' };
+
+/**
+ * Verifies the lease, unwraps the feature's content key for this license key and device, and
+ * decrypts data encrypted for the feature. The native module does the same (decryptFeature).
+ */
+export function decryptFeature(token: string, options: LeaseVerifyOptions, licenseKey: string, feature: string, encrypted: Buffer): FeatureDecryptResult {
+  const verified = verifyLease(token, options);
+  if (!verified.ok) return { ok: false, reason: verified.reason };
+  const wrapped = verified.claims.fk?.[feature];
+  if (!verified.claims.feat.includes(feature) || typeof wrapped !== 'string') return { ok: false, reason: 'not_licensed' };
+  try {
+    const wrapKey = featureWrapKey(licenseKey, options.product, options.fingerprintHash, verified.claims.jti);
+    return { ok: true, data: decryptForFeature(unwrapFeatureKey(wrapped, wrapKey, feature), feature, encrypted) };
+  } catch {
+    return { ok: false, reason: 'decrypt_failed' };
+  }
 }

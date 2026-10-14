@@ -2,7 +2,7 @@ import { KeyObject } from 'node:crypto';
 import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { hostname, platform } from 'node:os';
 import { join } from 'node:path';
-import { hashFingerprint, keySet, LeaseClaims, LeaseFailure, LeaseVerifyOptions, LeaseVerifyResult, verifyLease } from '@carchalabs/licensekit-core';
+import { decodeLease, decryptFeature, hashFingerprint, keySet, LeaseClaims, LeaseFailure, LeaseVerifyOptions, LeaseVerifyResult, verifyLease } from '@carchalabs/licensekit-core';
 import { MachineIdUnavailableError, readMachineId } from './fingerprint';
 
 export { MachineIdUnavailableError, readMachineId };
@@ -94,6 +94,14 @@ const HWID_PACKAGE = '@carchalabs/licensekit-hwid';
 interface NativeLease {
   verifyLease(token: string, check: { product: string; fingerprintHash: string; now: number; graceSeconds?: number }): { ok: boolean; reason?: string };
   leaseKeyIds(): string[];
+  /** @carchalabs/licensekit-hwid 0.2+ with feature keys. */
+  decryptFeature?(
+    token: string,
+    check: { product: string; fingerprintHash: string; now: number; graceSeconds?: number },
+    licenseKey: string,
+    feature: string,
+    data: Buffer,
+  ): { ok: boolean; data?: Buffer; reason?: string };
 }
 
 /** Loads the native module once per process; null when it is not installed or has no build for this platform. */
@@ -389,6 +397,37 @@ export class LicenseKit {
       }
       return state;
     }
+  }
+
+  /**
+   * Decrypts data you encrypted for a feature (encryptForFeature in @carchalabs/licensekit-core, with the
+   * feature's content key from the console). Works offline: it uses the saved lease, which must be valid
+   * (or in its offline grace period), grant the feature and carry its key, and the saved license key.
+   * The native module does the work when it trusts this app's keys, so the content key never reaches
+   * JavaScript; without it the JavaScript implementation is used. Throws a LicenseError:
+   * `unlicensed`, a lease failure reason, `clock_suspect`, `feature_not_licensed` or `decrypt_failed`.
+   */
+  async decrypt(feature: string, data: Uint8Array): Promise<Buffer> {
+    const fingerprintHash = await this.fingerprint();
+    const stored = await this.load();
+    if (!stored?.token) throw new LicenseError('unlicensed', 'This device has no license.');
+    const leased: Leased = { ...stored, token: stored.token };
+    const state = this.stateFromLease(leased, true);
+    if (state.status !== 'valid' && state.status !== 'grace') {
+      throw new LicenseError(state.status === 'clock_suspect' ? 'clock_suspect' : (state.reason ?? 'invalid'), state.message ?? 'The license is not valid.');
+    }
+    const claims = decodeLease(leased.token)?.claims;
+    const graceSeconds = state.status === 'grace' ? (claims?.grc ?? (this.opts.graceDays ?? DEFAULT_GRACE_DAYS) * 86400) : 0;
+    const check = { product: this.opts.product, fingerprintHash, now: this.nowSec(), ...(graceSeconds ? { graceSeconds } : {}) };
+    const native = this.native();
+    const result: { ok: boolean; data?: Buffer; reason?: string } =
+      native && typeof native.decryptFeature === 'function'
+        ? native.decryptFeature(leased.token, check, leased.licenseKey, feature, Buffer.from(data))
+        : decryptFeature(leased.token, { keys: this.keys, ...check }, leased.licenseKey, feature, Buffer.from(data));
+    if (result.ok && result.data) return Buffer.from(result.data);
+    if (result.reason === 'not_licensed') throw new LicenseError('feature_not_licensed', `This license does not include "${feature}".`);
+    if (result.reason === 'decrypt_failed') throw new LicenseError('decrypt_failed', 'The data could not be decrypted with this license.');
+    throw new LicenseError(result.reason ?? 'invalid', REASON_TEXT[result.reason as LeaseFailure] ?? 'The license is not valid.');
   }
 
   async deactivate(): Promise<void> {

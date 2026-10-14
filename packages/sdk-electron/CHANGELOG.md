@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- `decrypt(feature, data)` opens data encrypted for a feature with its content key (`encryptForFeature` in licensekit-core). Leases from servers with feature keys carry the licensed features' keys wrapped for the license key and device; the native module (licensekit-hwid 0.2) decrypts without the key reaching JavaScript, otherwise the JavaScript implementation does.
 - With `@carchalabs/licensekit-hwid` 0.2 installed, every saved lease is verified twice: by the JavaScript verifier and by the native module, whose trusted keys are compiled in. The two follow the same rules, so a different answer is treated as a modified license (`bad_signature`). Apps given keys the native build does not trust (a self-hosted server with the default build) keep the JavaScript check alone.
 
 ## 0.2.0

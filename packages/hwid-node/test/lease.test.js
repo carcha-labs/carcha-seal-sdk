@@ -36,3 +36,18 @@ test('every lease vector gives the core library result', { skip: !testAddon && '
     assert.deepEqual(r.ok ? { ok: true, kid: r.kid } : { ok: false, reason: r.reason }, v.expected, v.name);
   }
 });
+
+test('feature data is decrypted only through a lease the build trusts', () => {
+  const v = vectors.features.decrypts.find((x) => x.name === 'decrypts for a licensed feature');
+  const r = hwid.decryptFeature(v.token, v.check, v.licenseKey, v.feature, Buffer.from(v.data, 'base64'));
+  assert.deepEqual({ ok: r.ok, reason: r.reason }, { ok: false, reason: 'unknown_key' });
+  assert.equal(r.data, undefined);
+});
+
+test('every feature vector gives the core library result', { skip: !testAddon && 'set LICENSEKIT_LEASE_TEST_ADDON' }, () => {
+  const addon = require(path.resolve(testAddon));
+  for (const v of vectors.features.decrypts) {
+    const r = addon.decryptFeature(v.token, v.check, v.licenseKey, v.feature, Buffer.from(v.data, 'base64'));
+    assert.deepEqual(r.ok ? { ok: true, data: r.data.toString('base64') } : { ok: false, reason: r.reason }, v.expected, v.name);
+  }
+});

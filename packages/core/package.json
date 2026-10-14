@@ -1,12 +1,13 @@
 {
   "name": "@carchalabs/licensekit-core",
   "version": "0.1.1",
-  "description": "LicenseKit lease format: Ed25519-signed compact JWS, key sets and license keys",
+  "description": "LicenseKit lease format: Ed25519-signed compact JWS, key sets, license keys and feature-key encryption",
   "homepage": "https://licensekit.carchalabs.com/docs/",
   "repository": { "type": "git", "url": "git+https://github.com/carcha-labs/licensekit-sdk.git", "directory": "packages/core" },
   "bugs": { "url": "https://github.com/carcha-labs/licensekit-sdk/issues" },
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "bin": { "licensekit-encrypt": "dist/encrypt-cli.js" },
   "files": ["dist", "src", "!dist/**/*.test.*", "!src/**/*.test.ts"],
   "scripts": {
     "build": "tsc -p tsconfig.json",

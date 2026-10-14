@@ -77,9 +77,52 @@ vectors.push({ name: 'revalidation due, grace used up', token: core.signLease(cl
 vectors.push({ name: 'custom issuer', token: core.signLease(claims({ iss: 'acme' }), privateKey), check: { ...base, issuer: 'acme' } });
 vectors.push({ name: 'leeway zero', token: core.signLease(claims({ nbf: NOW + 1 }), privateKey), check: { ...base, leewaySeconds: 0 } });
 
+// Feature keys in the claims: an object of strings, or absent.
+vectors.push({ name: 'fk with a wrapped key', token: core.signLease(claims({ fk: { pro: 'AAAA' } }), privateKey), check: base });
+vectors.push({ name: 'fk not an object', token: signed(header(), claims({ fk: ['AAAA'] })), check: base });
+vectors.push({ name: 'fk value not a string', token: signed(header(), claims({ fk: { pro: 1 } })), check: base });
+
 for (const v of vectors) {
   const r = core.verifyLease(v.token, { keys: [pem], ...v.check });
   v.expected = r.ok ? { ok: true, kid } : { ok: false, reason: r.reason };
 }
-writeFileSync(path.join(__dirname, 'vectors.json'), JSON.stringify({ publicKey: pem, kid, vectors }, null, 2) + '\n');
-console.log(`${vectors.length} vectors`);
+
+// ---- Feature keys ----
+const normalize = ['lk-abcd-efgh-ijkl', ' LK ABCD efgh ', 'abcdoil0', 'LKLK-1234', 'lk--', '', 'ABCDEFGHIJ'].map((input) => ({ input, expected: core.normalizeLicenseKey(input) }));
+
+const LICENSE = 'LK-7K2M-QX9P-4RTV-8WNB-3HCJ-6DFG-YZ5S';
+const FP = 'f'.repeat(64);
+const contentKeys = { pro: core.generateFeatureKey(), export: core.generateFeatureKey() };
+/** A lease granting `feat`, with the content keys of `wrapFor` wrapped for this license key, device and lease id. */
+const featureLease = ({ jti = 'lease-1', feat = ['pro', 'export'], wrapFor = feat, license = LICENSE, fp = FP } = {}) => {
+  const wrapKey = core.featureWrapKey(license, 'studio', fp, jti);
+  const fk = Object.fromEntries(wrapFor.map((f) => [f, core.wrapFeatureKey(contentKeys[f], wrapKey, f)]));
+  return core.signLease(claims({ jti, feat, fk, fp }), privateKey);
+};
+const plaintext = Buffer.from('premium module: export(){ return 42 }', 'utf8');
+const forPro = core.encryptForFeature(contentKeys.pro, 'pro', plaintext);
+const tampered = Buffer.from(forPro);
+tampered[tampered.length - 1] ^= 1;
+const decrypts = [
+  ['decrypts for a licensed feature', featureLease(), LICENSE, 'pro', forPro],
+  ['license key typed differently (normalized)', featureLease(), ' lk-7k2m-qx9p-4rtv-8wnb-3hcj-6dfg-yz5s ', 'pro', forPro],
+  ['data for another feature', featureLease(), LICENSE, 'export', forPro],
+  ['feature not in the lease', featureLease({ feat: ['export'] }), LICENSE, 'pro', forPro],
+  ['feature granted but no key in the lease', featureLease({ wrapFor: ['export'] }), LICENSE, 'pro', forPro],
+  ['another license key', featureLease(), 'LK-0000-0000-0000-0000-0000-0000-0000', 'pro', forPro],
+  ['keys wrapped for another device', featureLease({ fp: 'e'.repeat(64) }), LICENSE, 'pro', forPro],
+  ['data modified', featureLease(), LICENSE, 'pro', tampered],
+  ['not LicenseKit-encrypted data', featureLease(), LICENSE, 'pro', plaintext],
+  ['data too short', featureLease(), LICENSE, 'pro', Buffer.from('LKE1')],
+  ['lease refused (signed by another key)', signed(header(), claims({ fk: {} }), other.privateKey), LICENSE, 'pro', forPro],
+].map(([name, token, licenseKey, feature, data]) => {
+  const r = core.decryptFeature(token, { keys: [pem], ...base }, licenseKey, feature, data);
+  return { name, token, check: base, licenseKey, feature, data: data.toString('base64'), expected: r.ok ? { ok: true, data: r.data.toString('base64') } : { ok: false, reason: r.reason } };
+});
+// The wrap key itself, so a different derivation shows up directly.
+const wrapKeys = [[LICENSE, 'studio', FP, 'lease-1'], ['lk-abcd', 'p', 'x', '']].map(([licenseKey, product, fingerprintHash, leaseId]) => ({
+  licenseKey, product, fingerprintHash, leaseId, expected: core.featureWrapKey(licenseKey, product, fingerprintHash, leaseId).toString('hex'),
+}));
+
+writeFileSync(path.join(__dirname, 'vectors.json'), JSON.stringify({ publicKey: pem, kid, vectors, features: { normalize, wrapKeys, decrypts } }, null, 2) + '\n');
+console.log(`${vectors.length} lease vectors, ${normalize.length + wrapKeys.length + decrypts.length} feature vectors`);

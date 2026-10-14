@@ -43,6 +43,21 @@ export interface LeaseVerdict {
  */
 export function verifyLease(token: string, check: LeaseCheck): LeaseVerdict;
 
+export interface FeatureDecrypt {
+  ok: boolean;
+  /** The plaintext; present when ok. */
+  data?: Buffer;
+  /** A lease failure reason, 'not_licensed' or 'decrypt_failed'; absent when ok. */
+  reason?: string;
+}
+
+/**
+ * Verifies the lease (compiled-in keys), unwraps the feature's content key for this license key and
+ * device, and decrypts data encrypted for the feature (encryptForFeature in licensekit-core). The
+ * content key never reaches JavaScript.
+ */
+export function decryptFeature(token: string, check: LeaseCheck, licenseKey: string, feature: string, data: Buffer): FeatureDecrypt;
+
 /** Ids of the lease signing keys this build trusts (keyId in @carchalabs/licensekit-core). */
 export function leaseKeyIds(): string[];
 
