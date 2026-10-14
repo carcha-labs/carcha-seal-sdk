@@ -9,7 +9,37 @@ permissions:
   id-token: write
 
 jobs:
+  # The hardware module's native file, built and tested on each target (as in hwid-node.yml).
+  hwid:
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - { target: darwin-arm64, os: macos-latest }
+          - { target: darwin-x64, os: macos-15-intel }
+          - { target: win32-x64-msvc, os: windows-latest }
+          - { target: linux-x64-gnu, os: ubuntu-22.04 }
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        working-directory: packages/hwid-node
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node scripts/build.js --npm
+      - run: npm test
+      - uses: actions/upload-artifact@v4
+        with:
+          name: hwid-node-${{ matrix.target }}
+          path: packages/hwid-node/npm/${{ matrix.target }}/licensekit-hwid.${{ matrix.target }}.node
+          if-no-files-found: error
+          retention-days: 7
+
   publish:
+    needs: hwid
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -20,15 +50,36 @@ jobs:
       - run: npm install -g npm@^11.5.1
       - run: npm ci
       - run: npm test
-      - name: Publish versions that are not on npm yet
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: hwid-node-*
+          path: hwid-artifacts
+      - name: Put each native file into its platform package
         shell: bash
         run: |
-          for dir in packages/core packages/sdk-electron packages/quickstart; do
+          for t in darwin-arm64 darwin-x64 win32-x64-msvc linux-x64-gnu; do
+            cp "hwid-artifacts/hwid-node-$t/licensekit-hwid.$t.node" "packages/hwid-node/npm/$t/"
+            test -s "packages/hwid-node/npm/$t/licensekit-hwid.$t.node"
+          done
+      - name: Publish versions that are not on npm yet
+        shell: bash
+        # Trusted publishing (OIDC) once it is set up per package on npmjs.com. NPM_TOKEN is only for
+        # the first publish of a package that does not exist on npm yet; delete the secret afterwards.
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          publish() {
+            local dir=$1
+            local name version
             name=$(node -p "require('./$dir/package.json').name")
             version=$(node -p "require('./$dir/package.json').version")
             if npm view "$name@$version" version > /dev/null 2>&1; then
               echo "$name@$version is already on npm"
             else
-              npm publish -w "$dir"
+              (cd "$dir" && npm publish --provenance)
             fi
-          done
+          }
+          # Dependency order: platform packages, the hardware module, then core, electron, quickstart.
+          for t in darwin-arm64 darwin-x64 win32-x64-msvc linux-x64-gnu; do publish "packages/hwid-node/npm/$t"; done
+          publish packages/hwid-node
+          for dir in packages/core packages/sdk-electron packages/quickstart; do publish "$dir"; done

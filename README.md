@@ -26,7 +26,7 @@ The hardware module needs a Rust toolchain: `cargo test` in `packages/hwid`, `np
 
 ## Releases
 
-Publishing runs from GitHub Actions with npm trusted publishing when a GitHub release is published. Each package is published only if its version is not on npm yet, in dependency order: core, electron, quickstart.
+Publishing runs from GitHub Actions with npm trusted publishing when a GitHub release is published. The hardware module's native file is built and tested on each platform first. Each package is published only if its version is not on npm yet, in dependency order: the four hardware platform packages, the hardware module, core, electron, quickstart.
 
 ## License
 
