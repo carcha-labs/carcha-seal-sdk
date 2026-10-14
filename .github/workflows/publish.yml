@@ -79,7 +79,7 @@ jobs:
             if npm view "$name@$version" version > /dev/null 2>&1; then
               echo "$name@$version is already on npm"
             elif npm view "$name" name > /dev/null 2>&1; then
-              (cd "$dir" && npm publish --provenance)
+              (cd "$dir" && npm publish --provenance --loglevel verbose)
             else
               echo "$name is new on npm: staging $version for approval"
               (cd "$dir" && npm stage publish)
