@@ -2,7 +2,7 @@ import { KeyObject } from 'node:crypto';
 import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { hostname, platform } from 'node:os';
 import { join } from 'node:path';
-import { hashFingerprint, keySet, LeaseClaims, LeaseFailure, verifyLease } from '@carchalabs/licensekit-core';
+import { hashFingerprint, keySet, LeaseClaims, LeaseFailure, LeaseVerifyOptions, LeaseVerifyResult, verifyLease } from '@carchalabs/licensekit-core';
 import { MachineIdUnavailableError, readMachineId } from './fingerprint';
 
 export { MachineIdUnavailableError, readMachineId };
@@ -90,6 +90,26 @@ type Leased = Stored & { token: string };
 const DEFINITIVE = new Set(['invalid_key', 'not_activated', 'license_suspended', 'license_revoked', 'license_expired', 'sdk_update_required', 'app_update_required', 'vm_not_allowed']);
 /** The native hardware module. A non-literal require: bundlers leave it to Node, which must load the .node file from disk. */
 const HWID_PACKAGE = '@carchalabs/licensekit-hwid';
+/** The native module's lease verifier (@carchalabs/licensekit-hwid 0.2+): its keys are compiled in. */
+interface NativeLease {
+  verifyLease(token: string, check: { product: string; fingerprintHash: string; now: number; graceSeconds?: number }): { ok: boolean; reason?: string };
+  leaseKeyIds(): string[];
+}
+
+/** Loads the native module once per process; null when it is not installed or has no build for this platform. */
+let hwidModule: any;
+function loadHwid(): any {
+  if (hwidModule === undefined) {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      hwidModule = require(HWID_PACKAGE);
+    } catch {
+      hwidModule = null;
+    }
+  }
+  return hwidModule;
+}
+
 /** The server accepts at most this many components. */
 const MAX_COMPONENTS = 32;
 /** The license itself is gone: forget the key too. The other refusals can be undone on the server (resume, renew,
@@ -136,6 +156,8 @@ export class LicenseKit {
   private readonly keys: Map<string, KeyObject>;
   private fingerprintCache?: string;
   private hardwareCache?: Promise<HardwareReport | null>;
+  /** The native lease verifier, when it trusts every key this app was given (undefined = not looked up yet). */
+  private nativeLease?: NativeLease | null;
 
   constructor(private readonly opts: LicenseKitOptions) {
     this.file = join(opts.storageDir, 'license.dat');
@@ -176,8 +198,8 @@ export class LicenseKit {
       if (source === false) return null;
       try {
         if (source) return await source();
-        // eslint-disable-next-line @typescript-eslint/no-require-imports
-        const hwid = require(HWID_PACKAGE);
+        const hwid = loadHwid();
+        if (!hwid) return null;
         const { components, vm } = hwid.collect(`licensekit:${this.opts.product}`);
         return { components, vm };
       } catch {
@@ -230,6 +252,42 @@ export class LicenseKit {
     return { status, offline, storageProtected: this.storageProtected, features: [], expiresAt: null, ...extra };
   }
 
+  /**
+   * The native verifier, used only when its compiled-in keys include every key this app was given:
+   * an app that trusts other keys (a self-hosted server) is checked by the JavaScript verifier alone.
+   */
+  private native(): NativeLease | null {
+    if (this.nativeLease === undefined) {
+      const hwid = loadHwid();
+      let native: NativeLease | null = null;
+      if (hwid && typeof hwid.verifyLease === 'function' && typeof hwid.leaseKeyIds === 'function') {
+        const trusted = new Set<string>(hwid.leaseKeyIds());
+        if ([...this.keys.keys()].every((kid) => trusted.has(kid))) native = hwid;
+      }
+      this.nativeLease = native;
+    }
+    return this.nativeLease;
+  }
+
+  /**
+   * Verifies a lease twice, in JavaScript and in the native module, when the native verifier applies.
+   * Both follow the same rules, so a different answer means one of them was tampered with: the lease
+   * is then treated as modified.
+   */
+  private verify(token: string, options: LeaseVerifyOptions): LeaseVerifyResult {
+    const result = verifyLease(token, options);
+    const native = this.native();
+    if (!native) return result;
+    const check = native.verifyLease(token, {
+      product: options.product,
+      fingerprintHash: options.fingerprintHash,
+      now: options.now ?? Math.floor(Date.now() / 1000),
+      ...(options.graceSeconds !== undefined ? { graceSeconds: options.graceSeconds } : {}),
+    });
+    const agree = check.ok === result.ok && (result.ok || check.reason === result.reason);
+    return agree ? result : { ok: false, reason: 'bad_signature' };
+  }
+
   private stateFromLease(stored: Leased, offline: boolean): LicenseState {
     const fingerprintHash = this.fingerprintCache!;
     const now = this.nowSec();
@@ -238,7 +296,7 @@ export class LicenseKit {
       return this.emptyState('clock_suspect', offline, { reason: 'clock_rollback', message: CLOCK_MESSAGE, keyHint });
     }
     const verifyOptions = { keys: this.keys, product: this.opts.product, fingerprintHash, now };
-    const strict = verifyLease(stored.token, verifyOptions);
+    const strict = this.verify(stored.token, verifyOptions);
     const fromClaims = (claims: LeaseClaims) => ({
       customer: claims.cus,
       features: claims.feat,
@@ -256,7 +314,7 @@ export class LicenseKit {
     }
     if (strict.reason === 'revalidation_required' && strict.claims) {
       const grace = strict.claims.grc ?? (this.opts.graceDays ?? DEFAULT_GRACE_DAYS) * 86400;
-      const lenient = verifyLease(stored.token, { ...verifyOptions, graceSeconds: grace });
+      const lenient = this.verify(stored.token, { ...verifyOptions, graceSeconds: grace });
       if (lenient.ok) {
         return {
           status: 'grace',

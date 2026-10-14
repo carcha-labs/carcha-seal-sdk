@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- With `@carchalabs/licensekit-hwid` 0.2 installed, every saved lease is verified twice: by the JavaScript verifier and by the native module, whose trusted keys are compiled in. The two follow the same rules, so a different answer is treated as a modified license (`bad_signature`). Apps given keys the native build does not trust (a self-hosted server with the default build) keep the JavaScript check alone.
+
 ## 0.2.0
 
 Upgrade from 0.1.2; no code changes needed.

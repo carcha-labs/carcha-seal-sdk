@@ -1,12 +1,13 @@
-# Builds and tests the native hardware-id core on each OS it reads.
+# Builds and tests the native cores on each OS: hardware ids (packages/hwid) and lease
+# verification (packages/lease).
 name: hwid
 
 on:
   push:
     branches: [main]
-    paths: ["packages/hwid/**", ".github/workflows/hwid.yml"]
+    paths: ["packages/hwid/**", "packages/lease/**", ".github/workflows/hwid.yml"]
   pull_request:
-    paths: ["packages/hwid/**", ".github/workflows/hwid.yml"]
+    paths: ["packages/hwid/**", "packages/lease/**", ".github/workflows/hwid.yml"]
 
 permissions:
   contents: read
@@ -27,6 +28,9 @@ jobs:
       - run: rustup component add clippy
       - run: cargo clippy --all-targets -- -D warnings
       - run: cargo test
+      - name: Lease verifier (clippy, unit tests, the core library's vectors)
+        working-directory: packages/lease
+        run: cargo clippy --all-targets -- -D warnings && cargo test
       - name: C program linked against the static library
         if: runner.os != 'Windows'
         run: tests/c/run.sh

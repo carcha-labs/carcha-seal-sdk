@@ -6,9 +6,9 @@ name: hwid-node
 on:
   push:
     branches: [main]
-    paths: ["packages/hwid/**", "packages/hwid-node/**", ".github/workflows/hwid-node.yml"]
+    paths: ["packages/hwid/**", "packages/lease/**", "packages/hwid-node/**", ".github/workflows/hwid-node.yml"]
   pull_request:
-    paths: ["packages/hwid/**", "packages/hwid-node/**", ".github/workflows/hwid-node.yml"]
+    paths: ["packages/hwid/**", "packages/lease/**", "packages/hwid-node/**", ".github/workflows/hwid-node.yml"]
 
 permissions:
   contents: read
@@ -42,6 +42,13 @@ jobs:
         run: test -f "npm/${{ matrix.target }}/licensekit-hwid.${{ matrix.target }}.node"
       - name: Tests (local build)
         run: npm test
+      - name: Lease vectors through the Node-API layer (a build that trusts the vectors' test key)
+        run: |
+          key=$(node -e "const v = require('../lease/tests/vectors.json'); process.stdout.write(v.publicKey.split('\\n').filter((l) => l && !l.startsWith('-----')).join(''))")
+          LICENSEKIT_LEASE_PUBLIC_KEYS="$key" cargo build --release --target-dir "$RUNNER_TEMP/lease-test"
+          lib=$(ls "$RUNNER_TEMP"/lease-test/release/{liblicensekit_hwid_node.dylib,liblicensekit_hwid_node.so,licensekit_hwid_node.dll} 2>/dev/null | head -1)
+          cp "$lib" "$RUNNER_TEMP/lease-test.node"
+          LICENSEKIT_LEASE_TEST_ADDON="$RUNNER_TEMP/lease-test.node" node --test test/lease.test.js
       - name: Installed the way users get it (main package + platform package from tarballs)
         run: |
           rm licensekit-hwid.*.node

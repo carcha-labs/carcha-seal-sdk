@@ -3,7 +3,7 @@ name = "licensekit_hwid_node"
 version = "0.1.0"
 edition = "2024"
 rust-version = "1.88"
-description = "Node-API layer over licensekit_hwid, for Node.js and Electron."
+description = "Node-API layer over licensekit_hwid and licensekit_lease, for Node.js and Electron."
 license = "MIT"
 publish = false
 
@@ -12,6 +12,7 @@ crate-type = ["cdylib"]
 
 [dependencies]
 licensekit_hwid = { path = "../hwid" }
+licensekit_lease = { path = "../lease" }
 # Default features: Node-API 4 and dyn-symbols (Node-API functions are looked up
 # in the host process at load time, so the same file loads in node.exe and in an
 # Electron executable on Windows).

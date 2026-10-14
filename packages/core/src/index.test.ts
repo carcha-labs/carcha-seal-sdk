@@ -215,3 +215,15 @@ test('a JWK for the key set carries kid, alg and use', () => {
   assert.equal(jwk.kid, keyId(keys.publicKeyPem));
   assert.equal(keyId(createPublicKey({ key: { kty: jwk.kty, crv: jwk.crv, x: jwk.x }, format: 'jwk' })), jwk.kid);
 });
+
+test('the lease vectors the Rust verifier is tested with (packages/lease/tests/vectors.json) are this library\'s results', async () => {
+  const { readFileSync } = await import('node:fs');
+  const { join } = await import('node:path');
+  const file = JSON.parse(readFileSync(join(__dirname, '..', '..', 'lease', 'tests', 'vectors.json'), 'utf8'));
+  assert.equal(keyId(file.publicKey), file.kid);
+  assert.ok(file.vectors.length >= 40);
+  for (const v of file.vectors) {
+    const r = verifyLease(v.token, { keys: [file.publicKey], ...v.check });
+    assert.deepEqual(r.ok ? { ok: true, kid: r.header.kid } : { ok: false, reason: r.reason }, v.expected, v.name);
+  }
+});

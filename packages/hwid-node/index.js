@@ -23,4 +23,4 @@ try {
   throw unavailable(e.message);
 }
 
-module.exports = { collect: addon.collect, version: addon.version };
+module.exports = { collect: addon.collect, verifyLease: addon.verifyLease, leaseKeyIds: addon.leaseKeyIds, version: addon.version };

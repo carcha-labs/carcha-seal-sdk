@@ -10,6 +10,20 @@ const { vm, components, notes } = collect('your-product-key');
 
 Only kinds, hashes, the VM flag and diagnostic notes reach JavaScript, never raw serials. If no native module exists for the platform, `require` throws (`code: 'HWID_UNAVAILABLE'`) instead of falling back.
 
+## Lease verification
+
+The module also verifies LicenseKit leases (`../lease`, the `licensekit_lease` crate) with the same rules, order and failure reasons as `verifyLease` in `@carchalabs/licensekit-core`. The Ed25519 public keys it trusts are compiled in, so a lease signed with another key cannot be made to pass by changing a file or a setting.
+
+```js
+const { verifyLease, leaseKeyIds } = require('@carchalabs/licensekit-hwid');
+verifyLease(token, { product, fingerprintHash, now, graceSeconds }); // { ok, reason?, kid? }
+leaseKeyIds(); // ids of the compiled-in keys (keyId in licensekit-core)
+```
+
+The published build trusts the hosted service's current and next keys (`../quickstart/public-keys`). A self-hosted server's operator builds with their own: `LICENSEKIT_LEASE_PUBLIC_KEYS=<base64 SPKI>,<base64 SPKI> npm run build` (the PEM bodies, comma-separated). The Electron SDK uses this verifier next to its JavaScript one when the compiled-in keys include every key the app was given; a different answer from the two is treated as a modified license.
+
+Both verifiers are tested against the same vectors: `../lease/tests/vectors.json`, leases signed by licensekit-core with a throwaway key and the result core gives for each (`node ../lease/tests/make-vectors.js` regenerates them). The Rust crate (`cargo test` in `../lease`), core's own tests and this module (a build that trusts the vectors' key, in CI) must all give those results.
+
 ## Packages
 
 Published as napi-rs lays out prebuilt modules: the main package holds the loader, and each target is its own package listed as an exact-version optional dependency, with `os`/`cpu` (and `libc`) so npm installs only the one for the machine. Nothing is compiled or downloaded at install time.
