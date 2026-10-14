@@ -1,6 +1,6 @@
 {
   "name": "@carchalabs/licensekit-hwid-linux-x64-gnu",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Prebuilt native module of @carchalabs/licensekit-hwid for linux-x64-gnu.",
   "os": [
     "linux"

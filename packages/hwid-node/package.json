@@ -1,6 +1,6 @@
 {
   "name": "@carchalabs/licensekit-hwid",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Hardware component hashes for LicenseKit machine binding (Node.js and Electron).",
   "main": "index.js",
   "types": "index.d.ts",
@@ -18,10 +18,10 @@
   },
   "license": "MIT",
   "optionalDependencies": {
-    "@carchalabs/licensekit-hwid-darwin-arm64": "0.1.0",
-    "@carchalabs/licensekit-hwid-darwin-x64": "0.1.0",
-    "@carchalabs/licensekit-hwid-win32-x64-msvc": "0.1.0",
-    "@carchalabs/licensekit-hwid-linux-x64-gnu": "0.1.0"
+    "@carchalabs/licensekit-hwid-darwin-arm64": "0.2.0",
+    "@carchalabs/licensekit-hwid-darwin-x64": "0.2.0",
+    "@carchalabs/licensekit-hwid-win32-x64-msvc": "0.2.0",
+    "@carchalabs/licensekit-hwid-linux-x64-gnu": "0.2.0"
   },
   "repository": {
     "type": "git",

@@ -378,7 +378,7 @@ dependencies = [
 
 [[package]]
 name = "licensekit_hwid"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "hkdf",
  "hmac",
@@ -388,7 +388,7 @@ dependencies = [
 
 [[package]]
 name = "licensekit_hwid_node"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "base64",
  "licensekit_hwid",

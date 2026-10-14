@@ -1,6 +1,6 @@
 {
   "name": "@carchalabs/licensekit-hwid-win32-x64-msvc",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Prebuilt native module of @carchalabs/licensekit-hwid for win32-x64-msvc.",
   "os": [
     "win32"

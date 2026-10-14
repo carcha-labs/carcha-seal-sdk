@@ -1,6 +1,8 @@
 # Changelog
 
-## Unreleased
+## 0.3.0
+
+Upgrade from 0.2.0; no code changes needed. Requires a LicenseKit server with feature keys (2026-10-15 or later) for `decrypt` and device keys.
 
 - `decrypt(feature, data)` opens data encrypted for a feature with its content key (`encryptForFeature` in licensekit-core). Leases from servers with feature keys carry the licensed features' keys wrapped for the license key and device; the native module (licensekit-hwid 0.2) decrypts without the key reaching JavaScript, otherwise the JavaScript implementation does.
 - With the native module, activation and check-ins also send the device's X25519 public key (derived from its hardware; the secret stays in the module), and the server wraps feature keys for it, so a copied `license.dat` opens nothing on another machine. `hardware: false` turns this off too. Needs a server with feature keys (older servers reject the new field).

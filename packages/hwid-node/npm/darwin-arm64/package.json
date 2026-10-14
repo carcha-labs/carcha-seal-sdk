@@ -1,6 +1,6 @@
 {
   "name": "@carchalabs/licensekit-hwid-darwin-arm64",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Prebuilt native module of @carchalabs/licensekit-hwid for darwin-arm64.",
   "os": [
     "darwin"
