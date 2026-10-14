@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createHash, createPublicKey } from 'node:crypto';
+import { createHash, createPrivateKey, createPublicKey, sign } from 'node:crypto';
 import {
   generateSigningKeys,
   signLease,
@@ -111,9 +111,27 @@ test('not before allows five minutes of clock skew by default', () => {
   assert.equal(reason(token, { now: now + 299 }), 'not_yet_valid');
 });
 
+test('expiry allows the same five minutes of clock skew', () => {
+  const token = signLease(claims({ rev: now + 10_000 }), keys.privateKeyPem);
+  assert.equal(reason(token, { now: now + 3600 + 299 }), 'ok');
+  assert.equal(reason(token, { now: now + 3600 + 300 }), 'expired');
+  assert.equal(reason(token, { now: now + 3600, leewaySeconds: 0 }), 'expired');
+});
+
+test('a header with crit is rejected, even when correctly signed (RFC 7515 4.1.11)', () => {
+  const kid = keyId(keys.publicKeyPem);
+  const signWith = (header: Record<string, unknown>) => {
+    const input = `${b64(header)}.${b64(claims())}`;
+    return `${input}.${sign(null, Buffer.from(input, 'ascii'), createPrivateKey(keys.privateKeyPem)).toString('base64url')}`;
+  };
+  assert.equal(reason(signWith({ alg: LEASE_ALGORITHM, typ: LEASE_TYPE, kid })), 'ok', 'the helper signs a valid lease');
+  assert.equal(reason(signWith({ alg: LEASE_ALGORITHM, typ: LEASE_TYPE, kid, crit: ['exp'] })), 'malformed');
+  assert.equal(reason(signWith({ alg: LEASE_ALGORITHM, typ: LEASE_TYPE, kid, crit: ['x-anything'], 'x-anything': 1 })), 'malformed');
+});
+
 test('expiry, revalidation window and grace', () => {
   const token = signLease(claims(), keys.privateKeyPem);
-  assert.equal(reason(token, { now: now + 3600 }), 'expired');
+  assert.equal(reason(token, { now: now + 3600 + 300 }), 'expired');
   assert.equal(reason(token, { now: now + 700 }), 'revalidation_required');
   assert.equal(reason(token, { now: now + 700, graceSeconds: 200 }), 'ok');
 });
@@ -142,10 +160,22 @@ test('a well-signed payload with the wrong claim shapes is malformed', () => {
   assert.equal(reason(signLease(broken, keys.privateKeyPem)), 'malformed');
 });
 
-test('license keys use the Crockford Base32 alphabet in four groups of four', () => {
+test('license keys carry at least 128 random bits: seven Crockford Base32 groups of four', () => {
+  const seen = new Set<string>();
   for (let i = 0; i < 200; i++) {
-    assert.match(generateLicenseKey(), /^LK-[0-9A-HJKMNP-TV-Z]{4}-[0-9A-HJKMNP-TV-Z]{4}-[0-9A-HJKMNP-TV-Z]{4}-[0-9A-HJKMNP-TV-Z]{4}$/);
+    const key = generateLicenseKey();
+    assert.match(key, /^LK(-[0-9A-HJKMNP-TV-Z]{4}){7}$/);
+    assert.ok(key.replace(/^LK-|-/g, '').length * 5 >= 128);
+    assert.equal(normalizeLicenseKey(key), key);
+    seen.add(key);
   }
+  assert.equal(seen.size, 200);
+});
+
+test('keys issued in the earlier four-group format still hash as they did', () => {
+  const old = 'LK-7Q2M-9XPA-K4TD-W8NE';
+  assert.equal(hashLicenseKey(old), createHash('sha256').update(old).digest('hex'));
+  assert.equal(hashLicenseKey('lk7q2m9xpak4tdw8ne'), hashLicenseKey(old));
 });
 
 test('key input ignores case, spaces and hyphens and maps I, L to 1 and O to 0', () => {

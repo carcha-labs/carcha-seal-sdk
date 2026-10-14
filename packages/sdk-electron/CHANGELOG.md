@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.2
+
+Security update. Upgrade from 0.1.1. Uses `@carchalabs/licensekit-core` 0.1.1.
+
+- A lease whose header lists critical extensions (`crit`) is rejected as malformed. LicenseKit leases use none (RFC 7515 4.1.11).
+- Lease expiry allows the same five minutes of clock skew as the start time, so a computer clock that runs a few minutes fast no longer ends a valid lease early.
+- License keys issued by the server now have seven groups of four characters (140 random bits). Keys in the earlier four-group format keep working.
+
 ## 0.1.1
 
 Security update. Upgrade from 0.1.0.

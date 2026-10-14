@@ -6,7 +6,7 @@ Try [LicenseKit](https://licensekit.carchalabs.com) from a terminal.
 2. Activate this computer:
 
    ```
-   npx @carchalabs/licensekit-quickstart activate LK-XXXX-XXXX-XXXX-XXXX
+   npx @carchalabs/licensekit-quickstart activate LK-XXXX-XXXX-XXXX-XXXX-XXXX-XXXX-XXXX
    ```
 
 3. Turn off the network and check the license. It is verified offline from the signed lease:

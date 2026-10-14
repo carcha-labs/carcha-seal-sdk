@@ -175,6 +175,9 @@ export function verifyLease(token: string, options: LeaseVerifyOptions): LeaseVe
   if (!isObject(header)) return { ok: false, reason: 'malformed' };
   if (header.alg !== LEASE_ALGORITHM) return { ok: false, reason: 'unsupported_algorithm' };
   if (header.typ !== LEASE_TYPE) return { ok: false, reason: 'wrong_type' };
+  // RFC 7515 4.1.11: a header that names critical extensions the verifier does not understand must be rejected.
+  // Leases use none, so any "crit" makes the lease invalid.
+  if ('crit' in header) return { ok: false, reason: 'malformed' };
 
   const keys = options.keys instanceof Map ? options.keys : keySet(options.keys);
   const key = typeof header.kid === 'string' ? keys.get(header.kid) : undefined;
@@ -196,9 +199,11 @@ export function verifyLease(token: string, options: LeaseVerifyOptions): LeaseVe
   if (claims.aud !== options.product) return { ok: false, reason: 'wrong_product', claims };
   if (claims.fp !== options.fingerprintHash) return { ok: false, reason: 'wrong_device', claims };
 
+  // The same clock-skew leeway on both ends (RFC 7519 4.1.4, 4.1.5).
   const now = options.now ?? Math.floor(Date.now() / 1000);
-  if (now + (options.leewaySeconds ?? DEFAULT_LEEWAY_SECONDS) < claims.nbf) return { ok: false, reason: 'not_yet_valid', claims };
-  if (claims.exp !== undefined && now >= claims.exp) return { ok: false, reason: 'expired', claims };
+  const leeway = options.leewaySeconds ?? DEFAULT_LEEWAY_SECONDS;
+  if (now + leeway < claims.nbf) return { ok: false, reason: 'not_yet_valid', claims };
+  if (claims.exp !== undefined && now - leeway >= claims.exp) return { ok: false, reason: 'expired', claims };
   if (now >= claims.rev + (options.graceSeconds ?? 0)) return { ok: false, reason: 'revalidation_required', claims };
 
   return { ok: true, header: header as unknown as LeaseHeader, claims };
@@ -211,8 +216,15 @@ export function hashFingerprint(rawFingerprint: string, product: string): string
 const CROCKFORD_ALPHABET = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
 const LICENSE_KEY_PREFIX = 'LK';
 
+// 28 symbols x 5 bits = 140 random bits, above the 128-bit minimum for a
+// bearer secret (OWASP ASVS 5.0 V6.1.1 / NIST SP 800-63B). Seven groups of
+// four keep the format readable. Keys issued with four groups (80 bits)
+// still normalize and hash the same way, so they keep working.
+const LICENSE_KEY_SYMBOLS = 28;
+
 export function generateLicenseKey(): string {
-  const bytes = randomBytes(16);
+  // 256 is a multiple of 32, so byte & 31 picks each symbol uniformly.
+  const bytes = randomBytes(LICENSE_KEY_SYMBOLS);
   const body = Array.from(bytes, (byte) => CROCKFORD_ALPHABET[byte & 31]).join('');
   return `${LICENSE_KEY_PREFIX}-${body.match(/.{4}/g)!.join('-')}`;
 }

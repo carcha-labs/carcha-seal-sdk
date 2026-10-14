@@ -67,7 +67,7 @@ export async function run(args: string[], options: RunOptions): Promise<number> 
     product: PRODUCT,
     publicKey: options.publicKeys ?? bundledPublicKeys(),
     storageDir: options.storageDir ?? defaultStorageDir(platform(), process.env, homedir()),
-    appVersion: '0.1.1',
+    appVersion: '0.1.2',
     fetchImpl: options.fetchImpl,
     machineId: options.machineId,
   });
