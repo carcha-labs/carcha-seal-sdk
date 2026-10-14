@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.2.0
+
+Upgrade from 0.1.2; no code changes needed.
+
+- The SDK now sends hardware components: one keyed hash per part (motherboard, disk, network card, OS install, CPU and graphics models) and whether the computer is a virtual machine, read with `@carchalabs/licensekit-hwid` (installed with the SDK as an optional dependency, prebuilt for macOS arm64 and x64, Windows x64 and Linux x64). The license server then recognises the computer after a new disk, network card or operating system install, so it keeps its seat, and refuses a copied disk or system image on other hardware. Raw serial numbers never leave the computer.
+- Where the module is not available (other platforms, or not installed), nothing extra is sent and the SDK works as before. `hardware: false` turns it off; `hardware: () => report` supplies your own.
+- Bundlers must leave `@carchalabs/licensekit-hwid` to Node (mark it external); electron-builder unpacks its native module from the asar archive.
+- `vm_not_allowed` (a license whose policy does not allow virtual machines) is kept while offline like the other refusals.
+- Requires a license server with hardware matching (LicenseKit server from 2026-10-14); older servers reject the new fields.
+
 ## 0.1.2
 
 Security update. Upgrade from 0.1.1. Uses `@carchalabs/licensekit-core` 0.1.1.

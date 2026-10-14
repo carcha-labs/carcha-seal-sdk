@@ -25,4 +25,6 @@ if (LicenseKit.hasFeature(state, 'export-pdf')) exportPdf();
 
 The SDK sends the license key, a per-product SHA-256 hash of the operating system's machine ID, the device name, the platform, your app version and its own version. The raw machine ID does not leave the computer.
 
+**Hardware components.** When `@carchalabs/licensekit-hwid` is installed, the SDK also sends one keyed hash per hardware part (motherboard, disk, network card, OS install, CPU and graphics models) and whether the computer is a virtual machine. The license server then recognises the computer after a new disk, network card or operating system install, and refuses a copied disk or system image on other hardware. Raw serial numbers never leave the computer. Without the package, or on a platform it has no module for, nothing extra is sent. `hardware: false` turns it off. Bundlers must leave the package to Node (mark it external); electron-builder unpacks its native module from the asar archive.
+
 Full reference: [licensekit.carchalabs.com/docs](https://licensekit.carchalabs.com/docs/#sdk). Requires Node 22.13 or later. MIT License.

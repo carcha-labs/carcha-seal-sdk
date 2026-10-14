@@ -40,6 +40,13 @@ export interface LicenseState {
   notices?: LicenseNotice[];
 }
 
+/** Hashed hardware components (see @carchalabs/licensekit-hwid); the server matches a device by them. */
+export interface HardwareReport {
+  components: { kind: string; hash: string }[];
+  /** True when the device runs as a virtual machine. */
+  vm: boolean;
+}
+
 export interface SecureStore {
   encrypt(plain: string): Buffer | Promise<Buffer>;
   decrypt(cipher: Buffer): string | Promise<string>;
@@ -59,6 +66,12 @@ export interface LicenseKitOptions {
   machineId?: () => Promise<string>;
   /** Use hostname + CPU + MAC when the OS machine id cannot be read (default false; see readMachineId). */
   allowFallbackFingerprint?: boolean;
+  /**
+   * Hardware components sent with each request, so the device keeps its seat after a new disk, network
+   * card or OS install. Default: read with @carchalabs/licensekit-hwid when it is installed; nothing is
+   * sent when it is not (or cannot load on this platform). false: never send them. A function: your own.
+   */
+  hardware?: false | (() => HardwareReport | null | Promise<HardwareReport | null>);
   now?: () => number;
 }
 
@@ -74,7 +87,11 @@ interface Stored {
 
 type Leased = Stored & { token: string };
 
-const DEFINITIVE = new Set(['invalid_key', 'not_activated', 'license_suspended', 'license_revoked', 'license_expired', 'sdk_update_required', 'app_update_required']);
+const DEFINITIVE = new Set(['invalid_key', 'not_activated', 'license_suspended', 'license_revoked', 'license_expired', 'sdk_update_required', 'app_update_required', 'vm_not_allowed']);
+/** The native hardware module. A non-literal require: bundlers leave it to Node, which must load the .node file from disk. */
+const HWID_PACKAGE = '@carchalabs/licensekit-hwid';
+/** The server accepts at most this many components. */
+const MAX_COMPONENTS = 32;
 /** The license itself is gone: forget the key too. The other refusals can be undone on the server (resume, renew,
  *  re-activate), so the key is kept and the next successful online check restores the license on its own. */
 const FORGET_KEY = new Set(['invalid_key', 'license_revoked']);
@@ -118,6 +135,7 @@ export class LicenseKit {
   private readonly file: string;
   private readonly keys: Map<string, KeyObject>;
   private fingerprintCache?: string;
+  private hardwareCache?: Promise<HardwareReport | null>;
 
   constructor(private readonly opts: LicenseKitOptions) {
     this.file = join(opts.storageDir, 'license.dat');
@@ -149,6 +167,26 @@ export class LicenseKit {
       this.fingerprintCache = hashFingerprint(raw, this.opts.product);
     }
     return this.fingerprintCache;
+  }
+
+  /** Read once per instance: hardware does not change while the app runs. Never throws. */
+  private hardware(): Promise<{ components?: HardwareReport['components']; vm?: boolean }> {
+    this.hardwareCache ??= (async () => {
+      const source = this.opts.hardware;
+      if (source === false) return null;
+      try {
+        if (source) return await source();
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        const hwid = require(HWID_PACKAGE);
+        const { components, vm } = hwid.collect(`licensekit:${this.opts.product}`);
+        return { components, vm };
+      } catch {
+        return null; // not installed, or no module for this platform: send nothing, as before
+      }
+    })();
+    return this.hardwareCache.then((report) =>
+      report && report.components.length ? { components: report.components.slice(0, MAX_COMPONENTS), vm: report.vm === true } : {},
+    );
   }
 
   private async load(): Promise<Stored | null> {
@@ -244,6 +282,7 @@ export class LicenseKit {
       platform: platform(),
       appVersion: this.opts.appVersion,
       sdkVersion: SDK_VERSION,
+      ...(await this.hardware()),
     });
     const stored: Leased = { licenseKey: key, token: response.token, lastSeen: this.nowSec(), ...noticesFrom(response) };
     const state = this.stateFromLease(stored, false);
@@ -269,6 +308,7 @@ export class LicenseKit {
         fingerprint: this.fingerprintCache,
         appVersion: this.opts.appVersion,
         sdkVersion: SDK_VERSION,
+        ...(await this.hardware()),
       });
       const fresh: Leased = { licenseKey: stored.licenseKey, token: response.token, lastSeen: this.nowSec(), ...noticesFrom(response) };
       await this.save(fresh);
@@ -297,7 +337,12 @@ export class LicenseKit {
     const stored = await this.load();
     if (!stored) return;
     try {
-      await this.post('/v1/deactivate', { licenseKey: stored.licenseKey, product: this.opts.product, fingerprint: await this.fingerprint() });
+      await this.post('/v1/deactivate', {
+        licenseKey: stored.licenseKey,
+        product: this.opts.product,
+        fingerprint: await this.fingerprint(),
+        ...(await this.hardware()),
+      });
     } catch (e) {
       if (!(e instanceof LicenseError && (e.code === 'not_activated' || e.code === 'invalid_key'))) throw e;
     }

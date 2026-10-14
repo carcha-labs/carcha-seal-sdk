@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { homedir, platform } from 'node:os';
 import { join } from 'node:path';
-import { LicenseError, LicenseKit, LicenseState } from '@carchalabs/licensekit-electron';
+import { LicenseError, LicenseKit, LicenseKitOptions, LicenseState } from '@carchalabs/licensekit-electron';
 
 export const PRODUCT = 'licensekit-demo';
 export const DEFAULT_SERVER_URL = 'https://licensekit.carchalabs.com';
@@ -15,6 +15,8 @@ export interface RunOptions {
   publicKeys?: string[];
   fetchImpl?: typeof fetch;
   machineId?: () => Promise<string>;
+  /** Passed to the SDK (tests simulate machines; the CLI itself reads the hardware). */
+  hardware?: LicenseKitOptions['hardware'];
 }
 
 const USAGE = [
@@ -67,9 +69,10 @@ export async function run(args: string[], options: RunOptions): Promise<number> 
     product: PRODUCT,
     publicKey: options.publicKeys ?? bundledPublicKeys(),
     storageDir: options.storageDir ?? defaultStorageDir(platform(), process.env, homedir()),
-    appVersion: '0.1.2',
+    appVersion: '0.2.0',
     fetchImpl: options.fetchImpl,
     machineId: options.machineId,
+    hardware: options.hardware,
   });
   if (command === 'activate') {
     try {
