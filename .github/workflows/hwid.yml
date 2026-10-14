@@ -1,0 +1,41 @@
+# Builds and tests the native hardware-id core on each OS it reads.
+name: hwid
+
+on:
+  push:
+    branches: [main]
+    paths: ["packages/hwid/**", ".github/workflows/hwid.yml"]
+  pull_request:
+    paths: ["packages/hwid/**", ".github/workflows/hwid.yml"]
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    working-directory: packages/hwid
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - run: rustup component add clippy
+      - run: cargo clippy --all-targets -- -D warnings
+      - run: cargo test
+      - name: C program linked against the static library
+        if: runner.os != 'Windows'
+        run: tests/c/run.sh
+      - name: What this runner reads (kinds and hashes only)
+        run: cargo run --release --example probe
+      - name: Probe for running on a real Windows PC
+        if: runner.os == 'Windows'
+        uses: actions/upload-artifact@v4
+        with:
+          name: hwid-probe-windows-x64
+          path: packages/hwid/target/release/examples/probe.exe
+          retention-days: 14

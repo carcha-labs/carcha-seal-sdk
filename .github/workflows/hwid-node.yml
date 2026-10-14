@@ -1,0 +1,60 @@
+# Builds the Node-API module for each published target, tests it on that target, checks the
+# published layout (main package + platform package, installed from tarballs) and uploads the
+# platform package. Every target has a build job and a runtime test (napi-rs release guidance).
+name: hwid-node
+
+on:
+  push:
+    branches: [main]
+    paths: ["packages/hwid/**", "packages/hwid-node/**", ".github/workflows/hwid-node.yml"]
+  pull_request:
+    paths: ["packages/hwid/**", "packages/hwid-node/**", ".github/workflows/hwid-node.yml"]
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    working-directory: packages/hwid-node
+    shell: bash
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { target: darwin-arm64, os: macos-latest }
+          # Intel macOS runners end when the macOS 15 image is retired (fall 2027).
+          - { target: darwin-x64, os: macos-15-intel }
+          - { target: win32-x64-msvc, os: windows-latest }
+          # The oldest supported Ubuntu image: an older glibc runs on more Linux versions.
+          - { target: linux-x64-gnu, os: ubuntu-22.04 }
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Build
+        run: node scripts/build.js --npm
+      - name: The module was built for the expected target
+        run: test -f "npm/${{ matrix.target }}/licensekit-hwid.${{ matrix.target }}.node"
+      - name: Tests (local build)
+        run: npm test
+      - name: Installed the way users get it (main package + platform package from tarballs)
+        run: |
+          rm licensekit-hwid.*.node
+          out="$RUNNER_TEMP/packcheck"
+          mkdir -p "$out/tgz" "$out/app"
+          npm pack --pack-destination "$out/tgz"
+          (cd "npm/${{ matrix.target }}" && npm pack --pack-destination "$out/tgz")
+          cd "$out/app"
+          npm init -y > /dev/null
+          npm install --no-audit --no-fund "$out"/tgz/*.tgz
+          node -e "const h = require('@carchalabs/licensekit-hwid'); const c = h.collect('ci'); console.log(h.version(), c.vm, c.components.map((x) => x.kind).join(' ')); if (!c.components.length) process.exit(1)"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: hwid-node-${{ matrix.target }}
+          path: packages/hwid-node/npm/${{ matrix.target }}
+          retention-days: 14

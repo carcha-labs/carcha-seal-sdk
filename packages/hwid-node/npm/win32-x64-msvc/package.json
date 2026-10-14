@@ -1,0 +1,31 @@
+{
+  "name": "@carchalabs/licensekit-hwid-win32-x64-msvc",
+  "version": "0.1.0",
+  "description": "Prebuilt native module of @carchalabs/licensekit-hwid for win32-x64-msvc.",
+  "os": [
+    "win32"
+  ],
+  "cpu": [
+    "x64"
+  ],
+  "main": "licensekit-hwid.win32-x64-msvc.node",
+  "files": [
+    "licensekit-hwid.win32-x64-msvc.node"
+  ],
+  "license": "MIT",
+  "engines": {
+    "node": ">=22.13"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/carcha-labs/licensekit-sdk.git",
+    "directory": "packages/hwid-node/npm/win32-x64-msvc"
+  },
+  "bugs": {
+    "url": "https://github.com/carcha-labs/licensekit-sdk/issues"
+  },
+  "homepage": "https://licensekit.carchalabs.com/docs/",
+  "publishConfig": {
+    "access": "public"
+  }
+}

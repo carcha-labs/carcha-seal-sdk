@@ -1,0 +1,27 @@
+[package]
+name = "licensekit_hwid_node"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.88"
+description = "Node-API layer over licensekit_hwid, for Node.js and Electron."
+license = "MIT"
+publish = false
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+licensekit_hwid = { path = "../hwid" }
+# Default features: Node-API 4 and dyn-symbols (Node-API functions are looked up
+# in the host process at load time, so the same file loads in node.exe and in an
+# Electron executable on Windows).
+napi = "3"
+napi-derive = "3"
+
+[build-dependencies]
+napi-build = "2"
+
+[profile.release]
+lto = true
+codegen-units = 1
+strip = true
