@@ -47,7 +47,8 @@ jobs:
         with:
           node-version: 22
           registry-url: https://registry.npmjs.org
-      - run: npm install -g npm@^11.5.1
+      # 11.15.0: staged publishing (needed to create a new package without a 2FA-bypass token).
+      - run: npm install -g npm@^11.15.0
       - run: npm ci
       - run: npm test
       - uses: actions/download-artifact@v4
@@ -63,8 +64,10 @@ jobs:
           done
       - name: Publish versions that are not on npm yet
         shell: bash
-        # Trusted publishing (OIDC) once it is set up per package on npmjs.com. NPM_TOKEN is only for
-        # the first publish of a package that does not exist on npm yet; delete the secret afterwards.
+        # A package already on npm is published with trusted publishing (OIDC, set up per package on
+        # npmjs.com). A package that does not exist yet is staged (npm stage publish): it goes public
+        # only after a maintainer approves it with 2FA on npmjs.com (Staged Packages); then set up
+        # trusted publishing for it. NPM_TOKEN (a granular token, no 2FA bypass) is only for staging.
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
@@ -75,8 +78,11 @@ jobs:
             version=$(node -p "require('./$dir/package.json').version")
             if npm view "$name@$version" version > /dev/null 2>&1; then
               echo "$name@$version is already on npm"
-            else
+            elif npm view "$name" name > /dev/null 2>&1; then
               (cd "$dir" && npm publish --provenance)
+            else
+              echo "$name is new on npm: staging $version for approval"
+              (cd "$dir" && npm stage publish)
             fi
           }
           # Dependency order: platform packages, the hardware module, then core, electron, quickstart.
