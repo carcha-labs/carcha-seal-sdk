@@ -13,6 +13,7 @@ publish = false
 crate-type = ["rlib", "staticlib", "cdylib"]
 
 [dependencies]
+hkdf = "0.12"
 hmac = "0.12"
 sha2 = "0.10"
 

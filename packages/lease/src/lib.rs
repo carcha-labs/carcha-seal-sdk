@@ -144,7 +144,8 @@ fn valid_claims(claims: &Map<String, Value>) -> bool {
     let customer = claims.get("cus").is_none_or(Value::is_string);
     let optional_times = ["grc", "mnt"].iter().all(|name| claims.get(*name).is_none_or(|v| finite(Some(v)).is_some_and(|n| n >= 0.0)));
     let feature_keys = claims.get("fk").is_none_or(|v| v.as_object().is_some_and(|m| m.values().all(Value::is_string)));
-    strings && numbers && expiry && features && customer && optional_times && feature_keys
+    let ephemeral = claims.get("epk").is_none_or(Value::is_string);
+    strings && numbers && expiry && features && customer && optional_times && feature_keys && ephemeral
 }
 
 pub fn verify(token: &str, options: &Options) -> Result<Verified, Refused> {
@@ -258,6 +259,40 @@ pub fn feature_wrap_key(license_key: &str, product: &str, fingerprint_hash: &str
     okm
 }
 
+// ---- Device keys (X25519, RFC 7748; same construction as the core library) -------------------
+
+const DEVICE_WRAP_SALT: &[u8] = b"licensekit feature key v2 device";
+
+/// The X25519 public key of a device secret.
+pub fn device_public_key(device_secret: &[u8; 32]) -> [u8; 32] {
+    x25519_dalek::PublicKey::from(&x25519_dalek::StaticSecret::from(*device_secret)).to_bytes()
+}
+
+/// The wrap key for a lease whose feature keys the server wrapped for this device (claim epk).
+/// None for an epk that is not 32 base64url bytes, or a low-order one (all-zero shared secret).
+pub fn device_feature_wrap_key(license_key: &str, product: &str, fingerprint_hash: &str, lease_id: &str, device_secret: &[u8; 32], epk: &str) -> Option<[u8; 32]> {
+    if !is_base64url(epk) {
+        return None;
+    }
+    let epk_raw: [u8; 32] = b64().decode(epk).ok()?.try_into().ok()?;
+    let shared = x25519_dalek::StaticSecret::from(*device_secret).diffie_hellman(&x25519_dalek::PublicKey::from(epk_raw));
+    if !shared.was_contributory() {
+        return None;
+    }
+    let mut ikm = shared.as_bytes().to_vec();
+    ikm.extend_from_slice(normalize_license_key(license_key).as_bytes());
+    let info = format!(
+        "{product}\n{fingerprint_hash}\n{lease_id}\n{}\n{}",
+        b64().encode(epk_raw),
+        b64().encode(device_public_key(device_secret))
+    );
+    let mut okm = [0u8; 32];
+    hkdf::Hkdf::<Sha256>::new(Some(DEVICE_WRAP_SALT), &ikm)
+        .expand(info.as_bytes(), &mut okm)
+        .expect("32 bytes is a valid HKDF-SHA256 length");
+    Some(okm)
+}
+
 /// AES-256-GCM open of nonce || ciphertext || tag with associated data.
 fn open(key: &[u8; 32], sealed: &[u8], aad: &str) -> Option<Vec<u8>> {
     use aes_gcm::aead::{Aead, KeyInit, Payload};
@@ -308,8 +343,16 @@ impl DecryptError {
 }
 
 /// Verifies the lease, then unwraps the feature's content key for this license key and device and
-/// decrypts `encrypted` with it. The content key never leaves this function.
-pub fn decrypt_feature(token: &str, options: &Options, license_key: &str, feature: &str, encrypted: &[u8]) -> Result<Vec<u8>, DecryptError> {
+/// decrypts `encrypted` with it. A lease wrapped for a device key (claim epk) needs that device's
+/// secret. The content key never leaves this function.
+pub fn decrypt_feature(
+    token: &str,
+    options: &Options,
+    license_key: &str,
+    feature: &str,
+    encrypted: &[u8],
+    device_secret: Option<&[u8; 32]>,
+) -> Result<Vec<u8>, DecryptError> {
     let verified = verify(token, options).map_err(|(failure, _)| DecryptError::Lease(failure))?;
     let claims = &verified.claims;
     let licensed = claims.get("feat").and_then(Value::as_array).is_some_and(|f| f.iter().any(|x| x.as_str() == Some(feature)));
@@ -318,7 +361,12 @@ pub fn decrypt_feature(token: &str, options: &Options, license_key: &str, featur
         return Err(DecryptError::NotLicensed);
     };
     let lease_id = claims.get("jti").and_then(Value::as_str).unwrap_or_default();
-    let wrap_key = feature_wrap_key(license_key, options.product, options.fingerprint_hash, lease_id);
+    let wrap_key = match claims.get("epk").and_then(Value::as_str) {
+        Some(epk) => device_secret
+            .and_then(|secret| device_feature_wrap_key(license_key, options.product, options.fingerprint_hash, lease_id, secret, epk))
+            .ok_or(DecryptError::Failed)?,
+        None => feature_wrap_key(license_key, options.product, options.fingerprint_hash, lease_id),
+    };
     let content_key = unwrap_feature_key(wrapped, &wrap_key, feature).ok_or(DecryptError::Failed)?;
     decrypt_for_feature(&content_key, feature, encrypted).ok_or(DecryptError::Failed)
 }

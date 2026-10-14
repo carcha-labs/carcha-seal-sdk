@@ -3,6 +3,9 @@ import assert from 'node:assert/strict';
 import { createHash, createPrivateKey, createPublicKey, sign } from 'node:crypto';
 import {
   decryptFeature,
+  deviceFeatureWrapKey,
+  devicePublicKey,
+  featureWrapKeyForDevice,
   decryptForFeature,
   encryptForFeature,
   FeatureCryptoError,
@@ -237,9 +240,21 @@ test('the lease vectors the Rust verifier is tested with (packages/lease/tests/v
   for (const v of file.features.normalize) assert.equal(normalizeLicenseKey(v.input), v.expected);
   for (const v of file.features.wrapKeys) assert.equal(featureWrapKey(v.licenseKey, v.product, v.fingerprintHash, v.leaseId).toString('hex'), v.expected);
   for (const v of file.features.decrypts) {
-    const r = decryptFeature(v.token, { keys: [file.publicKey], ...v.check }, v.licenseKey, v.feature, Buffer.from(v.data, 'base64'));
+    const secret = v.deviceSecret ? Buffer.from(v.deviceSecret, 'hex') : undefined;
+    const r = decryptFeature(v.token, { keys: [file.publicKey], ...v.check }, v.licenseKey, v.feature, Buffer.from(v.data, 'base64'), secret);
     assert.deepEqual(r.ok ? { ok: true, data: r.data.toString('base64') } : { ok: false, reason: r.reason }, v.expected, v.name);
   }
+});
+
+test('device public keys and device wrapping match the vectors and refuse other devices', () => {
+  const file = JSON.parse(require('node:fs').readFileSync(require('node:path').join(__dirname, '..', '..', 'lease', 'tests', 'vectors.json'), 'utf8'));
+  for (const v of file.features.devicePublicKeys) assert.equal(devicePublicKey(Buffer.from(v.secret, 'hex')).toString('base64url'), v.expected);
+  const secret = Buffer.alloc(32, 7);
+  const { wrapKey, epk } = featureWrapKeyForDevice('LK-AAAA', 'studio', 'fp', 'lease-1', devicePublicKey(secret));
+  assert.deepEqual(deviceFeatureWrapKey('lk-aaaa', 'studio', 'fp', 'lease-1', secret, epk), wrapKey);
+  assert.notDeepEqual(deviceFeatureWrapKey('LK-AAAA', 'studio', 'fp', 'lease-1', Buffer.alloc(32, 8), epk), wrapKey);
+  assert.notDeepEqual(featureWrapKeyForDevice('LK-AAAA', 'studio', 'fp', 'lease-1', devicePublicKey(secret)).epk, epk, 'a new one-off key each time');
+  assert.throws(() => featureWrapKeyForDevice('LK-AAAA', 'studio', 'fp', 'lease-1', Buffer.alloc(32)), FeatureCryptoError, 'low-order device key');
 });
 
 test('feature data: only the right content key and feature open it, and any change is detected', () => {

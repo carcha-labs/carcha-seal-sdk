@@ -5,6 +5,7 @@ import {
   hkdfSync,
   createPrivateKey,
   createPublicKey,
+  diffieHellman,
   generateKeyPairSync,
   randomBytes,
   sign,
@@ -39,6 +40,8 @@ export interface LeaseClaims {
   mnt?: number;
   /** Wrapped feature content keys, by feature (see wrapFeatureKey). */
   fk?: Record<string, string>;
+  /** The server's one-off X25519 public key (base64url) when fk is wrapped for a device key. */
+  epk?: string;
 }
 
 export interface PublicJwk {
@@ -160,7 +163,8 @@ function isLeaseClaims(value: unknown): value is LeaseClaims {
   const customer = value.cus === undefined || typeof value.cus === 'string';
   const optionalTimes = ['grc', 'mnt'].every((name) => value[name] === undefined || (Number.isFinite(value[name]) && (value[name] as number) >= 0));
   const featureKeys = value.fk === undefined || (isObject(value.fk) && Object.values(value.fk).every((wrapped) => typeof wrapped === 'string'));
-  return strings && numbers && expiry && features && customer && optionalTimes && featureKeys;
+  const ephemeral = value.epk === undefined || typeof value.epk === 'string';
+  return strings && numbers && expiry && features && customer && optionalTimes && featureKeys && ephemeral;
 }
 
 export function decodeLease(token: string): { header: LeaseHeader; claims: LeaseClaims } | null {
@@ -328,6 +332,77 @@ export function decryptForFeature(contentKey: Buffer, feature: string, encrypted
   return open(contentKey, encrypted.subarray(ENCRYPTED_MAGIC.length), `LKE1:${feature}`);
 }
 
+// ---- Device keys -----------------------------------------------------------------------------
+//
+// A device can have an X25519 key pair derived from its hardware (the native module does this; the
+// secret never leaves it). When the device sends its public key, the server wraps the lease's feature
+// keys for it: a one-off X25519 key per lease (claim epk), the shared secret (RFC 7748) and the license
+// key go through HKDF-SHA256 with the product, fingerprint, lease id and both public keys. Only that
+// device's hardware gives the secret, so a copied license file opens nothing on another machine.
+
+const DEVICE_WRAP_SALT = Buffer.from('licensekit feature key v2 device', 'utf8');
+const X25519_PKCS8_PREFIX = Buffer.from('302e020100300506032b656e04220420', 'hex');
+const X25519_SPKI_PREFIX = Buffer.from('302a300506032b656e032100', 'hex');
+
+function x25519Private(secret: Buffer): KeyObject {
+  if (secret.length !== 32) throw new FeatureCryptoError('an X25519 key is 32 bytes');
+  return createPrivateKey({ key: Buffer.concat([X25519_PKCS8_PREFIX, secret]), format: 'der', type: 'pkcs8' });
+}
+
+function x25519Public(raw: Buffer): KeyObject {
+  if (raw.length !== 32) throw new FeatureCryptoError('an X25519 key is 32 bytes');
+  return createPublicKey({ key: Buffer.concat([X25519_SPKI_PREFIX, raw]), format: 'der', type: 'spki' });
+}
+
+/** X25519 (RFC 7748); OpenSSL refuses low-order public keys, which surface as a FeatureCryptoError. */
+function x25519(privateKey: KeyObject, publicKey: KeyObject): Buffer {
+  try {
+    return diffieHellman({ privateKey, publicKey });
+  } catch {
+    throw new FeatureCryptoError('invalid device or server key');
+  }
+}
+
+function rawPublic(key: KeyObject): Buffer {
+  return (key.export({ format: 'der', type: 'spki' }) as Buffer).subarray(X25519_SPKI_PREFIX.length);
+}
+
+/** The X25519 public key of a device secret (32 bytes each). */
+export function devicePublicKey(deviceSecret: Buffer): Buffer {
+  return rawPublic(createPublicKey(x25519Private(deviceSecret)));
+}
+
+function deviceWrapKey(shared: Buffer, licenseKey: string, product: string, fingerprintHash: string, leaseId: string, epk: Buffer, devicePublic: Buffer): Buffer {
+  // RFC 7748 6.1: an all-zero shared secret means a low-order public key; refuse it.
+  if (shared.every((b) => b === 0)) throw new FeatureCryptoError('invalid device or server key');
+  const ikm = Buffer.concat([shared, Buffer.from(normalizeLicenseKey(licenseKey), 'utf8')]);
+  const info = Buffer.from(`${product}\n${fingerprintHash}\n${leaseId}\n${toBase64Url(epk)}\n${toBase64Url(devicePublic)}`, 'utf8');
+  return Buffer.from(hkdfSync('sha256', ikm, DEVICE_WRAP_SALT, info, 32));
+}
+
+/** Server side: a one-off key pair for this lease and the wrap key for the device's public key. */
+export function featureWrapKeyForDevice(
+  licenseKey: string,
+  product: string,
+  fingerprintHash: string,
+  leaseId: string,
+  devicePublic: Buffer,
+  ephemeralSecret: Buffer = randomBytes(32),
+): { wrapKey: Buffer; epk: string } {
+  const ephemeral = x25519Private(ephemeralSecret);
+  const epk = rawPublic(createPublicKey(ephemeral));
+  const shared = x25519(ephemeral, x25519Public(devicePublic));
+  return { wrapKey: deviceWrapKey(shared, licenseKey, product, fingerprintHash, leaseId, epk, devicePublic), epk: toBase64Url(epk) };
+}
+
+/** Device side: the wrap key from the device secret and the lease's epk. */
+export function deviceFeatureWrapKey(licenseKey: string, product: string, fingerprintHash: string, leaseId: string, deviceSecret: Buffer, epk: string): Buffer {
+  if (!BASE64URL.test(epk)) throw new FeatureCryptoError('epk is not base64url');
+  const epkRaw = fromBase64Url(epk);
+  const shared = x25519(x25519Private(deviceSecret), x25519Public(epkRaw));
+  return deviceWrapKey(shared, licenseKey, product, fingerprintHash, leaseId, epkRaw, devicePublicKey(deviceSecret));
+}
+
 export type FeatureDecryptResult =
   | { ok: true; data: Buffer }
   | { ok: false; reason: LeaseFailure | 'not_licensed' | 'decrypt_failed' };
@@ -336,13 +411,25 @@ export type FeatureDecryptResult =
  * Verifies the lease, unwraps the feature's content key for this license key and device, and
  * decrypts data encrypted for the feature. The native module does the same (decryptFeature).
  */
-export function decryptFeature(token: string, options: LeaseVerifyOptions, licenseKey: string, feature: string, encrypted: Buffer): FeatureDecryptResult {
+export function decryptFeature(
+  token: string,
+  options: LeaseVerifyOptions,
+  licenseKey: string,
+  feature: string,
+  encrypted: Buffer,
+  deviceSecret?: Buffer,
+): FeatureDecryptResult {
   const verified = verifyLease(token, options);
   if (!verified.ok) return { ok: false, reason: verified.reason };
   const wrapped = verified.claims.fk?.[feature];
   if (!verified.claims.feat.includes(feature) || typeof wrapped !== 'string') return { ok: false, reason: 'not_licensed' };
   try {
-    const wrapKey = featureWrapKey(licenseKey, options.product, options.fingerprintHash, verified.claims.jti);
+    const { epk, jti } = verified.claims;
+    if (epk !== undefined && !deviceSecret) return { ok: false, reason: 'decrypt_failed' };
+    const wrapKey =
+      epk !== undefined
+        ? deviceFeatureWrapKey(licenseKey, options.product, options.fingerprintHash, jti, deviceSecret!, epk)
+        : featureWrapKey(licenseKey, options.product, options.fingerprintHash, jti);
     return { ok: true, data: decryptForFeature(unwrapFeatureKey(wrapped, wrapKey, feature), feature, encrypted) };
   } catch {
     return { ok: false, reason: 'decrypt_failed' };

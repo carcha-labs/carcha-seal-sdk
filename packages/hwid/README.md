@@ -17,6 +17,8 @@ One Rust library with a C interface (`include/licensekit_hwid.h`), built as a st
 
 Empty values, all-zero / all-FF values, firmware placeholders ("To be filled by O.E.M.") and locally administered or multicast MACs are dropped before hashing.
 
+`device_secret(key)` derives a 32-byte secret with HKDF-SHA256 from the raw (normalized) system UUID, motherboard serial, system disk serial and OS install id, whichever the machine reports, keyed by the product key. MAC addresses (24 guessable bits after the vendor prefix) and CPU / graphics models (shared by many machines) are left out. It seeds the device's X25519 key pair for feature keys (`../lease`); it changes when one of those parts changes.
+
 ```
 cargo test                                   # unit tests (fake /sys trees, IOKit, Win32) + a read of this machine
 tests/c/run.sh                               # links a C program against the static library

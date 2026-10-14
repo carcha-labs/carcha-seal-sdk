@@ -1,8 +1,8 @@
 //! Node-API layer over `licensekit_hwid` and `licensekit_lease` for Node.js and
 //! Electron.
 //!
-//! Exposes `collect(key)`, `verifyLease(token, options)`, `leaseKeyIds()`,
-//! `decryptFeature(token, options, licenseKey, feature, data)` and `version()`. Only kinds, hashes, the VM flag and diagnostic notes cross into
+//! Exposes `collect(key)`, `devicePublicKey(key)`, `verifyLease(token, options)`,
+//! `leaseKeyIds()`, `decryptFeature(token, options, licenseKey, feature, data)` and `version()`. Only kinds, hashes, the VM flag and diagnostic notes cross into
 //! JavaScript, never raw serials.
 
 use napi::bindgen_prelude::*;
@@ -48,6 +48,29 @@ pub fn collect(key: Either<String, Buffer>) -> Result<Collected> {
             .collect(),
         notes,
     })
+}
+
+/// The device secret for a product, from this machine's hardware (the same product key the SDK
+/// passes to collect: "licensekit:<product>"). Never crosses into JavaScript.
+fn device_secret_for(product: &str) -> Option<[u8; 32]> {
+    licensekit_hwid::device_secret(format!("licensekit:{product}").as_bytes())
+}
+
+/// This machine's X25519 device public key for `key` (base64url, 32 bytes), or null when the machine
+/// reports none of the parts the device secret is made from. The server wraps feature keys for it.
+#[napi]
+pub fn device_public_key(key: Either<String, Buffer>) -> Result<Option<String>> {
+    let bytes: Vec<u8> = match key {
+        Either::A(s) => s.into_bytes(),
+        Either::B(b) => b.to_vec(),
+    };
+    if bytes.is_empty() {
+        return Err(Error::new(Status::InvalidArg, "key must not be empty"));
+    }
+    Ok(licensekit_hwid::device_secret(&bytes).map(|secret| {
+        use base64::Engine;
+        base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(licensekit_lease::device_public_key(&secret))
+    }))
 }
 
 /// Version of the native core, e.g. "0.1.0".
@@ -140,8 +163,19 @@ fn lease_options(check: &LeaseCheck) -> licensekit_lease::Options<'_> {
 /// key and device, and decrypts data the vendor encrypted for the feature. The content key never
 /// reaches JavaScript.
 #[napi]
-pub fn decrypt_feature(token: String, check: LeaseCheck, license_key: String, feature: String, data: Buffer) -> FeatureDecrypt {
-    match licensekit_lease::decrypt_feature(&token, &lease_options(&check), &license_key, &feature, &data) {
+pub fn decrypt_feature(
+    token: String,
+    check: LeaseCheck,
+    license_key: String,
+    feature: String,
+    data: Buffer,
+    #[allow(unused_variables)] test_device_secret: Option<Buffer>,
+) -> FeatureDecrypt {
+    #[cfg(feature = "test-device-secret")]
+    let secret = test_device_secret.and_then(|b| <[u8; 32]>::try_from(b.as_ref()).ok()).or_else(|| device_secret_for(&check.product));
+    #[cfg(not(feature = "test-device-secret"))]
+    let secret = device_secret_for(&check.product);
+    match licensekit_lease::decrypt_feature(&token, &lease_options(&check), &license_key, &feature, &data, secret.as_ref()) {
         Ok(plain) => FeatureDecrypt { ok: true, data: Some(plain.into()), reason: None },
         Err(e) => FeatureDecrypt { ok: false, data: None, reason: Some(e.as_str().to_string()) },
     }

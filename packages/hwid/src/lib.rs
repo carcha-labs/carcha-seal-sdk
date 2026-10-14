@@ -109,6 +109,14 @@ pub fn collect_with_notes(key: &[u8]) -> (Collected, Vec<String>) {
     (Collected { components: hash::hash_all(key, raws), vm }, notes)
 }
 
+/// A 32-byte secret derived from this machine's system UUID, motherboard serial, system disk
+/// serial and OS install id (whichever it reports), keyed by `key`. Raw values never leave the
+/// library; neither should the secret, except into the X25519 key pair it seeds. None when the
+/// machine reports none of those parts.
+pub fn device_secret(key: &[u8]) -> Option<[u8; 32]> {
+    hash::device_secret(key, read_platform().raws)
+}
+
 #[cfg(target_os = "linux")]
 fn read_platform() -> Reading {
     let (raws, vm) = linux::read(&linux::Fs::system());

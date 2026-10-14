@@ -32,6 +32,13 @@ fn same_result_as_the_core_library_for_every_vector() {
     }
 }
 
+/// The vector's device secret (hex), when it has one.
+fn device_secret(v: &Value) -> Option<[u8; 32]> {
+    let hex = v["deviceSecret"].as_str()?;
+    let bytes: Vec<u8> = (0..hex.len()).step_by(2).map(|i| u8::from_str_radix(&hex[i..i + 2], 16).unwrap()).collect();
+    bytes.try_into().ok()
+}
+
 fn options<'a>(keys: &'a [TrustedKey], check: &'a Value) -> Options<'a> {
     Options {
         keys,
@@ -62,6 +69,11 @@ fn feature_keys_work_as_in_the_core_library() {
         let hex: String = key.iter().map(|b| format!("{b:02x}")).collect();
         assert_eq!(hex, s("expected"));
     }
+    for v in features["devicePublicKeys"].as_array().unwrap() {
+        let secret = device_secret(&serde_json::json!({ "deviceSecret": v["secret"] })).unwrap();
+        let public = base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(licensekit_lease::device_public_key(&secret));
+        assert_eq!(public, v["expected"].as_str().unwrap());
+    }
     let decrypts = features["decrypts"].as_array().unwrap();
     assert!(decrypts.len() >= 10);
     for v in decrypts {
@@ -73,6 +85,7 @@ fn feature_keys_work_as_in_the_core_library() {
             v["licenseKey"].as_str().unwrap(),
             v["feature"].as_str().unwrap(),
             &data,
+            device_secret(v).as_ref(),
         ) {
             Ok(plain) => serde_json::json!({ "ok": true, "data": b64.encode(plain) }),
             Err(e) => serde_json::json!({ "ok": false, "reason": e.as_str() }),

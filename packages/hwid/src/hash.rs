@@ -4,7 +4,7 @@ use hmac::{Hmac, Mac};
 use sha2::Sha256;
 
 use crate::normalize::normalize;
-use crate::{Component, Raw};
+use crate::{Component, Kind, Raw};
 
 /// Normalizes, drops junk and duplicates, hashes. The output is sorted by
 /// kind then hash, so the same machine always yields the same list.
@@ -26,6 +26,41 @@ pub(crate) fn hash_all(key: &[u8], raws: Vec<Raw>) -> Vec<Component> {
     out
 }
 
+/// Kinds whose raw values make the device secret: identifiers with enough entropy that the
+/// server's keyed hashes cannot be reversed to them. MAC addresses are left out (24 bits after the
+/// vendor prefix), as are CPU and graphics models (shared by many machines).
+const DEVICE_SECRET_KINDS: [Kind; 4] = [Kind::Uuid, Kind::Board, Kind::Disk, Kind::Os];
+const DEVICE_SECRET_SALT: &[u8] = b"licensekit device key v1";
+
+/// The device secret: HKDF-SHA256 (RFC 5869) over the normalized raw values of the
+/// DEVICE_SECRET_KINDS (sorted, each as kind || 0x00 || value || 0x00), with `key` (the product
+/// key) as info. None when the machine reports none of those kinds. It changes when one of those
+/// parts changes (a new disk, motherboard or OS install).
+pub(crate) fn device_secret(key: &[u8], raws: Vec<Raw>) -> Option<[u8; 32]> {
+    let mut kept: Vec<Raw> = raws
+        .into_iter()
+        .filter(|r| DEVICE_SECRET_KINDS.contains(&r.kind))
+        .filter_map(|r| normalize(r.kind, &r.value).map(|value| Raw { kind: r.kind, value }))
+        .collect();
+    kept.sort();
+    kept.dedup();
+    if kept.is_empty() {
+        return None;
+    }
+    let mut ikm = Vec::new();
+    for r in &kept {
+        ikm.extend_from_slice(r.kind.as_str().as_bytes());
+        ikm.push(0);
+        ikm.extend_from_slice(r.value.as_bytes());
+        ikm.push(0);
+    }
+    let mut okm = [0u8; 32];
+    hkdf::Hkdf::<Sha256>::new(Some(DEVICE_SECRET_SALT), &ikm)
+        .expand(key, &mut okm)
+        .expect("32 bytes is a valid HKDF-SHA256 length");
+    Some(okm)
+}
+
 /// HMAC-SHA256(key, kind || 0x00 || value). The kind is part of the message,
 /// so the same string read as two kinds gives two unrelated hashes.
 fn hmac_hex(key: &[u8], kind: &str, value: &str) -> String {
@@ -43,7 +78,6 @@ fn hmac_hex(key: &[u8], kind: &str, value: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::Kind;
 
     fn raw(kind: Kind, value: &str) -> Raw {
         Raw { kind, value: value.into() }
@@ -57,6 +91,38 @@ mod tests {
             hmac_hex(b"product-a", "disk", "SN123"),
             include_str!("../tests/fixtures/hmac-disk-sn123.txt").trim()
         );
+    }
+
+    #[test]
+    fn device_secret_from_strong_parts_only() {
+        let parts = vec![raw(Kind::Uuid, "4C4C4544-0042-3510-8051-B4C04F4A4E32"), raw(Kind::Disk, "S4EWNX0R123456"), raw(Kind::Os, "0f9e8d7c6b5a49382716051423324150")];
+        let a = device_secret(b"product-a", parts.clone()).unwrap();
+        assert_eq!(device_secret(b"product-a", parts.iter().rev().cloned().collect()), Some(a), "order does not matter");
+        assert_ne!(device_secret(b"product-b", parts.clone()), Some(a), "another product, another secret");
+        let mut with_extras = parts.clone();
+        with_extras.extend([raw(Kind::Mac, "00:1A:2B:3C:4D:5E"), raw(Kind::Cpu, "Intel Core i7"), raw(Kind::Gpu, "10de:2484")]);
+        assert_eq!(device_secret(b"product-a", with_extras), Some(a), "MAC, CPU and GPU do not count");
+        let mut new_disk = parts.clone();
+        new_disk[1] = raw(Kind::Disk, "S4EWNX0R999999");
+        assert_ne!(device_secret(b"product-a", new_disk), Some(a), "a new disk is a new secret");
+        assert_eq!(device_secret(b"product-a", vec![raw(Kind::Mac, "00:1A:2B:3C:4D:5E")]), None);
+        assert_eq!(device_secret(b"product-a", vec![raw(Kind::Board, "To be filled by O.E.M.")]), None, "placeholders are dropped");
+    }
+
+    #[test]
+    fn device_secret_matches_its_definition() {
+        // HKDF-SHA256(salt "licensekit device key v1", ikm "disk\0SN1234\0os\0<id>\0", info "p").
+        let got = device_secret(b"p", vec![raw(Kind::Os, "0f9e8d7c6b5a49382716051423324150"), raw(Kind::Disk, "SN1234")]).unwrap();
+        let mut ikm = Vec::new();
+        for (k, v) in [("disk", "SN1234"), ("os", "0f9e8d7c6b5a49382716051423324150")] {
+            ikm.extend_from_slice(k.as_bytes());
+            ikm.push(0);
+            ikm.extend_from_slice(v.as_bytes());
+            ikm.push(0);
+        }
+        let mut want = [0u8; 32];
+        hkdf::Hkdf::<Sha256>::new(Some(b"licensekit device key v1"), &ikm).expand(b"p", &mut want).unwrap();
+        assert_eq!(got, want);
     }
 
     #[test]

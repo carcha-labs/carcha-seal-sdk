@@ -94,6 +94,8 @@ const HWID_PACKAGE = '@carchalabs/licensekit-hwid';
 interface NativeLease {
   verifyLease(token: string, check: { product: string; fingerprintHash: string; now: number; graceSeconds?: number }): { ok: boolean; reason?: string };
   leaseKeyIds(): string[];
+  /** This machine's X25519 public key from its hardware (base64url), or null. */
+  devicePublicKey?(key: string): string | null;
   /** @carchalabs/licensekit-hwid 0.2+ with feature keys. */
   decryptFeature?(
     token: string,
@@ -166,6 +168,7 @@ export class LicenseKit {
   private hardwareCache?: Promise<HardwareReport | null>;
   /** The native lease verifier, when it trusts every key this app was given (undefined = not looked up yet). */
   private nativeLease?: NativeLease | null;
+  private deviceKeyCache?: string | null;
 
   constructor(private readonly opts: LicenseKitOptions) {
     this.file = join(opts.storageDir, 'license.dat');
@@ -261,6 +264,27 @@ export class LicenseKit {
   }
 
   /**
+   * The device's public key, sent with activation and check-ins so the server wraps feature keys for
+   * this machine only. Only when the native module verifies for this app (it then also decrypts, with
+   * the matching secret it derives itself) and hardware is not turned off. Never throws.
+   */
+  private deviceKey(): { devicePublicKey?: string } {
+    if (this.deviceKeyCache === undefined) {
+      let key: string | null = null;
+      try {
+        const native = this.opts.hardware === false ? null : this.native();
+        if (native && typeof native.devicePublicKey === 'function' && typeof native.decryptFeature === 'function') {
+          key = native.devicePublicKey(`licensekit:${this.opts.product}`);
+        }
+      } catch {
+        key = null;
+      }
+      this.deviceKeyCache = key;
+    }
+    return this.deviceKeyCache ? { devicePublicKey: this.deviceKeyCache } : {};
+  }
+
+  /**
    * The native verifier, used only when its compiled-in keys include every key this app was given:
    * an app that trusts other keys (a self-hosted server) is checked by the JavaScript verifier alone.
    */
@@ -349,6 +373,7 @@ export class LicenseKit {
       appVersion: this.opts.appVersion,
       sdkVersion: SDK_VERSION,
       ...(await this.hardware()),
+      ...this.deviceKey(),
     });
     const stored: Leased = { licenseKey: key, token: response.token, lastSeen: this.nowSec(), ...noticesFrom(response) };
     const state = this.stateFromLease(stored, false);
@@ -375,6 +400,7 @@ export class LicenseKit {
         appVersion: this.opts.appVersion,
         sdkVersion: SDK_VERSION,
         ...(await this.hardware()),
+        ...this.deviceKey(),
       });
       const fresh: Leased = { licenseKey: stored.licenseKey, token: response.token, lastSeen: this.nowSec(), ...noticesFrom(response) };
       await this.save(fresh);

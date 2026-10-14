@@ -1,5 +1,6 @@
 // Writes vectors.json: leases signed by @carchalabs/licensekit-core with a throwaway test
-// key, each with the result core's verifyLease gives. The Rust crate must give the same
+// key (its private half is in the file as testOnlyPrivateKey, so tests can sign more; no build
+// trusts it except the CI test build), each with the result core's verifyLease gives. The Rust crate must give the same
 // result for every vector (tests/conformance.rs); test/vectors.test.js in hwid-node re-checks
 // the expected results against core, so the file cannot drift from it.
 // Run from the repository root after building core: node packages/lease/tests/make-vectors.js
@@ -81,6 +82,8 @@ vectors.push({ name: 'leeway zero', token: core.signLease(claims({ nbf: NOW + 1 
 vectors.push({ name: 'fk with a wrapped key', token: core.signLease(claims({ fk: { pro: 'AAAA' } }), privateKey), check: base });
 vectors.push({ name: 'fk not an object', token: signed(header(), claims({ fk: ['AAAA'] })), check: base });
 vectors.push({ name: 'fk value not a string', token: signed(header(), claims({ fk: { pro: 1 } })), check: base });
+vectors.push({ name: 'epk a string', token: core.signLease(claims({ fk: {}, epk: 'AAAA' }), privateKey), check: base });
+vectors.push({ name: 'epk not a string', token: signed(header(), claims({ epk: 1 })), check: base });
 
 for (const v of vectors) {
   const r = core.verifyLease(v.token, { keys: [pem], ...v.check });
@@ -115,14 +118,37 @@ const decrypts = [
   ['not LicenseKit-encrypted data', featureLease(), LICENSE, 'pro', plaintext],
   ['data too short', featureLease(), LICENSE, 'pro', Buffer.from('LKE1')],
   ['lease refused (signed by another key)', signed(header(), claims({ fk: {} }), other.privateKey), LICENSE, 'pro', forPro],
-].map(([name, token, licenseKey, feature, data]) => {
-  const r = core.decryptFeature(token, { keys: [pem], ...base }, licenseKey, feature, data);
-  return { name, token, check: base, licenseKey, feature, data: data.toString('base64'), expected: r.ok ? { ok: true, data: r.data.toString('base64') } : { ok: false, reason: r.reason } };
+];
+
+// Device keys: feature keys wrapped for a device's X25519 public key (claim epk).
+const deviceSecret = Buffer.from('11'.repeat(32), 'hex');
+const otherDevice = Buffer.from('22'.repeat(32), 'hex');
+const deviceLease = ({ jti = 'lease-d', epkOverride } = {}) => {
+  const { wrapKey, epk } = core.featureWrapKeyForDevice(LICENSE, 'studio', FP, jti, core.devicePublicKey(deviceSecret));
+  const fk = { pro: core.wrapFeatureKey(contentKeys.pro, wrapKey, 'pro') };
+  return core.signLease(claims({ jti, feat: ['pro'], fk, epk: epkOverride ?? epk }), privateKey);
+};
+decrypts.push(
+  ['device: decrypts with the device secret', deviceLease(), LICENSE, 'pro', forPro, deviceSecret],
+  ['device: another device\'s secret', deviceLease(), LICENSE, 'pro', forPro, otherDevice],
+  ['device: no device secret', deviceLease(), LICENSE, 'pro', forPro],
+  ['device: wrong license key', deviceLease(), 'LK-0000-0000-0000-0000-0000-0000-0000', 'pro', forPro, deviceSecret],
+  ['device: low-order epk (all zero)', deviceLease({ epkOverride: Buffer.alloc(32).toString('base64url') }), LICENSE, 'pro', forPro, deviceSecret],
+  ['device: epk not 32 bytes', deviceLease({ epkOverride: 'AAAA' }), LICENSE, 'pro', forPro, deviceSecret],
+  ['device: secret given, lease not wrapped for a device', featureLease(), LICENSE, 'pro', forPro, deviceSecret],
+);
+const decryptVectors = decrypts.map(([name, token, licenseKey, feature, data, secret]) => {
+  const r = core.decryptFeature(token, { keys: [pem], ...base }, licenseKey, feature, data, secret);
+  return {
+    name, token, check: base, licenseKey, feature, data: data.toString('base64'), ...(secret ? { deviceSecret: secret.toString('hex') } : {}),
+    expected: r.ok ? { ok: true, data: r.data.toString('base64') } : { ok: false, reason: r.reason },
+  };
 });
+const devicePublicKeys = [deviceSecret, otherDevice, Buffer.from('ff'.repeat(32), 'hex')].map((secret) => ({ secret: secret.toString('hex'), expected: core.devicePublicKey(secret).toString('base64url') }));
 // The wrap key itself, so a different derivation shows up directly.
 const wrapKeys = [[LICENSE, 'studio', FP, 'lease-1'], ['lk-abcd', 'p', 'x', '']].map(([licenseKey, product, fingerprintHash, leaseId]) => ({
   licenseKey, product, fingerprintHash, leaseId, expected: core.featureWrapKey(licenseKey, product, fingerprintHash, leaseId).toString('hex'),
 }));
 
-writeFileSync(path.join(__dirname, 'vectors.json'), JSON.stringify({ publicKey: pem, kid, vectors, features: { normalize, wrapKeys, decrypts } }, null, 2) + '\n');
-console.log(`${vectors.length} lease vectors, ${normalize.length + wrapKeys.length + decrypts.length} feature vectors`);
+writeFileSync(path.join(__dirname, 'vectors.json'), JSON.stringify({ publicKey: pem, kid, testOnlyPrivateKey: privateKey.export({ type: 'pkcs8', format: 'pem' }).toString(), vectors, features: { normalize, wrapKeys, decrypts: decryptVectors, devicePublicKeys } }, null, 2) + '\n');
+console.log(`${vectors.length} lease vectors, ${normalize.length + wrapKeys.length + decryptVectors.length + devicePublicKeys.length} feature vectors`);

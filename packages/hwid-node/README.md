@@ -21,6 +21,8 @@ leaseKeyIds(); // ids of the compiled-in keys (keyId in licensekit-core)
 decryptFeature(token, { product, fingerprintHash, now }, licenseKey, 'pro', data); // { ok, data?, reason? }
 ```
 
+`devicePublicKey('licensekit:<product>')` returns this machine's X25519 public key (base64url), derived from its hardware; the SDK sends it so the server wraps feature keys for this machine only, and `decryptFeature` derives the matching secret itself (it never reaches JavaScript). A test build with `--features test-device-secret` (CI only) takes the secret as a sixth argument so the shared vectors can run through this layer.
+
 `decryptFeature` verifies the lease first, then unwraps the feature's content key from the lease (claim `fk`) for this license key and device and decrypts data encrypted for the feature; the key never reaches JavaScript.
 
 The published build trusts the hosted service's current and next keys (`../quickstart/public-keys`). A self-hosted server's operator builds with their own: `LICENSEKIT_LEASE_PUBLIC_KEYS=<base64 SPKI>,<base64 SPKI> npm run build` (the PEM bodies, comma-separated). The Electron SDK uses this verifier next to its JavaScript one when the compiled-in keys include every key the app was given; a different answer from the two is treated as a modified license.

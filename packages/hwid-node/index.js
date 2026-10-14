@@ -23,4 +23,4 @@ try {
   throw unavailable(e.message);
 }
 
-module.exports = { collect: addon.collect, verifyLease: addon.verifyLease, leaseKeyIds: addon.leaseKeyIds, decryptFeature: addon.decryptFeature, version: addon.version };
+module.exports = { collect: addon.collect, devicePublicKey: addon.devicePublicKey, verifyLease: addon.verifyLease, leaseKeyIds: addon.leaseKeyIds, decryptFeature: addon.decryptFeature, version: addon.version };

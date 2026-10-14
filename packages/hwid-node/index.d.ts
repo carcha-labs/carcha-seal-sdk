@@ -61,5 +61,12 @@ export function decryptFeature(token: string, check: LeaseCheck, licenseKey: str
 /** Ids of the lease signing keys this build trusts (keyId in @carchalabs/licensekit-core). */
 export function leaseKeyIds(): string[];
 
+/**
+ * This machine's X25519 device public key (base64url) for a product key, derived from its system UUID,
+ * motherboard serial, system disk serial and OS install id; null when it reports none of them. The
+ * secret half never leaves the module. It changes when one of those parts changes.
+ */
+export function devicePublicKey(key: string | Buffer): string | null;
+
 /** Version of the native core, e.g. "0.1.0". */
 export function version(): string;
