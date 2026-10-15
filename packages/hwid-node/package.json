@@ -1,7 +1,8 @@
 {
   "name": "@carchalabs/licensekit-hwid",
   "version": "0.2.0",
-  "description": "Hardware component hashes for LicenseKit machine binding (Node.js and Electron).",
+  "description": "Hardware component hashes for Carcha Seal (formerly LicenseKit) machine binding (Node.js and Electron).",
+  "keywords": ["hardware-id", "machine-id", "licensing", "electron", "carcha-seal"],
   "main": "index.js",
   "types": "index.d.ts",
   "files": [

@@ -1,6 +1,6 @@
 # @carchalabs/licensekit-quickstart
 
-Try [LicenseKit](https://licensekit.carchalabs.com) from a terminal.
+Try [Carcha Seal](https://licensekit.carchalabs.com) (formerly LicenseKit) from a terminal.
 
 1. Get a trial key at [licensekit.carchalabs.com](https://licensekit.carchalabs.com/#try).
 2. Activate this computer:
