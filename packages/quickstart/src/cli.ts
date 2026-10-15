@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { LicenseError, LicenseKit, LicenseKitOptions, LicenseState } from '@carchalabs/licensekit-electron';
 
 export const PRODUCT = 'licensekit-demo';
-export const DEFAULT_SERVER_URL = 'https://licensekit.carchalabs.com';
+export const DEFAULT_SERVER_URL = 'https://seal.carchalabs.com';
 export const DEVICE_NAME = 'LicenseKit quickstart';
 const COMMAND = 'npx @carchalabs/licensekit-quickstart';
 
@@ -27,7 +27,7 @@ const USAGE = [
   '  status                  Check the license. Works offline from the saved lease',
   "  deactivate              Release this computer's seat",
   '',
-  'Get a trial key at https://licensekit.carchalabs.com/#try',
+  'Get a trial key at https://seal.carchalabs.com/#try',
 ];
 
 export function bundledPublicKeys(): string[] {

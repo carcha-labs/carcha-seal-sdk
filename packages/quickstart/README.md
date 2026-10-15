@@ -1,8 +1,8 @@
 # @carchalabs/licensekit-quickstart
 
-Try [Carcha Seal](https://licensekit.carchalabs.com) (formerly LicenseKit) from a terminal.
+Try [Carcha Seal](https://seal.carchalabs.com) (formerly LicenseKit) from a terminal.
 
-1. Get a trial key at [licensekit.carchalabs.com](https://licensekit.carchalabs.com/#try).
+1. Get a trial key at [seal.carchalabs.com](https://seal.carchalabs.com/#try).
 2. Activate this computer:
 
    ```
@@ -21,6 +21,6 @@ Try [Carcha Seal](https://licensekit.carchalabs.com) (formerly LicenseKit) from 
    npx @carchalabs/licensekit-quickstart deactivate
    ```
 
-The quickstart sends the license key, a hash of this computer's machine ID, the device name "LicenseKit quickstart" and the platform. It saves the lease without encryption in the per-user application data folder, because a terminal has no system keychain. See the [privacy notice](https://licensekit.carchalabs.com/privacy/).
+The quickstart sends the license key, a hash of this computer's machine ID, the device name "LicenseKit quickstart" and the platform. It saves the lease without encryption in the per-user application data folder, because a terminal has no system keychain. See the [privacy notice](https://seal.carchalabs.com/privacy/).
 
 Requires Node 22.13 or later. MIT License.

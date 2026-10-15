@@ -1,6 +1,6 @@
 # @carchalabs/licensekit-electron
 
-The [Carcha Seal](https://licensekit.carchalabs.com) (formerly LicenseKit) SDK. It runs in the Electron main process or in plain Node. It activates a license key on this device, saves the signed lease, and verifies it offline with your public keys.
+The [Carcha Seal](https://seal.carchalabs.com) (formerly LicenseKit) SDK. It runs in the Electron main process or in plain Node. It activates a license key on this device, saves the signed lease, and verifies it offline with your public keys.
 
 ```js
 const { LicenseKit } = require('@carchalabs/licensekit-electron');
@@ -25,7 +25,7 @@ if (LicenseKit.hasFeature(state, 'export-pdf')) exportPdf();
 
 Code can be protected the same way (Envelope): encrypt a CommonJS module or a folder of them with `licensekit-encrypt --feature pro dist/premium dist/premium`, and load it with `await kit.requireEncrypted('pro', path.join(__dirname, 'premium/index.js.lke'))`. Without the feature in the license the code cannot be read; a licensed user can still read it from memory.
 
-Computers that never reach the server use offline activation: `offlineRequest(key)` returns a request file, the license server turns it into a license file (its `/offline` page, `POST /v1/offline/activate` or the console), and `activateOffline(file)` loads it; it works only on that computer, for the policy's offline days. `deactivateOffline()` removes the license and returns a deactivation file the vendor uploads to free the seat. See the [documentation](https://licensekit.carchalabs.com/docs/#concepts).
+Computers that never reach the server use offline activation: `offlineRequest(key)` returns a request file, the license server turns it into a license file (its `/offline` page, `POST /v1/offline/activate` or the console), and `activateOffline(file)` loads it; it works only on that computer, for the policy's offline days. `deactivateOffline()` removes the license and returns a deactivation file the vendor uploads to free the seat. See the [documentation](https://seal.carchalabs.com/docs/#concepts).
 
 The SDK sends the license key, a per-product SHA-256 hash of the operating system's machine ID, the device name, the platform, your app version and its own version. The raw machine ID does not leave the computer.
 
@@ -33,4 +33,4 @@ The SDK sends the license key, a per-product SHA-256 hash of the operating syste
 
 **Hardware components.** When `@carchalabs/licensekit-hwid` is installed, the SDK also sends one keyed hash per hardware part (motherboard, disk, network card, OS install, CPU and graphics models) and whether the computer is a virtual machine. The license server then recognises the computer after a new disk, network card or operating system install, and refuses a copied disk or system image on other hardware. Raw serial numbers never leave the computer. Without the package, or on a platform it has no module for, nothing extra is sent. `hardware: false` turns it off. Bundlers must leave the package to Node (mark it external); electron-builder unpacks its native module from the asar archive.
 
-Integration guide (activate once, check at start, put feature code behind `decrypt`, ship the native module, harden the app): [licensekit.carchalabs.com/docs/#integration](https://licensekit.carchalabs.com/docs/#integration). Full reference: [licensekit.carchalabs.com/docs](https://licensekit.carchalabs.com/docs/#sdk). Requires Node 22.13 or later. MIT License.
+Integration guide (activate once, check at start, put feature code behind `decrypt`, ship the native module, harden the app): [seal.carchalabs.com/docs/#integration](https://seal.carchalabs.com/docs/#integration). Full reference: [seal.carchalabs.com/docs](https://seal.carchalabs.com/docs/#sdk). Requires Node 22.13 or later. MIT License.

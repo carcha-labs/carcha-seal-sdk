@@ -3,7 +3,7 @@
   "version": "0.4.0",
   "description": "Carcha Seal (formerly LicenseKit) SDK for the Electron main process and Node: activation, offline verification, grace period",
   "keywords": ["electron", "licensing", "license-key", "software-licensing", "offline-licensing", "node-locked", "ed25519", "jws", "carcha-seal"],
-  "homepage": "https://licensekit.carchalabs.com/docs/",
+  "homepage": "https://seal.carchalabs.com/docs/",
   "repository": { "type": "git", "url": "git+https://github.com/carcha-labs/licensekit-sdk.git", "directory": "packages/sdk-electron" },
   "bugs": { "url": "https://github.com/carcha-labs/licensekit-sdk/issues" },
   "main": "dist/index.js",
