@@ -46,7 +46,12 @@ jobs:
         run: |
           key=$(node -e "const v = require('../lease/tests/vectors.json'); process.stdout.write(v.publicKey.split('\\n').filter((l) => l && !l.startsWith('-----')).join(''))")
           LICENSEKIT_LEASE_PUBLIC_KEYS="$key" cargo build --release --features test-device-secret --target-dir "$RUNNER_TEMP/lease-test"
-          lib=$(ls "$RUNNER_TEMP"/lease-test/release/{liblicensekit_hwid_node.dylib,liblicensekit_hwid_node.so,licensekit_hwid_node.dll} 2>/dev/null | head -1)
+          # Not ls: the step runs with -e -o pipefail, and ls fails on the two names this platform does not build.
+          lib=""
+          for f in "$RUNNER_TEMP"/lease-test/release/{liblicensekit_hwid_node.dylib,liblicensekit_hwid_node.so,licensekit_hwid_node.dll}; do
+            if [ -f "$f" ]; then lib="$f"; fi
+          done
+          test -n "$lib"
           cp "$lib" "$RUNNER_TEMP/lease-test.node"
           LICENSEKIT_LEASE_TEST_ADDON="$RUNNER_TEMP/lease-test.node" node --test test/lease.test.js
       - name: Installed the way users get it (main package + platform package from tarballs)
