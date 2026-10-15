@@ -1,6 +1,8 @@
 # Changelog
 
-## Unreleased
+## 0.4.0
+
+Upgrade from 0.3.0; no code changes needed. Offline activation needs a LicenseKit server with schema 9 (2026-10-15 or later) and a policy with offline days.
 
 - Envelope: `requireEncrypted(feature, file)` loads a CommonJS module you encrypted for a feature (`licensekit-encrypt`, which now also takes a folder) and returns its exports. The code is decrypted with the lease's feature key, through the native module when it is trusted, and compiled from memory; relative requires load its encrypted neighbours. Without a license that includes the feature the code is not available in readable form. `decrypt` and `requireEncrypted` share one license check per call.
 - Offline activation for computers that never reach the server: `offlineRequest(licenseKey)` writes a request file, the license server turns it into a license file (`POST /v1/offline/activate`, its `/offline` page, or the console), and `activateOffline(file)` loads it. Such a computer does not call the server in `check()`; a new license file renews it, `activate()` moves it to online check-ins. `deactivateOffline()` removes the license and returns the deactivation file the vendor uploads to free the seat. Needs a server with offline activation (schema 9) and a policy with offline days.

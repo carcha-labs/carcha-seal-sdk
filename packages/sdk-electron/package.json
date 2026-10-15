@@ -1,6 +1,6 @@
 {
   "name": "@carchalabs/licensekit-electron",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "LicenseKit SDK for the Electron main process and Node: activation, offline verification, grace period",
   "homepage": "https://licensekit.carchalabs.com/docs/",
   "repository": { "type": "git", "url": "git+https://github.com/carcha-labs/licensekit-sdk.git", "directory": "packages/sdk-electron" },
@@ -14,7 +14,7 @@
     "test": "node --no-warnings=ExperimentalWarning --test dist/*.test.js"
   },
   "dependencies": {
-    "@carchalabs/licensekit-core": "0.2.0"
+    "@carchalabs/licensekit-core": "0.3.0"
   },
   "optionalDependencies": {
     "@carchalabs/licensekit-hwid": "0.2.0"

@@ -1,6 +1,6 @@
 {
   "name": "@carchalabs/licensekit-core",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "LicenseKit lease format: Ed25519-signed compact JWS, key sets, license keys and feature-key encryption",
   "homepage": "https://licensekit.carchalabs.com/docs/",
   "repository": { "type": "git", "url": "git+https://github.com/carcha-labs/licensekit-sdk.git", "directory": "packages/core" },
