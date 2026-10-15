@@ -1,7 +1,10 @@
 import { KeyObject } from 'node:crypto';
+import { existsSync, readFileSync } from 'node:fs';
 import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { createRequire } from 'node:module';
 import { hostname, platform } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
+import { compileFunction } from 'node:vm';
 import { decodeLease, decryptFeature, hashFingerprint, keySet, LeaseClaims, LeaseFailure, LeaseVerifyOptions, LeaseVerifyResult, verifyLease } from '@carchalabs/licensekit-core';
 import { MachineIdUnavailableError, readMachineId } from './fingerprint';
 
@@ -454,6 +457,60 @@ export class LicenseKit {
    * `unlicensed`, a lease failure reason, `clock_suspect`, `feature_not_licensed` or `decrypt_failed`.
    */
   async decrypt(feature: string, data: Uint8Array): Promise<Buffer> {
+    return (await this.opener(feature))(data);
+  }
+
+  /**
+   * Envelope: loads a CommonJS module you encrypted for a feature (licensekit-encrypt, one file or a
+   * folder) and returns its exports, like require(). The code is decrypted with the lease's feature key
+   * (see decrypt) and compiled from memory; it never exists as a plain file. Relative requires inside
+   * it load encrypted neighbours (`./x` finds `x.lke`, `x.js.lke` or `x/index.js.lke`), anything else
+   * goes to Node as usual. Loaded once per process, like require(). Throws the same LicenseErrors as
+   * decrypt. A licensed user can still read the code from memory: this keeps an app with the license
+   * check removed from having the feature, it does not hide the code from its licensed users.
+   */
+  async requireEncrypted(feature: string, file: string): Promise<any> {
+    const open = await this.opener(feature);
+    return this.loadEncrypted(resolve(file), feature, open);
+  }
+
+  private readonly encryptedModules = new Map<string, { exports: any; filename: string; id: string; loaded: boolean }>();
+
+  private loadEncrypted(file: string, feature: string, open: (data: Uint8Array) => Buffer): any {
+    const cacheKey = `${feature}\0${file}`;
+    const cached = this.encryptedModules.get(cacheKey);
+    if (cached) return cached.exports;
+    const source = open(readFileSync(file)).toString('utf8');
+    const filename = file.replace(/\.lke$/, '');
+    const mod = { exports: {} as any, filename, id: filename, loaded: false };
+    // Registered before it runs, so a require cycle gets the partial exports, as in Node.
+    this.encryptedModules.set(cacheKey, mod);
+    const nodeRequire = createRequire(filename);
+    const localRequire = ((request: string) => {
+      if (request.startsWith('./') || request.startsWith('../')) {
+        const base = resolve(dirname(filename), request);
+        const encrypted = [`${base}.lke`, `${base}.js.lke`, join(base, 'index.js.lke')].find((candidate) => existsSync(candidate));
+        if (encrypted) return this.loadEncrypted(encrypted, feature, open);
+      }
+      return nodeRequire(request);
+    }) as NodeJS.Require;
+    Object.assign(localRequire, { resolve: nodeRequire.resolve, cache: nodeRequire.cache, main: nodeRequire.main, extensions: nodeRequire.extensions });
+    try {
+      const run = compileFunction(source, ['exports', 'require', 'module', '__filename', '__dirname'], { filename });
+      run.call(mod.exports, mod.exports, localRequire, mod, filename, dirname(filename));
+    } catch (e) {
+      this.encryptedModules.delete(cacheKey);
+      throw e;
+    }
+    mod.loaded = true;
+    return mod.exports;
+  }
+
+  /**
+   * Checks the saved lease once for a feature and returns a synchronous decrypter bound to it: decrypt
+   * uses it once, requireEncrypted for a module and the encrypted modules it requires.
+   */
+  private async opener(feature: string): Promise<(data: Uint8Array) => Buffer> {
     const fingerprintHash = await this.fingerprint();
     const stored = await this.load();
     if (!stored?.token) throw new LicenseError('unlicensed', 'This device has no license.');
@@ -466,14 +523,16 @@ export class LicenseKit {
     const graceSeconds = state.status === 'grace' ? (claims?.grc ?? (this.opts.graceDays ?? DEFAULT_GRACE_DAYS) * 86400) : 0;
     const check = { product: this.opts.product, fingerprintHash, now: this.nowSec(), ...(graceSeconds ? { graceSeconds } : {}) };
     const native = this.native();
-    const result: { ok: boolean; data?: Buffer; reason?: string } =
-      native && typeof native.decryptFeature === 'function'
-        ? native.decryptFeature(leased.token, check, leased.licenseKey, feature, Buffer.from(data))
-        : decryptFeature(leased.token, { keys: this.keys, ...check }, leased.licenseKey, feature, Buffer.from(data));
-    if (result.ok && result.data) return Buffer.from(result.data);
-    if (result.reason === 'not_licensed') throw new LicenseError('feature_not_licensed', `This license does not include "${feature}".`);
-    if (result.reason === 'decrypt_failed') throw new LicenseError('decrypt_failed', 'The data could not be decrypted with this license.');
-    throw new LicenseError(result.reason ?? 'invalid', REASON_TEXT[result.reason as LeaseFailure] ?? 'The license is not valid.');
+    return (data: Uint8Array) => {
+      const result: { ok: boolean; data?: Buffer; reason?: string } =
+        native && typeof native.decryptFeature === 'function'
+          ? native.decryptFeature(leased.token, check, leased.licenseKey, feature, Buffer.from(data))
+          : decryptFeature(leased.token, { keys: this.keys, ...check }, leased.licenseKey, feature, Buffer.from(data));
+      if (result.ok && result.data) return Buffer.from(result.data);
+      if (result.reason === 'not_licensed') throw new LicenseError('feature_not_licensed', `This license does not include "${feature}".`);
+      if (result.reason === 'decrypt_failed') throw new LicenseError('decrypt_failed', 'The data could not be decrypted with this license.');
+      throw new LicenseError(result.reason ?? 'invalid', REASON_TEXT[result.reason as LeaseFailure] ?? 'The license is not valid.');
+    };
   }
 
   /**

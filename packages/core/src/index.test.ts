@@ -307,3 +307,22 @@ test('licensekit-encrypt writes data that decryptForFeature opens; the key never
   assert.equal(runEncrypt(['--feature', 'pro', join(dir, 'in.js'), join(dir, 'x')], { LICENSEKIT_FEATURE_KEY: 'short' }, io), 2);
   assert.equal(runEncrypt([join(dir, 'in.js'), join(dir, 'x')], { LICENSEKIT_FEATURE_KEY: key.toString('base64url') }, io), 2, 'no feature');
 });
+
+test('licensekit-encrypt encrypts every file in a folder to the same paths with .lke', async () => {
+  const { mkdtempSync, mkdirSync, writeFileSync, readFileSync, existsSync } = await import('node:fs');
+  const { join } = await import('node:path');
+  const { tmpdir } = await import('node:os');
+  const { runEncrypt } = await import('./encrypt-cli');
+  const dir = mkdtempSync(join(tmpdir(), 'lke-dir-'));
+  const key = generateFeatureKey();
+  mkdirSync(join(dir, 'premium', 'lib'), { recursive: true });
+  writeFileSync(join(dir, 'premium', 'index.js'), 'module.exports = require("./lib/math");');
+  writeFileSync(join(dir, 'premium', 'lib', 'math.js'), 'module.exports = { add: (a, b) => a + b };');
+  const lines: string[] = [];
+  const io = { out: (s: string) => lines.push(s), err: (s: string) => lines.push(s) };
+  assert.equal(runEncrypt(['--feature', 'pro', join(dir, 'premium'), join(dir, 'out')], { LICENSEKIT_FEATURE_KEY: key.toString('base64url') }, io), 0);
+  assert.match(lines.at(-1)!, /Encrypted 2 file/);
+  assert.equal(decryptForFeature(key, 'pro', readFileSync(join(dir, 'out', 'index.js.lke'))).toString(), 'module.exports = require("./lib/math");');
+  assert.ok(existsSync(join(dir, 'out', 'lib', 'math.js.lke')));
+  assert.equal(existsSync(join(dir, 'out', 'index.js')), false, 'no plain copy');
+});

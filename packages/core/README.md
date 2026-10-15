@@ -15,6 +15,13 @@ if (!result.ok) console.log(result.reason);
 
 `verifyLease` accepts only Ed25519, selects the key by `kid`, and checks issuer, product, device, `nbf`, `exp` and the check-in deadline. Failure reasons are listed in the [documentation](https://licensekit.carchalabs.com/docs/#lease).
 
-Other exports: `keyId`, `publicJwk`, `publicKeyFromPrivate`, `decodeLease`, `hashFingerprint`, `generateLicenseKey`, `normalizeLicenseKey`, `hashLicenseKey`.
+Other exports: `keyId`, `publicJwk`, `publicKeyFromPrivate`, `decodeLease`, `hashFingerprint`, `generateLicenseKey`, `normalizeLicenseKey`, `hashLicenseKey`, and the feature encryption functions (`encryptForFeature`, `decryptForFeature`, `decryptFeature`).
+
+`licensekit-encrypt` encrypts a file, or every file in a folder, for a feature at build time, with the key from `LICENSEKIT_FEATURE_KEY` or `--key-file`:
+
+```bash
+npx -p @carchalabs/licensekit-core licensekit-encrypt --feature pro dist/pro.js dist/pro.js.lke
+npx -p @carchalabs/licensekit-core licensekit-encrypt --feature pro dist/premium dist/premium   # each file gets .lke
+```
 
 Requires Node 22.13 or later. MIT License.

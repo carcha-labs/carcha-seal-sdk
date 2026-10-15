@@ -23,6 +23,8 @@ if (LicenseKit.hasFeature(state, 'export-pdf')) exportPdf();
 
 `check()` returns one of `valid`, `grace`, `invalid`, `unlicensed` or `clock_suspect`, with `offline` and `storageProtected` flags. A refusal from the server (suspended, expired, device removed, update required) is kept while offline and cleared by the next successful check-in. `notices` carries what the server asks your app to act on, such as `sdk_update_recommended` or `app_update_recommended` with a `minimum` version and a `requiredFrom` date; the SDK shows nothing itself. `activate(key, machineName)` sends the device name you pass; the default is the computer's host name. `deactivate()` releases the seat.
 
+Code can be protected the same way (Envelope): encrypt a CommonJS module or a folder of them with `licensekit-encrypt --feature pro dist/premium dist/premium`, and load it with `await kit.requireEncrypted('pro', path.join(__dirname, 'premium/index.js.lke'))`. Without the feature in the license the code cannot be read; a licensed user can still read it from memory.
+
 Computers that never reach the server use offline activation: `offlineRequest(key)` returns a request file, the license server turns it into a license file (its `/offline` page, `POST /v1/offline/activate` or the console), and `activateOffline(file)` loads it; it works only on that computer, for the policy's offline days. `deactivateOffline()` removes the license and returns a deactivation file the vendor uploads to free the seat. See the [documentation](https://licensekit.carchalabs.com/docs/#concepts).
 
 The SDK sends the license key, a per-product SHA-256 hash of the operating system's machine ID, the device name, the platform, your app version and its own version. The raw machine ID does not leave the computer.
