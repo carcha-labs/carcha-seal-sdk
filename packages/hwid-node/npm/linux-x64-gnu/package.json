@@ -27,7 +27,7 @@
   "bugs": {
     "url": "https://github.com/carcha-labs/licensekit-sdk/issues"
   },
-  "homepage": "https://licensekit.carchalabs.com/docs/",
+  "homepage": "https://seal.carchalabs.com/docs/",
   "publishConfig": {
     "access": "public"
   }

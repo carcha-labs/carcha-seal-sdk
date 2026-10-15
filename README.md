@@ -1,6 +1,6 @@
 # Carcha Seal SDK
 
-The npm packages of [Carcha Seal](https://licensekit.carchalabs.com), licensing for desktop software: a license server, an Electron SDK and an admin console. Leases are Ed25519-signed compact JWS tokens that the app verifies offline.
+The npm packages of [Carcha Seal](https://seal.carchalabs.com), licensing for desktop software: a license server, an Electron SDK and an admin console. Leases are Ed25519-signed compact JWS tokens that the app verifies offline.
 
 Carcha Seal was previously named LicenseKit. The package names, the SDK class `LicenseKit` and the `LK-` key prefix keep that name, so existing apps and keys keep working. It is not related to licensekit.dev or to Kankoda's LicenseKit.
 
