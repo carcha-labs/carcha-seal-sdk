@@ -1,4 +1,4 @@
-// Writes vectors.json: leases signed by @carchalabs/licensekit-core with a throwaway test
+// Writes vectors.json: leases signed by @carchalabs/seal-core with a throwaway test
 // key (its private half is in the file as testOnlyPrivateKey, so tests can sign more; no build
 // trusts it except the CI test build), each with the result core's verifyLease gives. The Rust crate must give the same
 // result for every vector (tests/conformance.rs); test/vectors.test.js in hwid-node re-checks
@@ -115,7 +115,7 @@ const decrypts = [
   ['another license key', featureLease(), 'LK-0000-0000-0000-0000-0000-0000-0000', 'pro', forPro],
   ['keys wrapped for another device', featureLease({ fp: 'e'.repeat(64) }), LICENSE, 'pro', forPro],
   ['data modified', featureLease(), LICENSE, 'pro', tampered],
-  ['not LicenseKit-encrypted data', featureLease(), LICENSE, 'pro', plaintext],
+  ['not data encrypted for Carcha Seal', featureLease(), LICENSE, 'pro', plaintext],
   ['data too short', featureLease(), LICENSE, 'pro', Buffer.from('LKE1')],
   ['lease refused (signed by another key)', signed(header(), claims({ fk: {} }), other.privateKey), LICENSE, 'pro', forPro],
 ];
