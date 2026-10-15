@@ -38,6 +38,8 @@ export interface LicenseState {
   keyHint?: string;
   /** From the last successful check-in; kept while offline. The app decides how to show them. */
   notices?: LicenseNotice[];
+  /** True when the license came from an offline license file (activateOffline); renew it with a new file. */
+  offlineActivated?: boolean;
 }
 
 /** Hashed hardware components (see @carchalabs/licensekit-hwid); the server matches a device by them. */
@@ -83,9 +85,16 @@ interface Stored {
   /** The server's last definitive refusal, kept so an offline check reports it instead of an old lease. */
   refused?: { code: string; message: string; at: number };
   notices?: LicenseNotice[];
+  /** Activated from an offline license file: check() never calls the server; a new file renews it. */
+  offline?: boolean;
 }
 
 type Leased = Stored & { token: string };
+
+/** File formats of offline activation, shared with the license server. */
+const OFFLINE_REQUEST_FORMAT = 'licensekit-offline-request';
+const OFFLINE_LICENSE_FORMAT = 'licensekit-offline-license';
+const OFFLINE_DEACTIVATION_FORMAT = 'licensekit-offline-deactivation';
 
 const DEFINITIVE = new Set(['invalid_key', 'not_activated', 'license_suspended', 'license_revoked', 'license_expired', 'sdk_update_required', 'app_update_required', 'vm_not_allowed']);
 /** The native hardware module. A non-literal require: bundlers leave it to Node, which must load the .node file from disk. */
@@ -337,6 +346,7 @@ export class LicenseKit {
       storageProtected: this.storageProtected,
       keyHint,
       ...(stored.notices ? { notices: stored.notices } : {}),
+      ...(stored.offline ? { offlineActivated: true } : {}),
     });
     if (strict.ok) {
       return { status: 'valid', offline, ...fromClaims(strict.claims), revalidateBy: toIso(strict.claims.rev) };
@@ -352,7 +362,9 @@ export class LicenseKit {
           status: 'grace',
           offline,
           reason: 'offline_grace',
-          message: 'Working offline. Connect to the internet soon to keep using the app.',
+          message: stored.offline
+            ? 'This offline license is past its renewal date. Load a new offline license file soon to keep using the app.'
+            : 'Working offline. Connect to the internet soon to keep using the app.',
           ...fromClaims(lenient.claims),
           revalidateBy: toIso(Math.min(lenient.claims.rev + grace, lenient.claims.exp ?? Infinity)),
         };
@@ -392,6 +404,14 @@ export class LicenseKit {
     }
     const stored = await this.load();
     if (!stored) return this.emptyState('unlicensed', false);
+    if (stored.offline && stored.token) {
+      // Activated from an offline license file: the machine is not expected to reach the server.
+      const state = this.stateFromLease({ ...stored, token: stored.token }, true);
+      if (state.status === 'valid' || state.status === 'grace') {
+        await this.save({ ...stored, lastSeen: Math.max(stored.lastSeen ?? 0, this.nowSec()) });
+      }
+      return state;
+    }
     try {
       const response = await this.post('/v1/validate', {
         licenseKey: stored.licenseKey,
@@ -454,6 +474,67 @@ export class LicenseKit {
     if (result.reason === 'not_licensed') throw new LicenseError('feature_not_licensed', `This license does not include "${feature}".`);
     if (result.reason === 'decrypt_failed') throw new LicenseError('decrypt_failed', 'The data could not be decrypted with this license.');
     throw new LicenseError(result.reason ?? 'invalid', REASON_TEXT[result.reason as LeaseFailure] ?? 'The license is not valid.');
+  }
+
+  /**
+   * Offline activation, step 1 on a machine that cannot reach the server: the request file (JSON text)
+   * the user takes to a connected device. The license server turns it into a license file at
+   * POST /v1/offline/activate (or its offline activation page). It holds what activate() would send:
+   * the license key, this device's fingerprint and hashed hardware parts, never raw serial numbers.
+   */
+  async offlineRequest(licenseKey: string, machineName = hostname()): Promise<string> {
+    const fingerprint = await this.fingerprint();
+    const activation = {
+      licenseKey: licenseKey.trim().toUpperCase(),
+      product: this.opts.product,
+      fingerprint,
+      machineName: machineName.slice(0, 80),
+      platform: platform(),
+      appVersion: this.opts.appVersion,
+      sdkVersion: SDK_VERSION,
+      ...(await this.hardware()),
+      ...this.deviceKey(),
+    };
+    return JSON.stringify({ format: OFFLINE_REQUEST_FORMAT, version: 1, activation }, null, 2);
+  }
+
+  /**
+   * Offline activation, step 2: loads the license file the server issued for this machine's request.
+   * It is verified like an online lease (signature, product, this device) and then saved; from then on
+   * check() works without the server until the lease's renewal date plus the offline grace. Throws a
+   * LicenseError: `invalid_file`, `wrong_product`, or a lease failure reason such as `wrong_device`.
+   */
+  async activateOffline(licenseFile: string): Promise<LicenseState> {
+    await this.fingerprint();
+    let file: any;
+    try {
+      file = JSON.parse(licenseFile);
+    } catch {
+      throw new LicenseError('invalid_file', 'This is not a LicenseKit offline license file.');
+    }
+    if (!file || file.format !== OFFLINE_LICENSE_FORMAT || file.version !== 1 || typeof file.token !== 'string' || typeof file.licenseKey !== 'string') {
+      throw new LicenseError('invalid_file', 'This is not a LicenseKit offline license file.');
+    }
+    if (file.product !== this.opts.product) throw new LicenseError('wrong_product', 'This offline license file is for another product.');
+    const stored: Leased = { licenseKey: file.licenseKey.trim().toUpperCase(), token: file.token, lastSeen: this.nowSec(), offline: true };
+    const state = this.stateFromLease(stored, true);
+    if (state.status !== 'valid') {
+      throw new LicenseError(state.status === 'clock_suspect' ? 'clock_suspect' : state.reason ?? 'invalid', state.message ?? 'This offline license file cannot be used on this computer.');
+    }
+    await this.save(stored);
+    return state;
+  }
+
+  /**
+   * Gives an offline machine's seat back: removes the license from this device and returns the
+   * deactivation file (JSON text) for the vendor, who frees the seat by uploading it in the console.
+   * Throws `unlicensed` when there is no license to remove.
+   */
+  async deactivateOffline(): Promise<string> {
+    const stored = await this.load();
+    if (!stored?.token) throw new LicenseError('unlicensed', 'This device has no license.');
+    await this.clear();
+    return JSON.stringify({ format: OFFLINE_DEACTIVATION_FORMAT, version: 1, product: this.opts.product, token: stored.token }, null, 2);
   }
 
   async deactivate(): Promise<void> {

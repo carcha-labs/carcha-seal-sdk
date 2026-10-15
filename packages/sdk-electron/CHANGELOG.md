@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Offline activation for computers that never reach the server: `offlineRequest(licenseKey)` writes a request file, the license server turns it into a license file (`POST /v1/offline/activate`, its `/offline` page, or the console), and `activateOffline(file)` loads it. Such a computer does not call the server in `check()`; a new license file renews it, `activate()` moves it to online check-ins. `deactivateOffline()` removes the license and returns the deactivation file the vendor uploads to free the seat. Needs a server with offline activation (schema 9) and a policy with offline days.
+
 ## 0.3.0
 
 Upgrade from 0.2.0; no code changes needed. Requires a LicenseKit server with feature keys (2026-10-15 or later) for `decrypt` and device keys.
