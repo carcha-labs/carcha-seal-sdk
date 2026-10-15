@@ -1,6 +1,6 @@
 # @carchalabs/licensekit-electron
 
-The [LicenseKit](https://licensekit.carchalabs.com) SDK. It runs in the Electron main process or in plain Node. It activates a license key on this device, saves the signed lease, and verifies it offline with your public keys.
+The [Carcha Seal](https://licensekit.carchalabs.com) (formerly LicenseKit) SDK. It runs in the Electron main process or in plain Node. It activates a license key on this device, saves the signed lease, and verifies it offline with your public keys.
 
 ```js
 const { LicenseKit } = require('@carchalabs/licensekit-electron');

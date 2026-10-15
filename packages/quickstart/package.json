@@ -1,7 +1,8 @@
 {
   "name": "@carchalabs/licensekit-quickstart",
   "version": "0.4.0",
-  "description": "Try LicenseKit from a terminal: activate a trial key, then check the license offline",
+  "description": "Try Carcha Seal (formerly LicenseKit) from a terminal: activate a trial key, then check the license offline",
+  "keywords": ["licensing", "license-key", "electron", "quickstart", "carcha-seal"],
   "homepage": "https://licensekit.carchalabs.com/docs/",
   "repository": { "type": "git", "url": "git+https://github.com/carcha-labs/licensekit-sdk.git", "directory": "packages/quickstart" },
   "bugs": { "url": "https://github.com/carcha-labs/licensekit-sdk/issues" },
