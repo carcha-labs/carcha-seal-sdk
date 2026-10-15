@@ -783,7 +783,7 @@
         }
       },
       {
-        "name": "not LicenseKit-encrypted data",
+        "name": "not data encrypted for Carcha Seal",
         "token": "eyJhbGciOiJFZDI1NTE5IiwidHlwIjoibGljZW5zZWtpdC1sZWFzZStqd3QiLCJraWQiOiIxNGQySUdZM0VjckF3STZubzNSb1lOTmxVQTdXX1RNOFJlaUppdnJnZjk4In0.eyJpc3MiOiJsaWNlbnNla2l0Iiwic3ViIjoibGljXzEiLCJhdWQiOiJzdHVkaW8iLCJqdGkiOiJsZWFzZS0xIiwiaWF0IjoxNzk5OTk5OTQwLCJuYmYiOjE3OTk5OTk5NDAsImV4cCI6MTgwMDA4NjQwMCwicmV2IjoxODAwMDAzNjAwLCJmcCI6ImZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmYiLCJmZWF0IjpbInBybyIsImV4cG9ydCJdLCJjdXMiOiJBY21lIiwiZ3JjIjo2MDQ4MDAsImZrIjp7InBybyI6IkZXVGllTmpvT1M1aXRIeFlsXzJJSC03dERrQVl2ZlZucjY0UjRjVGN5MElERGVtc1o1VVJGRDJiQU9ub1dRcGNIMFdKVkw1MVhqQmtTTFZLIiwiZXhwb3J0IjoiMUhkNExHN3gzOEF5QldpRFdKYTJGZUtqTXZWM1RLVDltSDdWdnVfV3lzVzR2RW14ZWZHb1RuUlNxT04yTzU3V3IxTlU0ZV83clBuTVl6clUifX0.GOf-idcd9zqYZmO71Ssm5RvQxIfj-ouLnu5P-oCe59o9dFAukbGi7l1PY04Ru7JMnDhbTwK5a13W4bRTi2NdAg",
         "check": {
           "product": "studio",
