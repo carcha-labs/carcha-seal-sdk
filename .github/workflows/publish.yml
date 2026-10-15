@@ -49,8 +49,9 @@ jobs:
           registry-url: https://registry.npmjs.org
       # 11.15.0: staged publishing (needed to create a new package without a 2FA-bypass token).
       - run: npm install -g npm@^11.15.0
-      - run: npm ci
-      - run: npm test
+      # npm ci and the tests come after the hardware module is published (step below): the lock
+      # file cannot list a new hwid version before it is on npm, and npm 11 ci refuses a lock that
+      # misses a declared (even optional) dependency.
       - uses: actions/download-artifact@v4
         with:
           pattern: hwid-node-*
@@ -89,4 +90,16 @@ jobs:
           # Dependency order: platform packages, the hardware module, then core, electron, quickstart.
           for t in darwin-arm64 darwin-x64 win32-x64-msvc linux-x64-gnu; do publish "packages/hwid-node/npm/$t"; done
           publish packages/hwid-node
+
+          # The JavaScript packages are tested against the hardware module version they declare.
+          hwid=$(node -p "require('./packages/hwid-node/package.json').version")
+          for i in $(seq 1 30); do
+            npm view "@carchalabs/licensekit-hwid@$hwid" version > /dev/null 2>&1 && break
+            echo "waiting for @carchalabs/licensekit-hwid@$hwid on the registry"; sleep 10
+          done
+          # Adds only what the committed lock lacks (the new hwid); every locked version stays as it is.
+          npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+          npm ci
+          npm test
+
           for dir in packages/core packages/sdk-electron packages/quickstart; do publish "$dir"; done
