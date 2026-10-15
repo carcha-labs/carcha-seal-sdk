@@ -1,16 +1,16 @@
 {
-  "name": "@carchalabs/licensekit-hwid-darwin-x64",
-  "version": "0.2.0",
-  "description": "Prebuilt native module of @carchalabs/licensekit-hwid for darwin-x64.",
+  "name": "@carchalabs/seal-hwid-darwin-x64",
+  "version": "0.3.0",
+  "description": "Prebuilt native module of @carchalabs/seal-hwid for darwin-x64.",
   "os": [
     "darwin"
   ],
   "cpu": [
     "x64"
   ],
-  "main": "licensekit-hwid.darwin-x64.node",
+  "main": "seal-hwid.darwin-x64.node",
   "files": [
-    "licensekit-hwid.darwin-x64.node"
+    "seal-hwid.darwin-x64.node"
   ],
   "license": "MIT",
   "engines": {
@@ -18,11 +18,11 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/carcha-labs/licensekit-sdk.git",
+    "url": "git+https://github.com/carcha-labs/carcha-seal-sdk.git",
     "directory": "packages/hwid-node/npm/darwin-x64"
   },
   "bugs": {
-    "url": "https://github.com/carcha-labs/licensekit-sdk/issues"
+    "url": "https://github.com/carcha-labs/carcha-seal-sdk/issues"
   },
   "homepage": "https://seal.carchalabs.com/docs/",
   "publishConfig": {

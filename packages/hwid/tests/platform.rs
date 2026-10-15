@@ -1,7 +1,7 @@
 //! Reads the real machine the tests run on. Only checks which kinds are
 //! found, never values, so it holds on any machine of that OS.
 
-use licensekit_hwid::{Kind, collect};
+use seal_hwid::{Kind, collect};
 
 fn kinds() -> Vec<Kind> {
     collect(b"licensekit-test").components.iter().map(|c| c.kind).collect()

@@ -327,7 +327,7 @@ export function encryptForFeature(contentKey: Buffer, feature: string, data: Buf
 
 export function decryptForFeature(contentKey: Buffer, feature: string, encrypted: Buffer): Buffer {
   if (encrypted.length < ENCRYPTED_MAGIC.length || !encrypted.subarray(0, ENCRYPTED_MAGIC.length).equals(ENCRYPTED_MAGIC)) {
-    throw new FeatureCryptoError('not LicenseKit-encrypted data');
+    throw new FeatureCryptoError('not data encrypted for Carcha Seal');
   }
   return open(contentKey, encrypted.subarray(ENCRYPTED_MAGIC.length), `LKE1:${feature}`);
 }

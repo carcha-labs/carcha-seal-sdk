@@ -34,7 +34,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: hwid-node-${{ matrix.target }}
-          path: packages/hwid-node/npm/${{ matrix.target }}/licensekit-hwid.${{ matrix.target }}.node
+          path: packages/hwid-node/npm/${{ matrix.target }}/seal-hwid.${{ matrix.target }}.node
           if-no-files-found: error
           retention-days: 7
 
@@ -60,8 +60,8 @@ jobs:
         shell: bash
         run: |
           for t in darwin-arm64 darwin-x64 win32-x64-msvc linux-x64-gnu; do
-            cp "hwid-artifacts/hwid-node-$t/licensekit-hwid.$t.node" "packages/hwid-node/npm/$t/"
-            test -s "packages/hwid-node/npm/$t/licensekit-hwid.$t.node"
+            cp "hwid-artifacts/hwid-node-$t/seal-hwid.$t.node" "packages/hwid-node/npm/$t/"
+            test -s "packages/hwid-node/npm/$t/seal-hwid.$t.node"
           done
       - name: Publish versions that are not on npm yet
         shell: bash
@@ -94,9 +94,15 @@ jobs:
           # The JavaScript packages are tested against the hardware module version they declare.
           hwid=$(node -p "require('./packages/hwid-node/package.json').version")
           for i in $(seq 1 30); do
-            npm view "@carchalabs/licensekit-hwid@$hwid" version > /dev/null 2>&1 && break
-            echo "waiting for @carchalabs/licensekit-hwid@$hwid on the registry"; sleep 10
+            npm view "@carchalabs/seal-hwid@$hwid" version > /dev/null 2>&1 && break
+            if ! npm view "@carchalabs/seal-hwid" name > /dev/null 2>&1; then
+              # A new package was staged above: it is not on the registry until approved.
+              echo "::notice::@carchalabs/seal-hwid and its platform packages are staged. Approve them on npmjs.com (Staged Packages), then run Publish again to publish core, electron and quickstart."
+              exit 1
+            fi
+            echo "waiting for @carchalabs/seal-hwid@$hwid on the registry"; sleep 10
           done
+          npm view "@carchalabs/seal-hwid@$hwid" version > /dev/null 2>&1 || { echo "::error::@carchalabs/seal-hwid@$hwid did not appear on the registry"; exit 1; }
           # Adds only what the committed lock lacks (the new hwid); every locked version stays as it is.
           npm install --package-lock-only --ignore-scripts --no-audit --no-fund
           npm ci

@@ -1,20 +1,20 @@
 #!/usr/bin/env node
-// licensekit-encrypt: encrypts a file, or every file in a folder, for a feature with its content key,
+// seal-encrypt: encrypts a file, or every file in a folder, for a feature with its content key,
 // for your build.
-//   LICENSEKIT_FEATURE_KEY=<key from the console> npx -p @carchalabs/licensekit-core licensekit-encrypt --feature pro in.js out.js.lke
-//   ... licensekit-encrypt --feature pro dist/premium dist/premium.lke   (folder: each file gets .lke)
-// The key is read from LICENSEKIT_FEATURE_KEY or --key-file, never from the command line, so it
+//   SEAL_FEATURE_KEY=<key from the console> npx -p @carchalabs/seal-core seal-encrypt --feature pro in.js out.js.lke
+//   ... seal-encrypt --feature pro dist/premium dist/premium.lke   (folder: each file gets .lke)
+// The key is read from SEAL_FEATURE_KEY (or LICENSEKIT_FEATURE_KEY, its earlier name) or --key-file, never from the command line, so it
 // does not end up in shell history or process lists.
 import { mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, join, relative } from 'node:path';
 import { encryptForFeature } from './index';
 
 const USAGE = [
-  'Usage: licensekit-encrypt --feature <name> [--key-file <file>] <input> <output>',
+  'Usage: seal-encrypt --feature <name> [--key-file <file>] <input> <output>',
   '',
   "Encrypts <input> for a feature with the feature's content key (console: Products, Feature keys).",
   'When <input> is a folder, every file in it is encrypted to the same path under the <output> folder, with .lke added.',
-  'The key comes from the LICENSEKIT_FEATURE_KEY environment variable or from --key-file.',
+  'The key comes from the SEAL_FEATURE_KEY environment variable or from --key-file.',
   'Your app opens <output> with kit.decrypt(feature, data) on a device whose license includes the feature.',
 ];
 
@@ -34,10 +34,10 @@ export function runEncrypt(args: string[], env: Record<string, string | undefine
     USAGE.forEach(io.err);
     return 2;
   }
-  const encoded = (keyFile ? readFileSync(keyFile, 'utf8') : env.LICENSEKIT_FEATURE_KEY ?? '').trim();
+  const encoded = (keyFile ? readFileSync(keyFile, 'utf8') : env.SEAL_FEATURE_KEY ?? env.LICENSEKIT_FEATURE_KEY ?? '').trim();
   const key = Buffer.from(encoded, 'base64url');
   if (!/^[A-Za-z0-9_-]+$/.test(encoded) || key.length !== 32) {
-    io.err('The feature key must be the 32-byte base64url key shown in the console (LICENSEKIT_FEATURE_KEY or --key-file).');
+    io.err('The feature key must be the 32-byte base64url key shown in the console (SEAL_FEATURE_KEY or --key-file).');
     return 2;
   }
   const [input, output] = files;

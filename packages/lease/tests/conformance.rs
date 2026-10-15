@@ -1,7 +1,7 @@
 //! Every vector in vectors.json (made by make-vectors.js with the core library)
 //! must give the same result here as in core's verifyLease.
 
-use licensekit_lease::{DEFAULT_LEEWAY_SECONDS, Options, TrustedKey, verify};
+use seal_lease::{DEFAULT_LEEWAY_SECONDS, Options, TrustedKey, verify};
 use serde_json::Value;
 
 #[test]
@@ -54,7 +54,7 @@ fn options<'a>(keys: &'a [TrustedKey], check: &'a Value) -> Options<'a> {
 #[test]
 fn feature_keys_work_as_in_the_core_library() {
     use base64::Engine;
-    use licensekit_lease::{decrypt_feature, feature_wrap_key, normalize_license_key};
+    use seal_lease::{decrypt_feature, feature_wrap_key, normalize_license_key};
     let b64 = base64::engine::general_purpose::STANDARD;
     let file: Value = serde_json::from_str(include_str!("vectors.json")).unwrap();
     let keys = [TrustedKey::from_spki_pem(file["publicKey"].as_str().unwrap()).unwrap()];
@@ -71,7 +71,7 @@ fn feature_keys_work_as_in_the_core_library() {
     }
     for v in features["devicePublicKeys"].as_array().unwrap() {
         let secret = device_secret(&serde_json::json!({ "deviceSecret": v["secret"] })).unwrap();
-        let public = base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(licensekit_lease::device_public_key(&secret));
+        let public = base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(seal_lease::device_public_key(&secret));
         assert_eq!(public, v["expected"].as_str().unwrap());
     }
     let decrypts = features["decrypts"].as_array().unwrap();

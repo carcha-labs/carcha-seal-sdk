@@ -2,14 +2,14 @@
 
 The npm packages of [Carcha Seal](https://seal.carchalabs.com), licensing for desktop software: a license server, an Electron SDK and an admin console. Leases are Ed25519-signed compact JWS tokens that the app verifies offline.
 
-Carcha Seal was previously named LicenseKit. The package names, the SDK class `LicenseKit` and the `LK-` key prefix keep that name, so existing apps and keys keep working. It is not related to licensekit.dev or to Kankoda's LicenseKit.
+Carcha Seal was previously named LicenseKit, and these packages were `@carchalabs/licensekit-*` (now deprecated; same code as the last release under the old names). The SDK class is `Seal`; `LicenseKit` stays exported as an alias. License keys keep their `LK-` prefix, and leases, device hashes and offline files keep their format, so existing apps, keys and activations keep working. It is not related to licensekit.dev or to Kankoda's LicenseKit.
 
 | Package | What it does |
 | --- | --- |
-| [`@carchalabs/licensekit-core`](packages/core) | Lease format: signing, verification, key sets and license keys |
-| [`@carchalabs/licensekit-electron`](packages/sdk-electron) | SDK for the Electron main process and Node: activation, offline checks, grace period |
-| [`@carchalabs/licensekit-quickstart`](packages/quickstart) | Try Carcha Seal from a terminal with `npx` |
-| [`@carchalabs/licensekit-hwid`](packages/hwid-node) | Reads hardware components and returns one keyed hash each, for Node and Electron (prebuilt per platform) |
+| [`@carchalabs/seal-core`](packages/core) | Lease format: signing, verification, key sets and license keys |
+| [`@carchalabs/seal-electron`](packages/sdk-electron) | SDK for the Electron main process and Node: activation, offline checks, grace period |
+| [`@carchalabs/seal-quickstart`](packages/quickstart) | Try Carcha Seal from a terminal with `npx` |
+| [`@carchalabs/seal-hwid`](packages/hwid-node) | Reads hardware components and returns one keyed hash each, for Node and Electron (prebuilt per platform) |
 
 [`packages/hwid`](packages/hwid) is the native core of the hardware module, in Rust, with a C interface for other languages.
 

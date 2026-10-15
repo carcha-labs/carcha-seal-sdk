@@ -1,21 +1,21 @@
 {
-  "name": "@carchalabs/licensekit-quickstart",
-  "version": "0.4.0",
+  "name": "@carchalabs/seal-quickstart",
+  "version": "0.5.0",
   "description": "Try Carcha Seal (formerly LicenseKit) from a terminal: activate a trial key, then check the license offline",
   "keywords": ["licensing", "license-key", "electron", "quickstart", "carcha-seal"],
   "homepage": "https://seal.carchalabs.com/docs/",
-  "repository": { "type": "git", "url": "git+https://github.com/carcha-labs/licensekit-sdk.git", "directory": "packages/quickstart" },
-  "bugs": { "url": "https://github.com/carcha-labs/licensekit-sdk/issues" },
+  "repository": { "type": "git", "url": "git+https://github.com/carcha-labs/carcha-seal-sdk.git", "directory": "packages/quickstart" },
+  "bugs": { "url": "https://github.com/carcha-labs/carcha-seal-sdk/issues" },
   "main": "dist/cli.js",
   "types": "dist/cli.d.ts",
-  "bin": { "licensekit-quickstart": "dist/bin.js" },
+  "bin": { "seal-quickstart": "dist/bin.js", "licensekit-quickstart": "dist/bin.js" },
   "files": ["dist", "src", "public-keys"],
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "prepublishOnly": "npm run build"
   },
   "dependencies": {
-    "@carchalabs/licensekit-electron": "0.4.0"
+    "@carchalabs/seal-electron": "0.5.0"
   },
   "engines": { "node": ">=22.13" },
   "publishConfig": { "access": "public" },

@@ -1,16 +1,16 @@
 {
-  "name": "@carchalabs/licensekit-hwid-win32-x64-msvc",
-  "version": "0.2.0",
-  "description": "Prebuilt native module of @carchalabs/licensekit-hwid for win32-x64-msvc.",
+  "name": "@carchalabs/seal-hwid-win32-x64-msvc",
+  "version": "0.3.0",
+  "description": "Prebuilt native module of @carchalabs/seal-hwid for win32-x64-msvc.",
   "os": [
     "win32"
   ],
   "cpu": [
     "x64"
   ],
-  "main": "licensekit-hwid.win32-x64-msvc.node",
+  "main": "seal-hwid.win32-x64-msvc.node",
   "files": [
-    "licensekit-hwid.win32-x64-msvc.node"
+    "seal-hwid.win32-x64-msvc.node"
   ],
   "license": "MIT",
   "engines": {
@@ -18,11 +18,11 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/carcha-labs/licensekit-sdk.git",
+    "url": "git+https://github.com/carcha-labs/carcha-seal-sdk.git",
     "directory": "packages/hwid-node/npm/win32-x64-msvc"
   },
   "bugs": {
-    "url": "https://github.com/carcha-labs/licensekit-sdk/issues"
+    "url": "https://github.com/carcha-labs/carcha-seal-sdk/issues"
   },
   "homepage": "https://seal.carchalabs.com/docs/",
   "publishConfig": {

@@ -1,5 +1,5 @@
 //! C interface. Every binding (native apps, .NET P/Invoke, the Node-API
-//! layer) goes through these two functions; see include/licensekit_hwid.h.
+//! layer) goes through these two functions; see include/seal_hwid.h.
 
 use std::ffi::c_char;
 use std::panic::{AssertUnwindSafe, catch_unwind};

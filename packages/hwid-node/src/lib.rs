@@ -1,4 +1,4 @@
-//! Node-API layer over `licensekit_hwid` and `licensekit_lease` for Node.js and
+//! Node-API layer over `seal_hwid` and `seal_lease` for Node.js and
 //! Electron.
 //!
 //! Exposes `collect(key)`, `devicePublicKey(key)`, `verifyLease(token, options)`,
@@ -37,9 +37,9 @@ pub fn collect(key: Either<String, Buffer>) -> Result<Collected> {
     if bytes.is_empty() {
         return Err(Error::new(Status::InvalidArg, "key must not be empty"));
     }
-    let (c, notes) = licensekit_hwid::collect_with_notes(&bytes);
+    let (c, notes) = seal_hwid::collect_with_notes(&bytes);
     Ok(Collected {
-        format: licensekit_hwid::LK_HWID_FORMAT,
+        format: seal_hwid::LK_HWID_FORMAT,
         vm: c.vm,
         components: c
             .components
@@ -53,7 +53,7 @@ pub fn collect(key: Either<String, Buffer>) -> Result<Collected> {
 /// The device secret for a product, from this machine's hardware (the same product key the SDK
 /// passes to collect: "licensekit:<product>"). Never crosses into JavaScript.
 fn device_secret_for(product: &str) -> Option<[u8; 32]> {
-    licensekit_hwid::device_secret(format!("licensekit:{product}").as_bytes())
+    seal_hwid::device_secret(format!("licensekit:{product}").as_bytes())
 }
 
 /// This machine's X25519 device public key for `key` (base64url, 32 bytes), or null when the machine
@@ -67,9 +67,9 @@ pub fn device_public_key(key: Either<String, Buffer>) -> Result<Option<String>> 
     if bytes.is_empty() {
         return Err(Error::new(Status::InvalidArg, "key must not be empty"));
     }
-    Ok(licensekit_hwid::device_secret(&bytes).map(|secret| {
+    Ok(seal_hwid::device_secret(&bytes).map(|secret| {
         use base64::Engine;
-        base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(licensekit_lease::device_public_key(&secret))
+        base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(seal_lease::device_public_key(&secret))
     }))
 }
 
@@ -77,30 +77,31 @@ pub fn device_public_key(key: Either<String, Buffer>) -> Result<Option<String>> 
 #[napi]
 pub fn version() -> String {
     // SAFETY: lk_hwid_version returns a static NUL-terminated string.
-    unsafe { std::ffi::CStr::from_ptr(licensekit_hwid::lk_hwid_version()) }
+    unsafe { std::ffi::CStr::from_ptr(seal_hwid::lk_hwid_version()) }
         .to_string_lossy()
         .into_owned()
 }
 
 /// Public keys this build trusts for leases, compiled in: SPKI PEM bodies
-/// (base64), comma-separated, from LICENSEKIT_LEASE_PUBLIC_KEYS at build time.
+/// (base64), comma-separated, from SEAL_LEASE_PUBLIC_KEYS at build time
+/// (LICENSEKIT_LEASE_PUBLIC_KEYS, its earlier name, still works).
 /// The default is the hosted service's current and next signing keys
 /// (packages/quickstart/public-keys). Compiled in, so a lease signed with
 /// another key cannot be made to pass by changing a file or a setting.
-const LEASE_PUBLIC_KEYS: &str = match option_env!("LICENSEKIT_LEASE_PUBLIC_KEYS") {
-    Some(keys) => keys,
-    None => concat!(
+const LEASE_PUBLIC_KEYS: &str = match (option_env!("SEAL_LEASE_PUBLIC_KEYS"), option_env!("LICENSEKIT_LEASE_PUBLIC_KEYS")) {
+    (Some(keys), _) | (None, Some(keys)) => keys,
+    (None, None) => concat!(
         "MCowBQYDK2VwAyEALiAdmTkGG9jtE74LHZzjfNugnNT9bIvVBRm0onTDGgQ=,",
         "MCowBQYDK2VwAyEA71j+vfBUoOPZ2QfmhzjZQv/Aj600Wni1Vv7y5A/r/xg=",
     ),
 };
 
-fn trusted_keys() -> &'static [licensekit_lease::TrustedKey] {
-    static KEYS: std::sync::OnceLock<Vec<licensekit_lease::TrustedKey>> = std::sync::OnceLock::new();
+fn trusted_keys() -> &'static [seal_lease::TrustedKey] {
+    static KEYS: std::sync::OnceLock<Vec<seal_lease::TrustedKey>> = std::sync::OnceLock::new();
     KEYS.get_or_init(|| {
         LEASE_PUBLIC_KEYS
             .split(',')
-            .map(|key| licensekit_lease::TrustedKey::from_spki_pem(key).expect("LICENSEKIT_LEASE_PUBLIC_KEYS: not an Ed25519 SPKI key"))
+            .map(|key| seal_lease::TrustedKey::from_spki_pem(key).expect("SEAL_LEASE_PUBLIC_KEYS: not an Ed25519 SPKI key"))
             .collect()
     })
 }
@@ -126,10 +127,10 @@ pub struct LeaseVerdict {
 }
 
 /// Verifies a lease with the compiled-in keys and the same rules, order and
-/// reasons as verifyLease in @carchalabs/licensekit-core.
+/// reasons as verifyLease in @carchalabs/seal-core.
 #[napi]
 pub fn verify_lease(token: String, check: LeaseCheck) -> LeaseVerdict {
-    match licensekit_lease::verify(&token, &lease_options(&check)) {
+    match seal_lease::verify(&token, &lease_options(&check)) {
         Ok(verified) => LeaseVerdict { ok: true, reason: None, kid: Some(verified.kid) },
         Err((failure, _)) => LeaseVerdict { ok: false, reason: Some(failure.as_str().to_string()), kid: None },
     }
@@ -144,18 +145,18 @@ pub struct FeatureDecrypt {
     pub reason: Option<String>,
 }
 
-fn lease_options(check: &LeaseCheck) -> licensekit_lease::Options<'_> {
+fn lease_options(check: &LeaseCheck) -> seal_lease::Options<'_> {
     let now = check.now.unwrap_or_else(|| {
         std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_secs() as f64).unwrap_or(0.0)
     });
-    licensekit_lease::Options {
+    seal_lease::Options {
         keys: trusted_keys(),
         product: &check.product,
         fingerprint_hash: &check.fingerprint_hash,
         issuer: check.issuer.as_deref(),
         now,
         grace_seconds: check.grace_seconds.unwrap_or(0.0),
-        leeway_seconds: check.leeway_seconds.unwrap_or(licensekit_lease::DEFAULT_LEEWAY_SECONDS),
+        leeway_seconds: check.leeway_seconds.unwrap_or(seal_lease::DEFAULT_LEEWAY_SECONDS),
     }
 }
 
@@ -175,7 +176,7 @@ pub fn decrypt_feature(
     let secret = test_device_secret.and_then(|b| <[u8; 32]>::try_from(b.as_ref()).ok()).or_else(|| device_secret_for(&check.product));
     #[cfg(not(feature = "test-device-secret"))]
     let secret = device_secret_for(&check.product);
-    match licensekit_lease::decrypt_feature(&token, &lease_options(&check), &license_key, &feature, &data, secret.as_ref()) {
+    match seal_lease::decrypt_feature(&token, &lease_options(&check), &license_key, &feature, &data, secret.as_ref()) {
         Ok(plain) => FeatureDecrypt { ok: true, data: Some(plain.into()), reason: None },
         Err(e) => FeatureDecrypt { ok: false, data: None, reason: Some(e.as_str().to_string()) },
     }

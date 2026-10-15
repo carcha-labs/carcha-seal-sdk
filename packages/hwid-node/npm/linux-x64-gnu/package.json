@@ -1,7 +1,7 @@
 {
-  "name": "@carchalabs/licensekit-hwid-linux-x64-gnu",
-  "version": "0.2.0",
-  "description": "Prebuilt native module of @carchalabs/licensekit-hwid for linux-x64-gnu.",
+  "name": "@carchalabs/seal-hwid-linux-x64-gnu",
+  "version": "0.3.0",
+  "description": "Prebuilt native module of @carchalabs/seal-hwid for linux-x64-gnu.",
   "os": [
     "linux"
   ],
@@ -11,9 +11,9 @@
   "libc": [
     "glibc"
   ],
-  "main": "licensekit-hwid.linux-x64-gnu.node",
+  "main": "seal-hwid.linux-x64-gnu.node",
   "files": [
-    "licensekit-hwid.linux-x64-gnu.node"
+    "seal-hwid.linux-x64-gnu.node"
   ],
   "license": "MIT",
   "engines": {
@@ -21,11 +21,11 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/carcha-labs/licensekit-sdk.git",
+    "url": "git+https://github.com/carcha-labs/carcha-seal-sdk.git",
     "directory": "packages/hwid-node/npm/linux-x64-gnu"
   },
   "bugs": {
-    "url": "https://github.com/carcha-labs/licensekit-sdk/issues"
+    "url": "https://github.com/carcha-labs/carcha-seal-sdk/issues"
   },
   "homepage": "https://seal.carchalabs.com/docs/",
   "publishConfig": {

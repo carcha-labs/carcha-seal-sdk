@@ -1,6 +1,6 @@
-//! Verifies LicenseKit leases: compact JWS tokens signed with Ed25519
+//! Verifies Carcha Seal leases: compact JWS tokens signed with Ed25519
 //! (`header.claims.signature`, base64url). The rules, their order and the
-//! failure reasons are the same as `verifyLease` in @carchalabs/licensekit-core,
+//! failure reasons are the same as `verifyLease` in @carchalabs/seal-core,
 //! so both verifiers give the same answer for the same lease (the conformance
 //! test in packages/hwid-node checks this).
 

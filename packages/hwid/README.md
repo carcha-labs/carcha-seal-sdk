@@ -1,8 +1,8 @@
-# licensekit_hwid
+# seal_hwid
 
 Native core that reads a machine's hardware components and returns one HMAC-SHA256 per component, keyed by the product. Raw serials never leave the library. The license server decides how many components must still match.
 
-One Rust library with a C interface (`include/licensekit_hwid.h`), built as a static library (native apps link it), a shared library (.NET P/Invoke and other loaders) and, later, a Node-API layer for Node.js and Electron.
+One Rust library with a C interface (`include/seal_hwid.h`), built as a static library (native apps link it), a shared library (.NET P/Invoke and other loaders) and, later, a Node-API layer for Node.js and Electron.
 
 | Kind | Linux | macOS | Windows |
 | --- | --- | --- | --- |

@@ -1,13 +1,13 @@
 /*
- * LicenseKit hardware id: reads this machine's components and returns one
+ * Carcha Seal hardware id: reads this machine's components and returns one
  * HMAC-SHA256 per component, keyed by your product. Raw serials never leave
  * the library.
  *
- * Link the static library (licensekit_hwid.lib / liblicensekit_hwid.a) into
+ * Link the static library (seal_hwid.lib / libseal_hwid.a) into
  * native apps, or load the shared one (.dll / .dylib / .so).
  */
-#ifndef LICENSEKIT_HWID_H
-#define LICENSEKIT_HWID_H
+#ifndef SEAL_HWID_H
+#define SEAL_HWID_H
 
 #include <stddef.h>
 #include <stdint.h>
@@ -40,4 +40,4 @@ intptr_t lk_hwid_collect(const uint8_t *key, size_t key_len, char *out, size_t o
 }
 #endif
 
-#endif /* LICENSEKIT_HWID_H */
+#endif /* SEAL_HWID_H */

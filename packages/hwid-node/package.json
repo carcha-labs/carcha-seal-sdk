@@ -1,6 +1,6 @@
 {
-  "name": "@carchalabs/licensekit-hwid",
-  "version": "0.2.0",
+  "name": "@carchalabs/seal-hwid",
+  "version": "0.3.0",
   "description": "Hardware component hashes for Carcha Seal (formerly LicenseKit) machine binding (Node.js and Electron).",
   "keywords": ["hardware-id", "machine-id", "licensing", "electron", "carcha-seal"],
   "main": "index.js",
@@ -19,18 +19,18 @@
   },
   "license": "MIT",
   "optionalDependencies": {
-    "@carchalabs/licensekit-hwid-darwin-arm64": "0.2.0",
-    "@carchalabs/licensekit-hwid-darwin-x64": "0.2.0",
-    "@carchalabs/licensekit-hwid-win32-x64-msvc": "0.2.0",
-    "@carchalabs/licensekit-hwid-linux-x64-gnu": "0.2.0"
+    "@carchalabs/seal-hwid-darwin-arm64": "0.3.0",
+    "@carchalabs/seal-hwid-darwin-x64": "0.3.0",
+    "@carchalabs/seal-hwid-win32-x64-msvc": "0.3.0",
+    "@carchalabs/seal-hwid-linux-x64-gnu": "0.3.0"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/carcha-labs/licensekit-sdk.git",
+    "url": "git+https://github.com/carcha-labs/carcha-seal-sdk.git",
     "directory": "packages/hwid-node"
   },
   "bugs": {
-    "url": "https://github.com/carcha-labs/licensekit-sdk/issues"
+    "url": "https://github.com/carcha-labs/carcha-seal-sdk/issues"
   },
   "homepage": "https://seal.carchalabs.com/docs/",
   "publishConfig": {

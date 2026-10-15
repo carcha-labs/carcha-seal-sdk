@@ -1,11 +1,11 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { IOREG, MachineIdUnavailableError, readMachineId, REG_EXE } from './fingerprint';
-import { generateSigningKeys } from '@carchalabs/licensekit-core';
-import { LicenseError, LicenseKit } from './index';
+import { generateSigningKeys } from '@carchalabs/seal-core';
+import { LicenseError, LicenseKit, Seal } from './index';
 
 test('an unusable public key is rejected when the SDK is created', () => {
-  assert.throws(() => new LicenseKit({ serverUrl: 'http://x', product: 'a', publicKey: '', storageDir: '/tmp' }));
+  assert.throws(() => new Seal({ serverUrl: 'http://x', product: 'a', publicKey: '', storageDir: '/tmp' }));
 });
 
 test('machine id is stable across calls', async () => {
@@ -17,8 +17,8 @@ test('machine id is stable across calls', async () => {
 
 test('fingerprint is a per-product sha256, never the raw id', async () => {
   const opts = { serverUrl: 'http://x', publicKey: generateSigningKeys().publicKeyPem, storageDir: '/tmp', machineId: async () => 'raw-id' };
-  const f1 = await new LicenseKit({ ...opts, product: 'a' }).fingerprint();
-  const f2 = await new LicenseKit({ ...opts, product: 'b' }).fingerprint();
+  const f1 = await new Seal({ ...opts, product: 'a' }).fingerprint();
+  const f2 = await new Seal({ ...opts, product: 'b' }).fingerprint();
   assert.match(f1, /^[a-f0-9]{64}$/);
   assert.notEqual(f1, f2);
   assert.equal(f1.includes('raw-id'), false);
@@ -74,7 +74,7 @@ test('without the OS id there is no silent fallback: an error unless the vendor 
 });
 
 test('the SDK reports machine_id_unavailable instead of activating with a different fingerprint', async () => {
-  const kit = new LicenseKit({
+  const kit = new Seal({
     serverUrl: 'http://127.0.0.1:9',
     product: 'a',
     publicKey: generateSigningKeys().publicKeyPem,
@@ -86,4 +86,8 @@ test('the SDK reports machine_id_unavailable instead of activating with a differ
   const state = await kit.check();
   assert.deepEqual([state.status, state.reason], ['invalid', 'machine_id_unavailable']);
   await assert.rejects(kit.activate('LK-AAAA'), (e: any) => e instanceof LicenseError && e.code === 'machine_id_unavailable');
+});
+
+test('LicenseKit, the class\'s earlier name, is the same class', () => {
+  assert.equal(LicenseKit, Seal);
 });
