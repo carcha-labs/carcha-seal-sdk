@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.5.0
+
+The package is now `@carchalabs/seal-electron` (Carcha Seal, formerly LicenseKit); `@carchalabs/licensekit-electron` is deprecated and gets no further releases. Same behaviour as 0.4.0.
+
+- Install `@carchalabs/seal-electron` and change the import. The class is `Seal` (options: `SealOptions`); `LicenseKit` and `LicenseKitOptions` remain as aliases, so `new LicenseKit(...)` keeps working.
+- Dependencies: `@carchalabs/seal-core` 0.4.0 and the optional native module `@carchalabs/seal-hwid` 0.3.0 (formerly `@carchalabs/licensekit-hwid`). If your build unpacks the native module from the asar, the path is now `node_modules/@carchalabs/seal-hwid*`.
+- Nothing changes on the wire or on disk: leases, device hashes, license keys (`LK-`), offline files and `license.dat` are the same, so activated machines stay activated.
+
 ## 0.4.0
 
 Upgrade from 0.3.0; no code changes needed. Offline activation needs a LicenseKit server with schema 9 (2026-10-15 or later) and a policy with offline days.

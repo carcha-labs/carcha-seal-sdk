@@ -11,13 +11,13 @@ const root = path.join(__dirname, '..');
 const main = require(path.join(root, 'package.json'));
 
 test('every target has a platform package at the main version, listed with that exact version', () => {
-  assert.deepEqual(Object.keys(main.optionalDependencies).sort(), TARGETS.map((t) => `@carchalabs/licensekit-hwid-${t}`).sort());
+  assert.deepEqual(Object.keys(main.optionalDependencies).sort(), TARGETS.map((t) => `@carchalabs/seal-hwid-${t}`).sort());
   for (const t of TARGETS) {
     const pkg = require(path.join(root, 'npm', t, 'package.json'));
-    assert.equal(pkg.name, `@carchalabs/licensekit-hwid-${t}`);
+    assert.equal(pkg.name, `@carchalabs/seal-hwid-${t}`);
     assert.equal(pkg.version, main.version, t);
     assert.equal(main.optionalDependencies[pkg.name], main.version, t);
-    assert.equal(pkg.main, `licensekit-hwid.${t}.node`);
+    assert.equal(pkg.main, `seal-hwid.${t}.node`);
     assert.deepEqual(pkg.files, [pkg.main]);
     assert.equal(pkg.os.length, 1);
     assert.equal(pkg.cpu.length, 1);

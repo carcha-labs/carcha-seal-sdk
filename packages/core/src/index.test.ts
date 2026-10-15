@@ -288,7 +288,7 @@ test('a wrapped feature key opens only with the same license key, product, devic
   assert.throws(() => unwrapFeatureKey(wrapped, wrapKey, 'export'), FeatureCryptoError, 'bound to its feature');
 });
 
-test('licensekit-encrypt writes data that decryptForFeature opens; the key never comes from the command line', async () => {
+test('seal-encrypt writes data that decryptForFeature opens; the key never comes from the command line', async () => {
   const { mkdtempSync, writeFileSync, readFileSync } = await import('node:fs');
   const { join } = await import('node:path');
   const { tmpdir } = await import('node:os');
@@ -298,17 +298,20 @@ test('licensekit-encrypt writes data that decryptForFeature opens; the key never
   writeFileSync(join(dir, 'in.js'), 'module.exports = 42;');
   const lines: string[] = [];
   const io = { out: (s: string) => lines.push(s), err: (s: string) => lines.push(s) };
-  assert.equal(runEncrypt(['--feature', 'pro', join(dir, 'in.js'), join(dir, 'out.lke')], { LICENSEKIT_FEATURE_KEY: key.toString('base64url') }, io), 0);
+  assert.equal(runEncrypt(['--feature', 'pro', join(dir, 'in.js'), join(dir, 'out.lke')], { SEAL_FEATURE_KEY: key.toString('base64url') }, io), 0);
   assert.equal(decryptForFeature(key, 'pro', readFileSync(join(dir, 'out.lke'))).toString(), 'module.exports = 42;');
   writeFileSync(join(dir, 'key.txt'), key.toString('base64url') + '\n');
   assert.equal(runEncrypt(['--feature', 'pro', '--key-file', join(dir, 'key.txt'), join(dir, 'in.js'), join(dir, 'out2.lke')], {}, io), 0);
   assert.equal(decryptForFeature(key, 'pro', readFileSync(join(dir, 'out2.lke'))).toString(), 'module.exports = 42;');
   assert.equal(runEncrypt(['--feature', 'pro', join(dir, 'in.js'), join(dir, 'x')], {}, io), 2, 'no key');
-  assert.equal(runEncrypt(['--feature', 'pro', join(dir, 'in.js'), join(dir, 'x')], { LICENSEKIT_FEATURE_KEY: 'short' }, io), 2);
-  assert.equal(runEncrypt([join(dir, 'in.js'), join(dir, 'x')], { LICENSEKIT_FEATURE_KEY: key.toString('base64url') }, io), 2, 'no feature');
+  assert.equal(runEncrypt(['--feature', 'pro', join(dir, 'in.js'), join(dir, 'x')], { SEAL_FEATURE_KEY: 'short' }, io), 2);
+  assert.equal(runEncrypt([join(dir, 'in.js'), join(dir, 'x')], { SEAL_FEATURE_KEY: key.toString('base64url') }, io), 2, 'no feature');
+  // The variable's earlier name still works.
+  assert.equal(runEncrypt(['--feature', 'pro', join(dir, 'in.js'), join(dir, 'out3.lke')], { LICENSEKIT_FEATURE_KEY: key.toString('base64url') }, io), 0);
+  assert.equal(decryptForFeature(key, 'pro', readFileSync(join(dir, 'out3.lke'))).toString(), 'module.exports = 42;');
 });
 
-test('licensekit-encrypt encrypts every file in a folder to the same paths with .lke', async () => {
+test('seal-encrypt encrypts every file in a folder to the same paths with .lke', async () => {
   const { mkdtempSync, mkdirSync, writeFileSync, readFileSync, existsSync } = await import('node:fs');
   const { join } = await import('node:path');
   const { tmpdir } = await import('node:os');
@@ -320,7 +323,7 @@ test('licensekit-encrypt encrypts every file in a folder to the same paths with 
   writeFileSync(join(dir, 'premium', 'lib', 'math.js'), 'module.exports = { add: (a, b) => a + b };');
   const lines: string[] = [];
   const io = { out: (s: string) => lines.push(s), err: (s: string) => lines.push(s) };
-  assert.equal(runEncrypt(['--feature', 'pro', join(dir, 'premium'), join(dir, 'out')], { LICENSEKIT_FEATURE_KEY: key.toString('base64url') }, io), 0);
+  assert.equal(runEncrypt(['--feature', 'pro', join(dir, 'premium'), join(dir, 'out')], { SEAL_FEATURE_KEY: key.toString('base64url') }, io), 0);
   assert.match(lines.at(-1)!, /Encrypted 2 file/);
   assert.equal(decryptForFeature(key, 'pro', readFileSync(join(dir, 'out', 'index.js.lke'))).toString(), 'module.exports = require("./lib/math");');
   assert.ok(existsSync(join(dir, 'out', 'lib', 'math.js.lke')));

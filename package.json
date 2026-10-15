@@ -1,7 +1,7 @@
 {
-  "name": "licensekit-sdk",
+  "name": "carcha-seal-sdk",
   "private": true,
-  "description": "LicenseKit npm packages: lease format, Electron and Node SDK, terminal quickstart",
+  "description": "Carcha Seal npm packages: lease format, Electron and Node SDK, terminal quickstart",
   "workspaces": [
     "packages/core",
     "packages/sdk-electron",

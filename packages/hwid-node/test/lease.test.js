@@ -8,7 +8,7 @@ const hwid = require('..');
 
 const vectors = JSON.parse(readFileSync(path.join(__dirname, '..', '..', 'lease', 'tests', 'vectors.json'), 'utf8'));
 
-/** keyId as @carchalabs/licensekit-core computes it. */
+/** keyId as @carchalabs/seal-core computes it. */
 const keyId = (pem) => {
   const x = createPublicKey(pem).export({ format: 'jwk' }).x;
   return createHash('sha256').update(JSON.stringify({ crv: 'Ed25519', kty: 'OKP', x })).digest('base64url');
@@ -25,10 +25,10 @@ test('a lease signed by a key the build does not trust is refused, whatever it s
   assert.deepEqual(hwid.verifyLease(valid.token, valid.check), { ok: false, reason: 'unknown_key' });
 });
 
-// A build made with LICENSEKIT_LEASE_PUBLIC_KEYS set to the vectors' test key (CI builds one):
+// A build made with SEAL_LEASE_PUBLIC_KEYS set to the vectors' test key (CI builds one):
 // every vector must give the result the core library gives.
-const testAddon = process.env.LICENSEKIT_LEASE_TEST_ADDON;
-test('every lease vector gives the core library result', { skip: !testAddon && 'set LICENSEKIT_LEASE_TEST_ADDON' }, () => {
+const testAddon = process.env.SEAL_LEASE_TEST_ADDON;
+test('every lease vector gives the core library result', { skip: !testAddon && 'set SEAL_LEASE_TEST_ADDON' }, () => {
   const addon = require(path.resolve(testAddon));
   assert.deepEqual(addon.leaseKeyIds(), [vectors.kid]);
   for (const v of vectors.vectors) {
@@ -44,7 +44,7 @@ test('feature data is decrypted only through a lease the build trusts', () => {
   assert.equal(r.data, undefined);
 });
 
-test('every feature vector gives the core library result', { skip: !testAddon && 'set LICENSEKIT_LEASE_TEST_ADDON' }, () => {
+test('every feature vector gives the core library result', { skip: !testAddon && 'set SEAL_LEASE_TEST_ADDON' }, () => {
   const addon = require(path.resolve(testAddon));
   // The test build takes a device secret as a sixth argument (feature test-device-secret).
   for (const v of vectors.features.decrypts) {
@@ -64,12 +64,12 @@ test('the device key comes from this machine: stable, per product, and it opens 
   assert.throws(() => hwid.devicePublicKey(''), /key must not be empty/);
 });
 
-test('a lease wrapped for this machine\'s device key opens here; one wrapped for another key does not', { skip: !testAddon && 'set LICENSEKIT_LEASE_TEST_ADDON' }, () => {
+test('a lease wrapped for this machine\'s device key opens here; one wrapped for another key does not', { skip: !testAddon && 'set SEAL_LEASE_TEST_ADDON' }, () => {
   const addon = require(path.resolve(testAddon));
   const { createPrivateKey, createPublicKey: pub, diffieHellman, generateKeyPairSync, hkdfSync, randomBytes, sign, createCipheriv } = require('node:crypto');
   const device = addon.devicePublicKey('licensekit:studio');
   if (device === null) return;
-  // Independent of licensekit-core: the construction as documented, with Node's crypto.
+  // Independent of @carchalabs/seal-core: the construction as documented, with Node's crypto.
   const b64 = (b) => Buffer.from(b).toString('base64url');
   const LICENSE = 'LK-7K2M-QX9P-4RTV-8WNB-3HCJ-6DFG-YZ5S';
   const FP = 'f'.repeat(64);

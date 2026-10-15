@@ -377,41 +377,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "licensekit_hwid"
-version = "0.2.0"
-dependencies = [
- "hkdf",
- "hmac",
- "sha2",
- "windows-sys",
-]
-
-[[package]]
-name = "licensekit_hwid_node"
-version = "0.2.0"
-dependencies = [
- "base64",
- "licensekit_hwid",
- "licensekit_lease",
- "napi",
- "napi-build",
- "napi-derive",
-]
-
-[[package]]
-name = "licensekit_lease"
-version = "0.1.0"
-dependencies = [
- "aes-gcm",
- "base64",
- "ed25519-dalek",
- "hkdf",
- "serde_json",
- "sha2",
- "x25519-dalek",
-]
-
-[[package]]
 name = "memchr"
 version = "2.8.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -555,6 +520,41 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cfcb3a22ef46e85b45de6ee7e79d063319ebb6594faafcf1c225ea92ab6e9b92"
 dependencies = [
  "semver",
+]
+
+[[package]]
+name = "seal_hwid"
+version = "0.3.0"
+dependencies = [
+ "hkdf",
+ "hmac",
+ "sha2",
+ "windows-sys",
+]
+
+[[package]]
+name = "seal_hwid_node"
+version = "0.3.0"
+dependencies = [
+ "base64",
+ "napi",
+ "napi-build",
+ "napi-derive",
+ "seal_hwid",
+ "seal_lease",
+]
+
+[[package]]
+name = "seal_lease"
+version = "0.2.0"
+dependencies = [
+ "aes-gcm",
+ "base64",
+ "ed25519-dalek",
+ "hkdf",
+ "serde_json",
+ "sha2",
+ "x25519-dalek",
 ]
 
 [[package]]

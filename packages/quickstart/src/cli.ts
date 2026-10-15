@@ -1,12 +1,12 @@
 import { readFileSync } from 'node:fs';
 import { homedir, platform } from 'node:os';
 import { join } from 'node:path';
-import { LicenseError, LicenseKit, LicenseKitOptions, LicenseState } from '@carchalabs/licensekit-electron';
+import { LicenseError, Seal, SealOptions, LicenseState } from '@carchalabs/seal-electron';
 
 export const PRODUCT = 'licensekit-demo';
 export const DEFAULT_SERVER_URL = 'https://seal.carchalabs.com';
-export const DEVICE_NAME = 'LicenseKit quickstart';
-const COMMAND = 'npx @carchalabs/licensekit-quickstart';
+export const DEVICE_NAME = 'Carcha Seal quickstart';
+const COMMAND = 'npx @carchalabs/seal-quickstart';
 
 export interface RunOptions {
   out: (line: string) => void;
@@ -16,7 +16,7 @@ export interface RunOptions {
   fetchImpl?: typeof fetch;
   machineId?: () => Promise<string>;
   /** Passed to the SDK (tests simulate machines; the CLI itself reads the hardware). */
-  hardware?: LicenseKitOptions['hardware'];
+  hardware?: SealOptions['hardware'];
 }
 
 const USAGE = [
@@ -64,7 +64,7 @@ export async function run(args: string[], options: RunOptions): Promise<number> 
     USAGE.forEach((line) => out(line));
     return 2;
   }
-  const kit = new LicenseKit({
+  const kit = new Seal({
     serverUrl: options.serverUrl ?? DEFAULT_SERVER_URL,
     product: PRODUCT,
     publicKey: options.publicKeys ?? bundledPublicKeys(),

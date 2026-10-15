@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "licensekit_hwid.h"
+#include "seal_hwid.h"
 
 int main(void) {
     const uint8_t key[] = "product-a";

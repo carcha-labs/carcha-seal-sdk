@@ -31,7 +31,7 @@ export interface LeaseCheck {
 
 export interface LeaseVerdict {
   ok: boolean;
-  /** The failure reason, as @carchalabs/licensekit-core names it; absent when ok. */
+  /** The failure reason, as @carchalabs/seal-core names it; absent when ok. */
   reason?: string;
   /** Id of the key that signed the lease; present when ok. */
   kid?: string;
@@ -39,7 +39,7 @@ export interface LeaseVerdict {
 
 /**
  * Verifies a lease with the public keys compiled into this build and the same rules,
- * order and reasons as verifyLease in @carchalabs/licensekit-core.
+ * order and reasons as verifyLease in @carchalabs/seal-core.
  */
 export function verifyLease(token: string, check: LeaseCheck): LeaseVerdict;
 
@@ -53,12 +53,12 @@ export interface FeatureDecrypt {
 
 /**
  * Verifies the lease (compiled-in keys), unwraps the feature's content key for this license key and
- * device, and decrypts data encrypted for the feature (encryptForFeature in licensekit-core). The
+ * device, and decrypts data encrypted for the feature (encryptForFeature in @carchalabs/seal-core). The
  * content key never reaches JavaScript.
  */
 export function decryptFeature(token: string, check: LeaseCheck, licenseKey: string, feature: string, data: Buffer): FeatureDecrypt;
 
-/** Ids of the lease signing keys this build trusts (keyId in @carchalabs/licensekit-core). */
+/** Ids of the lease signing keys this build trusts (keyId in @carchalabs/seal-core). */
 export function leaseKeyIds(): string[];
 
 /**

@@ -5,7 +5,7 @@ import { createRequire } from 'node:module';
 import { hostname, platform } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { compileFunction } from 'node:vm';
-import { decodeLease, decryptFeature, hashFingerprint, keySet, LeaseClaims, LeaseFailure, LeaseVerifyOptions, LeaseVerifyResult, verifyLease } from '@carchalabs/licensekit-core';
+import { decodeLease, decryptFeature, hashFingerprint, keySet, LeaseClaims, LeaseFailure, LeaseVerifyOptions, LeaseVerifyResult, verifyLease } from '@carchalabs/seal-core';
 import { MachineIdUnavailableError, readMachineId } from './fingerprint';
 
 export { MachineIdUnavailableError, readMachineId };
@@ -17,7 +17,7 @@ export const SDK_VERSION: string = require('../package.json').version;
 export type LicenseStatus = 'valid' | 'grace' | 'invalid' | 'unlicensed' | 'clock_suspect';
 
 /**
- * Something the server asks the app to act on: sdk_update_recommended (update LicenseKit in the app) or
+ * Something the server asks the app to act on: sdk_update_recommended (update the Carcha Seal SDK in the app) or
  * app_update_recommended (the vendor's minimum app version), each with minimum and requiredFrom.
  */
 export interface LicenseNotice {
@@ -45,7 +45,7 @@ export interface LicenseState {
   offlineActivated?: boolean;
 }
 
-/** Hashed hardware components (see @carchalabs/licensekit-hwid); the server matches a device by them. */
+/** Hashed hardware components (see @carchalabs/seal-hwid); the server matches a device by them. */
 export interface HardwareReport {
   components: { kind: string; hash: string }[];
   /** True when the device runs as a virtual machine. */
@@ -58,7 +58,7 @@ export interface SecureStore {
   isProtected?(): boolean;
 }
 
-export interface LicenseKitOptions {
+export interface SealOptions {
   serverUrl: string;
   product: string;
   publicKey: string | string[];
@@ -73,7 +73,7 @@ export interface LicenseKitOptions {
   allowFallbackFingerprint?: boolean;
   /**
    * Hardware components sent with each request, so the device keeps its seat after a new disk, network
-   * card or OS install. Default: read with @carchalabs/licensekit-hwid when it is installed; nothing is
+   * card or OS install. Default: read with @carchalabs/seal-hwid when it is installed; nothing is
    * sent when it is not (or cannot load on this platform). false: never send them. A function: your own.
    */
   hardware?: false | (() => HardwareReport | null | Promise<HardwareReport | null>);
@@ -101,14 +101,14 @@ const OFFLINE_DEACTIVATION_FORMAT = 'licensekit-offline-deactivation';
 
 const DEFINITIVE = new Set(['invalid_key', 'not_activated', 'license_suspended', 'license_revoked', 'license_expired', 'sdk_update_required', 'app_update_required', 'vm_not_allowed']);
 /** The native hardware module. A non-literal require: bundlers leave it to Node, which must load the .node file from disk. */
-const HWID_PACKAGE = '@carchalabs/licensekit-hwid';
-/** The native module's lease verifier (@carchalabs/licensekit-hwid 0.2+): its keys are compiled in. */
+const HWID_PACKAGE = '@carchalabs/seal-hwid';
+/** The native module's lease verifier (@carchalabs/seal-hwid 0.2+): its keys are compiled in. */
 interface NativeLease {
   verifyLease(token: string, check: { product: string; fingerprintHash: string; now: number; graceSeconds?: number }): { ok: boolean; reason?: string };
   leaseKeyIds(): string[];
   /** This machine's X25519 public key from its hardware (base64url), or null. */
   devicePublicKey?(key: string): string | null;
-  /** @carchalabs/licensekit-hwid 0.2+ with feature keys. */
+  /** @carchalabs/seal-hwid 0.2+ with feature keys. */
   decryptFeature?(
     token: string,
     check: { product: string; fingerprintHash: string; now: number; graceSeconds?: number },
@@ -173,7 +173,7 @@ function noticesFrom(response: any): { notices?: LicenseNotice[] } {
   return list.length ? { notices: list } : {};
 }
 
-export class LicenseKit {
+export class Seal {
   private readonly file: string;
   private readonly keys: Map<string, KeyObject>;
   private fingerprintCache?: string;
@@ -182,7 +182,7 @@ export class LicenseKit {
   private nativeLease?: NativeLease | null;
   private deviceKeyCache?: string | null;
 
-  constructor(private readonly opts: LicenseKitOptions) {
+  constructor(private readonly opts: SealOptions) {
     this.file = join(opts.storageDir, 'license.dat');
     this.keys = keySet(Array.isArray(opts.publicKey) ? opts.publicKey : [opts.publicKey]);
   }
@@ -449,7 +449,7 @@ export class LicenseKit {
   }
 
   /**
-   * Decrypts data you encrypted for a feature (encryptForFeature in @carchalabs/licensekit-core, with the
+   * Decrypts data you encrypted for a feature (encryptForFeature in @carchalabs/seal-core, with the
    * feature's content key from the console). Works offline: it uses the saved lease, which must be valid
    * (or in its offline grace period), grant the feature and carry its key, and the saved license key.
    * The native module does the work when it trusts this app's keys, so the content key never reaches
@@ -461,7 +461,7 @@ export class LicenseKit {
   }
 
   /**
-   * Envelope: loads a CommonJS module you encrypted for a feature (licensekit-encrypt, one file or a
+   * Envelope: loads a CommonJS module you encrypted for a feature (seal-encrypt, one file or a
    * folder) and returns its exports, like require(). The code is decrypted with the lease's feature key
    * (see decrypt) and compiled from memory; it never exists as a plain file. Relative requires inside
    * it load encrypted neighbours (`./x` finds `x.lke`, `x.js.lke` or `x/index.js.lke`), anything else
@@ -569,10 +569,10 @@ export class LicenseKit {
     try {
       file = JSON.parse(licenseFile);
     } catch {
-      throw new LicenseError('invalid_file', 'This is not a LicenseKit offline license file.');
+      throw new LicenseError('invalid_file', 'This is not a Carcha Seal offline license file.');
     }
     if (!file || file.format !== OFFLINE_LICENSE_FORMAT || file.version !== 1 || typeof file.token !== 'string' || typeof file.licenseKey !== 'string') {
-      throw new LicenseError('invalid_file', 'This is not a LicenseKit offline license file.');
+      throw new LicenseError('invalid_file', 'This is not a Carcha Seal offline license file.');
     }
     if (file.product !== this.opts.product) throw new LicenseError('wrong_product', 'This offline license file is for another product.');
     const stored: Leased = { licenseKey: file.licenseKey.trim().toUpperCase(), token: file.token, lastSeen: this.nowSec(), offline: true };
@@ -616,3 +616,8 @@ export class LicenseKit {
     return (state.status === 'valid' || state.status === 'grace') && state.features.includes(feature);
   }
 }
+
+/** The SDK class under its earlier name (LicenseKit). Same class; use Seal in new code. */
+export { Seal as LicenseKit };
+/** @deprecated The options under the class's earlier name; use SealOptions. */
+export type LicenseKitOptions = SealOptions;

@@ -1,9 +1,9 @@
 [package]
-name = "licensekit_lease"
-version = "0.1.0"
+name = "seal_lease"
+version = "0.2.0"
 edition = "2024"
 rust-version = "1.85"
-description = "Verifies LicenseKit leases (Ed25519-signed JWS) and decrypts feature data, with the same rules as @carchalabs/licensekit-core."
+description = "Verifies Carcha Seal leases (Ed25519-signed JWS) and decrypts feature data, with the same rules as @carchalabs/seal-core."
 license = "MIT"
 publish = false
 
