@@ -1,0 +1,39 @@
+# Known-vulnerability gate (security sprint S1): npm audit on the workspace lockfile and cargo audit (RustSec
+# advisory database) on every Cargo.lock. Fails on high and critical npm advisories and on any RustSec vulnerability.
+# ci.yml calls it on every push and pull request, publish.yml before a release is published; it also runs daily,
+# because advisories are published without any change here.
+name: Audit
+on:
+  workflow_call:
+  schedule:
+    - cron: '41 4 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  CARGO_AUDIT_VERSION: 0.22.2
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: npm audit
+        run: npm audit --package-lock-only --audit-level=high
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cargo/bin/cargo-audit
+          key: cargo-audit-${{ env.CARGO_AUDIT_VERSION }}-${{ runner.os }}
+      - name: cargo audit (hwid, lease, hwid-node)
+        run: |
+          command -v cargo-audit || cargo install cargo-audit --locked --version "$CARGO_AUDIT_VERSION"
+          for lock in packages/hwid/Cargo.lock packages/lease/Cargo.lock packages/hwid-node/Cargo.lock; do
+            echo "::group::$lock"
+            cargo audit --file "$lock"
+            echo "::endgroup::"
+          done

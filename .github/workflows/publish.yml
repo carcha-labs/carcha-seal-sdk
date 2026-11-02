@@ -38,8 +38,12 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
+  # Known advisories (audit.yml): nothing is published while a high one is open.
+  audit:
+    uses: ./.github/workflows/audit.yml
+
   publish:
-    needs: hwid
+    needs: [hwid, audit]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
