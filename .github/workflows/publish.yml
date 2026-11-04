@@ -20,18 +20,27 @@ jobs:
           - { target: win32-x64-msvc, os: windows-latest }
           - { target: linux-x64-gnu, os: ubuntu-22.04 }
     runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
     defaults:
       run:
         working-directory: packages/hwid-node
         shell: bash
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1  # v7.1.0
         with:
           node-version: 22
       - run: node scripts/build.js --npm
       - run: npm test
-      - uses: actions/upload-artifact@v4
+      # SLSA build provenance for the native file, signed with Sigstore and kept by GitHub:
+      # gh attestation verify <file> -R carcha-labs/carcha-seal-sdk
+      - uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6  # v4.2.2
+        with:
+          subject-path: packages/hwid-node/npm/${{ matrix.target }}/seal-hwid.${{ matrix.target }}.node
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
         with:
           name: hwid-node-${{ matrix.target }}
           path: packages/hwid-node/npm/${{ matrix.target }}/seal-hwid.${{ matrix.target }}.node
@@ -46,17 +55,18 @@ jobs:
     needs: [hwid, audit]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1  # v7.1.0
         with:
           node-version: 22
           registry-url: https://registry.npmjs.org
-      # 11.15.0: staged publishing (needed to create a new package without a 2FA-bypass token).
-      - run: npm install -g npm@^11.15.0
+      # 11.15.0 or later: staged publishing (needed to create a new package without a 2FA-bypass
+      # token). An exact version, since this job can publish; Dependabot does not move it.
+      - run: npm install -g npm@11.21.1
       # npm ci and the tests come after the hardware module is published (step below): the lock
       # file cannot list a new hwid version before it is on npm, and npm 11 ci refuses a lock that
       # misses a declared (even optional) dependency.
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333  # v8.0.2
         with:
           pattern: hwid-node-*
           path: hwid-artifacts
@@ -88,7 +98,8 @@ jobs:
               (cd "$dir" && npm publish --provenance --loglevel verbose)
             else
               echo "$name is new on npm: staging $version for approval"
-              (cd "$dir" && npm stage publish)
+              # --provenance: with a token, as here, npm adds a provenance statement only when asked.
+              (cd "$dir" && npm stage publish --provenance)
             fi
           }
           # Dependency order: platform packages, the hardware module, then core, electron, quickstart.
@@ -113,3 +124,68 @@ jobs:
           npm test
 
           for dir in packages/core packages/sdk-electron packages/quickstart; do publish "$dir"; done
+
+  # A CycloneDX SBOM (CRA Annex I Part II(1)) for each package version on npm, attached to the
+  # GitHub release. A JavaScript package: the package as published, its dependencies resolved as a
+  # consumer's install resolves them. A platform package: the Rust crates compiled into its native
+  # file for that target, from the committed Cargo.lock.
+  sbom:
+    needs: publish
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1  # v7.1.0
+        with:
+          node-version: 22
+      - run: npm install -g npm@11.21.1  # as in the publish job
+      - name: JavaScript packages
+        shell: bash
+        run: |
+          mkdir -p sbom
+          for dir in packages/hwid-node packages/core packages/sdk-electron packages/quickstart; do
+            name=$(node -p "require('./$dir/package.json').name")
+            version=$(node -p "require('./$dir/package.json').version")
+            if ! npm view "$name@$version" version > /dev/null 2>&1; then
+              echo "::warning::$name@$version is not on npm (staged for approval?): no SBOM for it"
+              continue
+            fi
+            work=$(mktemp -d)
+            (cd "$work" && npm pack "$name@$version" --silent > /dev/null && tar xzf ./*.tgz)
+            (cd "$work/package" &&
+              npm install --package-lock-only --ignore-scripts --no-audit --no-fund > /dev/null &&
+              npm sbom --sbom-format cyclonedx --sbom-type library --omit dev --package-lock-only) \
+              > "sbom/${name#@carchalabs/}-$version.cdx.json"
+          done
+      - name: Platform packages (Rust crates in the native file)
+        shell: bash
+        working-directory: packages/hwid-node
+        run: |
+          cargo install cargo-cyclonedx --version 0.5.9 --locked
+          SOURCE_DATE_EPOCH=$(git log -1 --format=%ct)  # reproducible timestamp: the commit time
+          export SOURCE_DATE_EPOCH
+          for t in darwin-arm64:aarch64-apple-darwin darwin-x64:x86_64-apple-darwin \
+                   win32-x64-msvc:x86_64-pc-windows-msvc linux-x64-gnu:x86_64-unknown-linux-gnu; do
+            dir=npm/${t%%:*} triple=${t#*:}
+            name=$(node -p "require('./$dir/package.json').name")
+            version=$(node -p "require('./$dir/package.json').version")
+            if ! npm view "$name@$version" version > /dev/null 2>&1; then
+              echo "::warning::$name@$version is not on npm (staged for approval?): no SBOM for it"
+              continue
+            fi
+            cargo cyclonedx --format json --spec-version 1.5 --describe binaries --no-build-deps \
+              --target "$triple" --target-in-filename -q
+            mv "seal_hwid_node_cdylib_$triple.cdx.json" "../../sbom/${name#@carchalabs/}-$version.cdx.json"
+          done
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
+        with:
+          name: sbom
+          path: sbom/*.cdx.json
+          if-no-files-found: error
+      - name: Attach to the release
+        if: github.event_name == 'release'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.event.release.tag_name }}
+        run: gh release upload "$TAG" sbom/*.cdx.json --clobber --repo "$GITHUB_REPOSITORY"

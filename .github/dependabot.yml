@@ -1,0 +1,51 @@
+# Dependabot version updates, one grouped pull request per ecosystem a month. For GitHub
+# Actions it moves the commit pins and their version comments. A new release is offered only
+# after 7 days, so a compromised release has time to be found first. Security updates for
+# known advisories are separate (Dependabot security updates, in the repository settings).
+#
+# Only updates that keep the declared ranges are grouped: a major (or, in Cargo, a breaking
+# 0.x) release changes the code it needs and the versions it supports, so it is a decision
+# of its own, not part of a monthly bump.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    cooldown:
+      default-days: 7
+    # Minor and patch releases in one pull request; a major release comes as its own pull
+    # request, to be read against its release notes (publish.yml runs only on a release).
+    groups:
+      github-actions:
+        patterns: ["*"]
+        update-types: [minor, patch]
+
+  # The workspace root lock covers core, sdk-electron and quickstart. lockfile-only: the
+  # ranges in package.json stay as declared (@types/node follows engines.node 22).
+  - package-ecosystem: npm
+    directory: /
+    versioning-strategy: lockfile-only
+    schedule:
+      interval: monthly
+    cooldown:
+      default-days: 7
+    groups:
+      npm:
+        patterns: ["*"]
+
+  # lockfile-only: newer versions within the Cargo.toml requirements; a new 0.x minor
+  # (hkdf 0.13, aes-gcm 0.11) or major (ed25519-dalek 3) is a breaking change in Cargo.
+  - package-ecosystem: cargo
+    versioning-strategy: lockfile-only
+    directories:
+      - /packages/hwid
+      - /packages/lease
+      - /packages/hwid-node
+    schedule:
+      interval: monthly
+    cooldown:
+      default-days: 7
+    groups:
+      cargo:
+        patterns: ["*"]

@@ -405,4 +405,45 @@ mod tests {
             Failure::UnknownKey
         );
     }
+
+    /// Algorithm confusion (OWASP JWT; CWE-347): only the exact header alg "Ed25519" reaches the key. HMAC with the
+    /// public key as secret, EdDSA, RSA, another case, a missing alg and a non-string alg are all refused first.
+    #[test]
+    fn only_ed25519_is_accepted_as_alg() {
+        let keys = [TrustedKey::from_spki_pem(CURRENT).unwrap()];
+        let o = Options { keys: &keys, product: "p", fingerprint_hash: "f", issuer: None, now: 0.0, grace_seconds: 0.0, leeway_seconds: DEFAULT_LEEWAY_SECONDS };
+        let header = |json: &str| b64().encode(json);
+        for alg in [r#""none""#, r#""HS256""#, r#""EdDSA""#, r#""RS256""#, r#""ES256""#, r#""ed25519""#, r#""""#, "null", "1", r#"["Ed25519"]"#] {
+            let token = format!("{}.e30.c2ln", header(&format!(r#"{{"alg":{alg},"typ":"licensekit-lease+jwt","kid":"x"}}"#)));
+            assert_eq!(verify(&token, &o).unwrap_err().0, Failure::UnsupportedAlgorithm, "alg {alg}");
+        }
+        let missing = format!("{}.e30.c2ln", header(r#"{"typ":"licensekit-lease+jwt","kid":"x"}"#));
+        assert_eq!(verify(&missing, &o).unwrap_err().0, Failure::UnsupportedAlgorithm);
+    }
+
+    /// AES-256-GCM (NIST SP 800-38D): data that does not authenticate yields nothing, never partial plaintext
+    /// (RUSTSEC-2023-0096 was about plaintext left behind on a failed tag check).
+    #[test]
+    fn a_failed_tag_returns_no_plaintext() {
+        use aes_gcm::aead::{Aead, KeyInit, Payload};
+        let key = [7u8; 32];
+        let nonce = [9u8; NONCE_BYTES];
+        let plaintext = b"feature data";
+        let mut sealed = nonce.to_vec();
+        sealed.extend(aes_gcm::Aes256Gcm::new((&key).into()).encrypt(aes_gcm::Nonce::from_slice(&nonce), Payload { msg: plaintext, aad: b"LKE1:f" }).unwrap());
+        let mut data = ENCRYPTED_MAGIC.to_vec();
+        data.extend(&sealed);
+        assert_eq!(decrypt_for_feature(&key, "f", &data).as_deref(), Some(&plaintext[..]), "the untouched data opens");
+
+        let last = data.len() - 1;
+        for i in [ENCRYPTED_MAGIC.len() + NONCE_BYTES, last - TAG_BYTES + 1, last] {
+            let mut flipped = data.clone();
+            flipped[i] ^= 1;
+            assert_eq!(decrypt_for_feature(&key, "f", &flipped), None, "one bit flipped at byte {i}");
+        }
+        assert_eq!(decrypt_for_feature(&key, "other", &data), None, "another feature (associated data)");
+        assert_eq!(decrypt_for_feature(&[8u8; 32], "f", &data), None, "another key");
+        assert_eq!(decrypt_for_feature(&key, "f", &data[..data.len() - 1]), None, "a truncated tag");
+        assert_eq!(decrypt_for_feature(&key, "f", &data[..ENCRYPTED_MAGIC.len() + NONCE_BYTES + TAG_BYTES - 1]), None, "shorter than nonce and tag");
+    }
 }

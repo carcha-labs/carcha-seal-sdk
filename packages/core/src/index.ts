@@ -286,7 +286,14 @@ export function featureWrapKey(licenseKey: string, product: string, fingerprintH
   return Buffer.from(hkdfSync('sha256', Buffer.from(normalizeLicenseKey(licenseKey), 'utf8'), FEATURE_WRAP_SALT, info, 32));
 }
 
-function seal(key: Buffer, plaintext: Buffer, aad: string, nonce: Buffer): Buffer {
+/**
+ * AES-256-GCM with a fresh random 96-bit nonce for every message (NIST SP 800-38D §8.2.2, the RBG-based construction).
+ * The nonce is made here and nowhere else, so no caller can reuse one under a key. Random nonces allow up to 2^32
+ * messages per key (§8.3); a feature's content key encrypts a vendor's few asset files, and each lease has its own
+ * wrap key.
+ */
+function seal(key: Buffer, plaintext: Buffer, aad: string): Buffer {
+  const nonce = randomBytes(GCM_NONCE_BYTES);
   const cipher = createCipheriv('aes-256-gcm', key, nonce, { authTagLength: GCM_TAG_BYTES });
   cipher.setAAD(Buffer.from(aad, 'utf8'));
   return Buffer.concat([nonce, cipher.update(plaintext), cipher.final(), cipher.getAuthTag()]);
@@ -307,9 +314,9 @@ function open(key: Buffer, sealed: Buffer, aad: string): Buffer {
 }
 
 /** Wraps a feature's content key for one lease (the value of claims.fk[feature]), base64url. */
-export function wrapFeatureKey(contentKey: Buffer, wrapKey: Buffer, feature: string, nonce: Buffer = randomBytes(GCM_NONCE_BYTES)): string {
+export function wrapFeatureKey(contentKey: Buffer, wrapKey: Buffer, feature: string): string {
   if (contentKey.length !== 32) throw new FeatureCryptoError('a content key is 32 bytes');
-  return toBase64Url(seal(wrapKey, contentKey, `fk:${feature}`, nonce));
+  return toBase64Url(seal(wrapKey, contentKey, `fk:${feature}`));
 }
 
 export function unwrapFeatureKey(wrapped: string, wrapKey: Buffer, feature: string): Buffer {
@@ -320,9 +327,9 @@ export function unwrapFeatureKey(wrapped: string, wrapKey: Buffer, feature: stri
 }
 
 /** Encrypts data for a feature: "LKE1" || nonce || AES-256-GCM ciphertext || tag, the feature as associated data. */
-export function encryptForFeature(contentKey: Buffer, feature: string, data: Buffer, nonce: Buffer = randomBytes(GCM_NONCE_BYTES)): Buffer {
+export function encryptForFeature(contentKey: Buffer, feature: string, data: Buffer): Buffer {
   if (contentKey.length !== 32) throw new FeatureCryptoError('a content key is 32 bytes');
-  return Buffer.concat([ENCRYPTED_MAGIC, seal(contentKey, data, `LKE1:${feature}`, nonce)]);
+  return Buffer.concat([ENCRYPTED_MAGIC, seal(contentKey, data, `LKE1:${feature}`)]);
 }
 
 export function decryptForFeature(contentKey: Buffer, feature: string, encrypted: Buffer): Buffer {

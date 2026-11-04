@@ -272,6 +272,23 @@ test('feature data: only the right content key and feature open it, and any chan
   assert.throws(() => encryptForFeature(Buffer.alloc(16), 'pro', data), FeatureCryptoError);
 });
 
+test('AES-GCM nonces: a new random one for every message under a key (NIST SP 800-38D §8)', () => {
+  const key = generateFeatureKey();
+  const N = 10_000;
+  const data = new Set<string>();
+  const wrapped = new Set<string>();
+  for (let i = 0; i < N; i++) {
+    const sealed = encryptForFeature(key, 'pro', Buffer.from('same data'));
+    data.add(sealed.subarray(4, 16).toString('hex'));
+    wrapped.add(Buffer.from(wrapFeatureKey(key, key, 'pro'), 'base64url').subarray(0, 12).toString('hex'));
+  }
+  assert.equal(data.size, N, 'encryptForFeature: N messages, N distinct nonces');
+  assert.equal(wrapped.size, N, 'wrapFeatureKey: N wraps, N distinct nonces');
+  // The nonce is not something a caller can pass (and so reuse).
+  assert.equal(encryptForFeature.length, 3);
+  assert.equal(wrapFeatureKey.length, 3);
+});
+
 test('a wrapped feature key opens only with the same license key, product, device and lease id', () => {
   const content = generateFeatureKey();
   const wrapKey = featureWrapKey('LK-AAAA-BBBB', 'studio', 'fp', 'lease-1');
