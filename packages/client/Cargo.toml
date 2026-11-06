@@ -1,0 +1,21 @@
+[package]
+name = "seal_client"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.85"
+description = "Carcha Seal license client for the native SDKs: activation, check-ins, offline grace, clock checks, offline files and feature decryption, with the HTTP request left to the caller."
+license = "MIT"
+publish = false
+
+[dependencies]
+seal_lease = { path = "../lease" }
+serde_json = "1"
+sha2 = "0.10"
+
+[dev-dependencies]
+base64 = "0.22"
+
+[profile.release]
+lto = true
+codegen-units = 1
+strip = true

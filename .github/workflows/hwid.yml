@@ -1,13 +1,14 @@
 # Builds and tests the native cores on each OS: hardware ids (packages/hwid), lease
-# verification (packages/lease) and their C interface for C, C++, C# and Java (packages/native).
+# verification (packages/lease), the license client (packages/client) and their C interface for
+# C, C++, C# and Java (packages/native).
 name: hwid
 
 on:
   push:
     branches: [main]
-    paths: ["packages/hwid/**", "packages/lease/**", "packages/native/**", ".github/workflows/hwid.yml"]
+    paths: ["packages/hwid/**", "packages/lease/**", "packages/native/**", "packages/client/**", ".github/workflows/hwid.yml"]
   pull_request:
-    paths: ["packages/hwid/**", "packages/lease/**", "packages/native/**", ".github/workflows/hwid.yml"]
+    paths: ["packages/hwid/**", "packages/lease/**", "packages/native/**", "packages/client/**", ".github/workflows/hwid.yml"]
 
 permissions:
   contents: read
@@ -34,6 +35,9 @@ jobs:
       - name: C program linked against the static library
         if: runner.os != 'Windows'
         run: tests/c/run.sh
+      - name: License client (clippy, every scenario recorded from the Electron SDK)
+        working-directory: packages/client
+        run: cargo clippy --all-targets -- -D warnings && cargo test
       - name: C interface (clippy, every lease and decrypt vector through the C functions)
         working-directory: packages/native
         run: cargo clippy --all-targets --features test-device-secret -- -D warnings && cargo test --features test-device-secret

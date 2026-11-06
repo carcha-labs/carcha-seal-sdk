@@ -41,6 +41,7 @@ updates:
     directories:
       - /packages/hwid
       - /packages/lease
+      - /packages/client
       - /packages/native
       - /packages/hwid-node
     schedule:
