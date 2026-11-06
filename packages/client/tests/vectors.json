@@ -1,0 +1,3440 @@
+{
+  "publicKey": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAy+BD73exRVhWXnfdiUHFz1XQ1wirGGATKTeWUfIyb+Y=\n-----END PUBLIC KEY-----\n",
+  "server": "https://seal.example.com",
+  "scenarios": [
+    {
+      "name": "nothing activated",
+      "options": {
+        "product": "studio",
+        "publicKey": [
+          "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAy+BD73exRVhWXnfdiUHFz1XQ1wirGGATKTeWUfIyb+Y=\n-----END PUBLIC KEY-----\n"
+        ],
+        "appVersion": "2.4.0"
+      },
+      "machineId": "linux:0123456789abcdef0123456789abcdef",
+      "steps": [
+        {
+          "call": "check",
+          "nowMs": 1800000000000
+        }
+      ],
+      "outcomes": [
+        {
+          "requests": [],
+          "result": {
+            "ok": true,
+            "value": {
+              "status": "unlicensed",
+              "offline": false,
+              "storageProtected": false,
+              "features": [],
+              "expiresAt": null
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "activate, then check in online",
+      "options": {
+        "product": "studio",
+        "publicKey": [
+          "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAy+BD73exRVhWXnfdiUHFz1XQ1wirGGATKTeWUfIyb+Y=\n-----END PUBLIC KEY-----\n"
+        ],
+        "appVersion": "2.4.0"
+      },
+      "machineId": "linux:0123456789abcdef0123456789abcdef",
+      "steps": [
+        {
+          "call": "activate",
+          "args": [
+            "  lk-7k2m-qx9p-4rtv-8wnb-3hcj-6dfg-yz5s ",
+            "Design PC"
+          ],
+          "nowMs": 1800000000000,
+          "response": {
+            "status": 200,
+            "body": {
+              "token": "eyJhbGciOiJFZDI1NTE5IiwidHlwIjoibGljZW5zZWtpdC1sZWFzZStqd3QiLCJraWQiOiJTd1J3SU1NWUIzSE00aGV2b0FoLXdzV0R5SVM4YzU1bWlWZWFfc2xGam1BIn0.eyJpc3MiOiJsaWNlbnNla2l0Iiwic3ViIjoibGljXzEiLCJhdWQiOiJzdHVkaW8iLCJqdGkiOiJsZWFzZS0xIiwiaWF0IjoxODAwMDAwMDAwLCJuYmYiOjE4MDAwMDAwMDAsImV4cCI6MTgzMTUzNjAwMCwicmV2IjoxODAwMjU5MjAwLCJmcCI6IjhjNzA0Mzc2OWNjY2YwNWVjNDQ0YWI1Nzg2ZDFjYzEwNGIwMmU4Mzc5ODM4ZjE1NGRiMTUyY2QyNWUwMTEzNGQiLCJmZWF0IjpbInBybyJdLCJjdXMiOiJBY21lIn0.YK2kRWj3lfZ7ED4WukWR1yc_rxd0nzUqkNkNjWgIGLowZNkFwLgaSYXBKEOgsqnizyzavqMDeeiNsCZ3bf4rCw"
+            }
+          }
+        },
+        {
+          "call": "check",
+          "nowMs": 1800003600000,
+          "response": {
+            "status": 200,
+            "body": {
+              "token": "eyJhbGciOiJFZDI1NTE5IiwidHlwIjoibGljZW5zZWtpdC1sZWFzZStqd3QiLCJraWQiOiJTd1J3SU1NWUIzSE00aGV2b0FoLXdzV0R5SVM4YzU1bWlWZWFfc2xGam1BIn0.eyJpc3MiOiJsaWNlbnNla2l0Iiwic3ViIjoibGljXzEiLCJhdWQiOiJzdHVkaW8iLCJqdGkiOiJsZWFzZS0yIiwiaWF0IjoxODAwMDAzNjAwLCJuYmYiOjE4MDAwMDM2MDAsImV4cCI6MTgzMTUzOTYwMCwicmV2IjoxODAwMjYyODAwLCJmcCI6IjhjNzA0Mzc2OWNjY2YwNWVjNDQ0YWI1Nzg2ZDFjYzEwNGIwMmU4Mzc5ODM4ZjE1NGRiMTUyY2QyNWUwMTEzNGQiLCJmZWF0IjpbInBybyJdLCJjdXMiOiJBY21lIn0.KzaYPaF159fr6TaTQRumuso58-HaNaWvDlDaI62oLbtccrBb5e7r7Zp2wJ7Qt1j7FAVabMPnoud-s7t5z9gRDw",
+              "notices": [
+                {
+                  "code": "sdk_update_recommended",
+                  "minimum": "0.6.0",
+                  "requiredFrom": null
+                }
+              ]
+            }
+          }
+        },
+        {
+          "call": "check",
+          "nowMs": 1800007200000,
+          "response": {
+            "network": true
+          }
+        }
+      ],
+      "outcomes": [
+        {
+          "requests": [
+            {
+              "path": "/v1/activate",
+              "body": {
+                "licenseKey": "LK-7K2M-QX9P-4RTV-8WNB-3HCJ-6DFG-YZ5S",
+                "product": "studio",
+                "fingerprint": "8c7043769cccf05ec444ab5786d1cc104b02e8379838f154db152cd25e01134d",
+                "machineName": "Design PC",
+                "platform": "<platform>",
+                "appVersion": "2.4.0",
+                "sdkVersion": "<sdk-version>"
+              }
+            }
+          ],
+          "result": {
+            "ok": true,
+            "value": {
+              "status": "valid",
+              "offline": false,
+              "customer": "Acme",
+              "features": [
+                "pro"
+              ],
+              "expiresAt": "2028-01-15T08:00:00.000Z",
+              "maintenanceUntil": null,
+              "storageProtected": false,
+              "keyHint": "LK-7K2M…YZ5S",
+              "revalidateBy": "2027-01-18T08:00:00.000Z"
+            }
+          }
+        },
+        {
+          "requests": [
+            {
+              "path": "/v1/validate",
+              "body": {
+                "licenseKey": "LK-7K2M-QX9P-4RTV-8WNB-3HCJ-6DFG-YZ5S",
+                "product": "studio",
+                "fingerprint": "8c7043769cccf05ec444ab5786d1cc104b02e8379838f154db152cd25e01134d",
+                "appVersion": "2.4.0",
+                "sdkVersion": "<sdk-version>"
+              }
+            }
+          ],
+          "result": {
+            "ok": true,
+            "value": {
+              "status": "valid",
+              "offline": false,
+              "customer": "Acme",
+              "features": [
+                "pro"
+              ],
+              "expiresAt": "2028-01-15T09:00:00.000Z",
+              "maintenanceUntil": null,
+              "storageProtected": false,
+              "keyHint": "LK-7K2M…YZ5S",
+              "notices": [
+                {
+                  "code": "sdk_update_recommended",
+                  "minimum": "0.6.0",
+                  "requiredFrom": null
+                }
+              ],
+              "revalidateBy": "2027-01-18T09:00:00.000Z"
+            }
+          }
+        },
+        {
+          "requests": [
+            {
+              "path": "/v1/validate",
+              "body": {
+                "licenseKey": "LK-7K2M-QX9P-4RTV-8WNB-3HCJ-6DFG-YZ5S",
+                "product": "studio",
+                "fingerprint": "8c7043769cccf05ec444ab5786d1cc104b02e8379838f154db152cd25e01134d",
+                "appVersion": "2.4.0",
+                "sdkVersion": "<sdk-version>"
+              }
+            }
+          ],
+          "result": {
+            "ok": true,
+            "value": {
+              "status": "valid",
+              "offline": true,
+              "customer": "Acme",
+              "features": [
+                "pro"
+              ],
+              "expiresAt": "2028-01-15T09:00:00.000Z",
+              "maintenanceUntil": null,
+              "storageProtected": false,
+              "keyHint": "LK-7K2M…YZ5S",
+              "notices": [
+                {
+                  "code": "sdk_update_recommended",
+                  "minimum": "0.6.0",
+                  "requiredFrom": null
+                }
+              ],
+              "revalidateBy": "2027-01-18T09:00:00.000Z"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "activate without a machine name, a long name is cut",
+      "options": {
+        "product": "studio",
+        "publicKey": [
+          "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAy+BD73exRVhWXnfdiUHFz1XQ1wirGGATKTeWUfIyb+Y=\n-----END PUBLIC KEY-----\n"
+        ],
+        "appVersion": "2.4.0"
+      },
+      "machineId": "linux:0123456789abcdef0123456789abcdef",
+      "steps": [
+        {
+          "call": "activate",
+          "args": [
+            "LK-7K2M-QX9P-4RTV-8WNB-3HCJ-6DFG-YZ5S"
+          ],
+          "nowMs": 1800000000000,
+          "response": {
+            "status": 200,
+            "body": {
+              "token": "eyJhbGciOiJFZDI1NTE5IiwidHlwIjoibGljZW5zZWtpdC1sZWFzZStqd3QiLCJraWQiOiJTd1J3SU1NWUIzSE00aGV2b0FoLXdzV0R5SVM4YzU1bWlWZWFfc2xGam1BIn0.eyJpc3MiOiJsaWNlbnNla2l0Iiwic3ViIjoibGljXzEiLCJhdWQiOiJzdHVkaW8iLCJqdGkiOiJsZWFzZS0zIiwiaWF0IjoxODAwMDAwMDAwLCJuYmYiOjE4MDAwMDAwMDAsImV4cCI6MTgzMTUzNjAwMCwicmV2IjoxODAwMjU5MjAwLCJmcCI6IjhjNzA0Mzc2OWNjY2YwNWVjNDQ0YWI1Nzg2ZDFjYzEwNGIwMmU4Mzc5ODM4ZjE1NGRiMTUyY2QyNWUwMTEzNGQiLCJmZWF0IjpbInBybyJdLCJjdXMiOiJBY21lIn0.9ZgI6tQ8AIjv2FtcKonsQVa_u1cKW40nMuFx4G5yidOHrIt0PJN7xNq4H_aHMApVaZ802q3SfsB4HtpXxI4qCw"
+            }
+          }
+        },
+        {
+          "call": "deactivate",
+          "nowMs": 1800000000000,
+          "response": {
+            "status": 200,
+            "body": {
+              "ok": true
+            }
+          }
+        },
+        {
+          "call": "activate",
+          "args": [
+            "LK-7K2M-QX9P-4RTV-8WNB-3HCJ-6DFG-YZ5S",
+            "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+          ],
+          "nowMs": 1800000000000,
+          "response": {
+            "status": 200,
+            "body": {
+              "token": "eyJhbGciOiJFZDI1NTE5IiwidHlwIjoibGljZW5zZWtpdC1sZWFzZStqd3QiLCJraWQiOiJTd1J3SU1NWUIzSE00aGV2b0FoLXdzV0R5SVM4YzU1bWlWZWFfc2xGam1BIn0.eyJpc3MiOiJsaWNlbnNla2l0Iiwic3ViIjoibGljXzEiLCJhdWQiOiJzdHVkaW8iLCJqdGkiOiJsZWFzZS00IiwiaWF0IjoxODAwMDAwMDAwLCJuYmYiOjE4MDAwMDAwMDAsImV4cCI6MTgzMTUzNjAwMCwicmV2IjoxODAwMjU5MjAwLCJmcCI6IjhjNzA0Mzc2OWNjY2YwNWVjNDQ0YWI1Nzg2ZDFjYzEwNGIwMmU4Mzc5ODM4ZjE1NGRiMTUyY2QyNWUwMTEzNGQiLCJmZWF0IjpbInBybyJdLCJjdXMiOiJBY21lIn0.EsJidPg3hSOulRoPIf7DUUjkJ3rT_q9ZlpClELhpHCz5jRrz4mwQqcYNHl1KrQkzMcGiibc2l8ENh-mKJFokDQ"
+            }
+          }
+        }
+      ],
+      "outcomes": [
+        {
+          "requests": [
+            {
+              "path": "/v1/activate",
+              "body": {
+                "licenseKey": "LK-7K2M-QX9P-4RTV-8WNB-3HCJ-6DFG-YZ5S",
+                "product": "studio",
+                "fingerprint": "8c7043769cccf05ec444ab5786d1cc104b02e8379838f154db152cd25e01134d",
+                "platform": "<platform>",
+                "appVersion": "2.4.0",
+                "sdkVersion": "<sdk-version>"
+              }
+            }
+          ],
+          "result": {
+            "ok": true,
+            "value": {
+              "status": "valid",
+              "offline": false,
+              "customer": "Acme",
+              "features": [
+                "pro"
+              ],
+              "expiresAt": "2028-01-15T08:00:00.000Z",
+              "maintenanceUntil": null,
+              "storageProtected": false,
+              "keyHint": "LK-7K2M…YZ5S",
+              "revalidateBy": "2027-01-18T08:00:00.000Z"
+            }
+          }
+        },
+        {
+          "requests": [
+            {
+              "path": "/v1/deactivate",
+              "body": {
+                "licenseKey": "LK-7K2M-QX9P-4RTV-8WNB-3HCJ-6DFG-YZ5S",
+                "product": "studio",
+                "fingerprint": "8c7043769cccf05ec444ab5786d1cc104b02e8379838f154db152cd25e01134d"
+              }
+            }
+          ],
+          "result": {
+            "ok": true,
+            "value": null
+          }
+        },
+        {
+          "requests": [
+            {
+              "path": "/v1/activate",
+              "body": {
+                "licenseKey": "LK-7K2M-QX9P-4RTV-8WNB-3HCJ-6DFG-YZ5S",
+                "product": "studio",
+                "fingerprint": "8c7043769cccf05ec444ab5786d1cc104b02e8379838f154db152cd25e01134d",
+                "machineName": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+                "platform": "<platform>",
+                "appVersion": "2.4.0",
+                "sdkVersion": "<sdk-version>"
+              }
+            }
+          ],
+          "result": {
+            "ok": true,
+            "value": {
+              "status": "valid",
+              "offline": false,
+              "customer": "Acme",
+              "features": [
+                "pro"
+              ],
+              "expiresAt": "2028-01-15T08:00:00.000Z",
+              "maintenanceUntil": null,
+              "storageProtected": false,
+              "keyHint": "LK-7K2M…YZ5S",
+              "revalidateBy": "2027-01-18T08:00:00.000Z"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "activation refused: all seats used",
+      "options": {
+        "product": "studio",
+        "publicKey": [
+          "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAy+BD73exRVhWXnfdiUHFz1XQ1wirGGATKTeWUfIyb+Y=\n-----END PUBLIC KEY-----\n"
+        ],
+        "appVersion": "2.4.0"
+      },
+      "machineId": "linux:0123456789abcdef0123456789abcdef",
+      "steps": [
+        {
+          "call": "activate",
+          "args": [
+            "LK-7K2M-QX9P-4RTV-8WNB-3HCJ-6DFG-YZ5S"
+          ],
+          "nowMs": 1800000000000,
+          "response": {
+            "status": 409,
+            "body": {
+              "error": "activation_limit",
+              "message": "All 2 seat(s) are in use."
+            }
+          }
+        },
+        {
+          "call": "check",
+          "nowMs": 1800000000000
+        }
+      ],
+      "outcomes": [
+        {
+          "requests": [
+            {
+              "path": "/v1/activate",
+              "body": {
+                "licenseKey": "LK-7K2M-QX9P-4RTV-8WNB-3HCJ-6DFG-YZ5S",
+                "product": "studio",
+                "fingerprint": "8c7043769cccf05ec444ab5786d1cc104b02e8379838f154db152cd25e01134d",
+                "platform": "<platform>",
+                "appVersion": "2.4.0",
+                "sdkVersion": "<sdk-version>"
+              }
+            }
+          ],
+          "result": {
+            "ok": false,
+            "error": {
+              "code": "activation_limit",
+              "message": "All 2 seat(s) are in use."
+            }
+          }
+        },
+        {
+          "requests": [],
+          "result": {
+            "ok": true,
+            "value": {
+              "status": "unlicensed",
+              "offline": false,
+              "storageProtected": false,
+              "features": [],
+              "expiresAt": null
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "activation: server error page, no JSON",
+      "options": {
+        "product": "studio",
+        "publicKey": [
+          "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAy+BD73exRVhWXnfdiUHFz1XQ1wirGGATKTeWUfIyb+Y=\n-----END PUBLIC KEY-----\n"
+        ],
+        "appVersion": "2.4.0"
+      },
+      "machineId": "linux:0123456789abcdef0123456789abcdef",
+      "steps": [
+        {
+          "call": "activate",
+          "args": [
+            "LK-7K2M-QX9P-4RTV-8WNB-3HCJ-6DFG-YZ5S"
+          ],
+          "nowMs": 1800000000000,
+          "response": {
+            "status": 502,
+            "raw": "<html>Bad gateway</html>"
+          }
+        }
+      ],
+      "outcomes": [
+        {
+          "requests": [
+            {
+              "path": "/v1/activate",
+              "body": {
+                "licenseKey": "LK-7K2M-QX9P-4RTV-8WNB-3HCJ-6DFG-YZ5S",
+                "product": "studio",
+                "fingerprint": "8c7043769cccf05ec444ab5786d1cc104b02e8379838f154db152cd25e01134d",
+                "platform": "<platform>",
+                "appVersion": "2.4.0",
+                "sdkVersion": "<sdk-version>"
+              }
+            }
+          ],
+          "result": {
+            "ok": false,
+            "error": {
+              "code": "server_error",
+              "message": "License server error (502)"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "activation: no connection",
+      "options": {
+        "product": "studio",
+        "publicKey": [
+          "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAy+BD73exRVhWXnfdiUHFz1XQ1wirGGATKTeWUfIyb+Y=\n-----END PUBLIC KEY-----\n"
+        ],
+        "appVersion": "2.4.0"
+      },
+      "machineId": "linux:0123456789abcdef0123456789abcdef",
+      "steps": [
+        {
+          "call": "activate",
+          "args": [
+            "LK-7K2M-QX9P-4RTV-8WNB-3HCJ-6DFG-YZ5S"
+          ],
+          "nowMs": 1800000000000,
+          "response": {
+            "network": true
+          }
+        }
+      ],
+      "outcomes": [
+        {
+          "requests": [
+            {
+              "path": "/v1/activate",
+              "body": {
+                "licenseKey": "LK-7K2M-QX9P-4RTV-8WNB-3HCJ-6DFG-YZ5S",
+                "product": "studio",
+                "fingerprint": "8c7043769cccf05ec444ab5786d1cc104b02e8379838f154db152cd25e01134d",
+                "platform": "<platform>",
+                "appVersion": "2.4.0",
+                "sdkVersion": "<sdk-version>"
+              }
+            }
+          ],
+          "result": {
+            "ok": false,
+            "error": {
+              "code": "network",
+              "message": "Could not reach the license server."
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "activation: lease for another device or product",
+      "options": {
+        "product": "studio",
+        "publicKey": [
+          "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAy+BD73exRVhWXnfdiUHFz1XQ1wirGGATKTeWUfIyb+Y=\n-----END PUBLIC KEY-----\n"
+        ],
+        "appVersion": "2.4.0"
+      },
+      "machineId": "linux:0123456789abcdef0123456789abcdef",
+      "steps": [
+        {
+          "call": "activate",
+          "args": [
+            "LK-7K2M-QX9P-4RTV-8WNB-3HCJ-6DFG-YZ5S"
+          ],
+          "nowMs": 1800000000000,
+          "response": {
+            "status": 200,
+            "body": {
+              "token": "eyJhbGciOiJFZDI1NTE5IiwidHlwIjoibGljZW5zZWtpdC1sZWFzZStqd3QiLCJraWQiOiJTd1J3SU1NWUIzSE00aGV2b0FoLXdzV0R5SVM4YzU1bWlWZWFfc2xGam1BIn0.eyJpc3MiOiJsaWNlbnNla2l0Iiwic3ViIjoibGljXzEiLCJhdWQiOiJzdHVkaW8iLCJqdGkiOiJsZWFzZS01IiwiaWF0IjoxODAwMDAwMDAwLCJuYmYiOjE4MDAwMDAwMDAsImV4cCI6MTgzMTUzNjAwMCwicmV2IjoxODAwMjU5MjAwLCJmcCI6ImVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWUiLCJmZWF0IjpbInBybyJdLCJjdXMiOiJBY21lIn0.R2HeRQvMRDpDTOEaFE2S_ujAbCRN7lz9y37pihkrzeF6RLi4kRrupYiSW84Paz4WBEIpjZtWEUnGLX2Qu9byBA"
+            }
+          }
+        },
+        {
+          "call": "activate",
+          "args": [
+            "LK-7K2M-QX9P-4RTV-8WNB-3HCJ-6DFG-YZ5S"
+          ],
+          "nowMs": 1800000000000,
+          "response": {
+            "status": 200,
+            "body": {
+              "token": "eyJhbGciOiJFZDI1NTE5IiwidHlwIjoibGljZW5zZWtpdC1sZWFzZStqd3QiLCJraWQiOiJTd1J3SU1NWUIzSE00aGV2b0FoLXdzV0R5SVM4YzU1bWlWZWFfc2xGam1BIn0.eyJpc3MiOiJsaWNlbnNla2l0Iiwic3ViIjoibGljXzEiLCJhdWQiOiJvdGhlciIsImp0aSI6ImxlYXNlLTYiLCJpYXQiOjE4MDAwMDAwMDAsIm5iZiI6MTgwMDAwMDAwMCwiZXhwIjoxODMxNTM2MDAwLCJyZXYiOjE4MDAyNTkyMDAsImZwIjoiOGM3MDQzNzY5Y2NjZjA1ZWM0NDRhYjU3ODZkMWNjMTA0YjAyZTgzNzk4MzhmMTU0ZGIxNTJjZDI1ZTAxMTM0ZCIsImZlYXQiOlsicHJvIl0sImN1cyI6IkFjbWUifQ.O-CNu6sQoVYBJtDQdOAQDutSWSbPhJwOk9iC_-FqHpWybgfSnZOXwXI11rf_q6TEv1_mzKcF36AcpOgnPGI5Ag"
+            }
+          }
+        },
+        {
+          "call": "check",
+          "nowMs": 1800000000000
+        }
+      ],
+      "outcomes": [
+        {
+          "requests": [
+            {
+              "path": "/v1/activate",
+              "body": {
+                "licenseKey": "LK-7K2M-QX9P-4RTV-8WNB-3HCJ-6DFG-YZ5S",
+                "product": "studio",
+                "fingerprint": "8c7043769cccf05ec444ab5786d1cc104b02e8379838f154db152cd25e01134d",
+                "platform": "<platform>",
+                "appVersion": "2.4.0",
+                "sdkVersion": "<sdk-version>"
+              }
+            }
+          ],
+          "result": {
+            "ok": false,
+            "error": {
+              "code": "wrong_device",
+              "message": "This license is activated on another device."
+            }
+          }
+        },
+        {
+          "requests": [
+            {
+              "path": "/v1/activate",
+              "body": {
+                "licenseKey": "LK-7K2M-QX9P-4RTV-8WNB-3HCJ-6DFG-YZ5S",
+                "product": "studio",
+                "fingerprint": "8c7043769cccf05ec444ab5786d1cc104b02e8379838f154db152cd25e01134d",
+                "platform": "<platform>",
+                "appVersion": "2.4.0",
+                "sdkVersion": "<sdk-version>"
+              }
+            }
+          ],
+          "result": {
+            "ok": false,
+            "error": {
+              "code": "wrong_product",
+              "message": "This license is for a different product."
+            }
+          }
+        },
+        {
+          "requests": [],
+          "result": {
+            "ok": true,
+            "value": {
+              "status": "unlicensed",
+              "offline": false,
+              "storageProtected": false,
+              "features": [],
+              "expiresAt": null
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "activation: lease from the future (device clock behind)",
+      "options": {
+        "product": "studio",
+        "publicKey": [
+          "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAy+BD73exRVhWXnfdiUHFz1XQ1wirGGATKTeWUfIyb+Y=\n-----END PUBLIC KEY-----\n"
+        ],
+        "appVersion": "2.4.0"
+      },
+      "machineId": "linux:0123456789abcdef0123456789abcdef",
+      "steps": [
+        {
+          "call": "activate",
+          "args": [
+            "LK-7K2M-QX9P-4RTV-8WNB-3HCJ-6DFG-YZ5S"
+          ],
+          "nowMs": 1799827200000,
+          "response": {
+            "status": 200,
+            "body": {
+              "token": "eyJhbGciOiJFZDI1NTE5IiwidHlwIjoibGljZW5zZWtpdC1sZWFzZStqd3QiLCJraWQiOiJTd1J3SU1NWUIzSE00aGV2b0FoLXdzV0R5SVM4YzU1bWlWZWFfc2xGam1BIn0.eyJpc3MiOiJsaWNlbnNla2l0Iiwic3ViIjoibGljXzEiLCJhdWQiOiJzdHVkaW8iLCJqdGkiOiJsZWFzZS03IiwiaWF0IjoxODAwMDAwMDAwLCJuYmYiOjE4MDAwMDAwMDAsImV4cCI6MTgzMTUzNjAwMCwicmV2IjoxODAwMjU5MjAwLCJmcCI6IjhjNzA0Mzc2OWNjY2YwNWVjNDQ0YWI1Nzg2ZDFjYzEwNGIwMmU4Mzc5ODM4ZjE1NGRiMTUyY2QyNWUwMTEzNGQiLCJmZWF0IjpbInBybyJdLCJjdXMiOiJBY21lIn0.CU7w9ylfmlKCnw9ECbt0SHjRU5S2HGThMEvpwqeGmB3nZvYzowdlE6Oj8ENpFbb8hXvovYlMgoA4ryTS9J67DA"
+            }
+          }
+        }
+      ],
+      "outcomes": [
+        {
+          "requests": [
+            {
+              "path": "/v1/activate",
+              "body": {
+                "licenseKey": "LK-7K2M-QX9P-4RTV-8WNB-3HCJ-6DFG-YZ5S",
+                "product": "studio",
+                "fingerprint": "8c7043769cccf05ec444ab5786d1cc104b02e8379838f154db152cd25e01134d",
+                "platform": "<platform>",
+                "appVersion": "2.4.0",
+                "sdkVersion": "<sdk-version>"
+              }
+            }
+          ],
+          "result": {
+            "ok": false,
+            "error": {
+              "code": "clock_suspect",
+              "message": "The date and time on this computer look wrong. Correct them, then connect to the internet."
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "offline within the revalidation time",
+      "options": {
+        "product": "studio",
+        "publicKey": [
+          "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAy+BD73exRVhWXnfdiUHFz1XQ1wirGGATKTeWUfIyb+Y=\n-----END PUBLIC KEY-----\n"
+        ],
+        "appVersion": "2.4.0"
+      },
+      "machineId": "linux:0123456789abcdef0123456789abcdef",
+      "steps": [
+        {
+          "call": "activate",
+          "args": [
+            "LK-7K2M-QX9P-4RTV-8WNB-3HCJ-6DFG-YZ5S"
+          ],
+          "nowMs": 1800000000000,
+          "response": {
+            "status": 200,
+            "body": {
+              "token": "eyJhbGciOiJFZDI1NTE5IiwidHlwIjoibGljZW5zZWtpdC1sZWFzZStqd3QiLCJraWQiOiJTd1J3SU1NWUIzSE00aGV2b0FoLXdzV0R5SVM4YzU1bWlWZWFfc2xGam1BIn0.eyJpc3MiOiJsaWNlbnNla2l0Iiwic3ViIjoibGljXzEiLCJhdWQiOiJzdHVkaW8iLCJqdGkiOiJsZWFzZS04IiwiaWF0IjoxODAwMDAwMDAwLCJuYmYiOjE4MDAwMDAwMDAsImV4cCI6MTgzMTUzNjAwMCwicmV2IjoxODAwMjU5MjAwLCJmcCI6IjhjNzA0Mzc2OWNjY2YwNWVjNDQ0YWI1Nzg2ZDFjYzEwNGIwMmU4Mzc5ODM4ZjE1NGRiMTUyY2QyNWUwMTEzNGQiLCJmZWF0IjpbInBybyJdLCJjdXMiOiJBY21lIn0.ch2dmdm4IJf8gp3VEyk8rCtty5tB_HXryj78-IG1HW_J1W4u_aV5ICTvVlU771kWSg1ibFiuqcAwgclsLl99BA"
+            }
+          }
+        },
+        {
+          "call": "check",
+          "nowMs": 1800255600000,
+          "response": {
+            "network": true
+          }
+        }
+      ],
+      "outcomes": [
+        {
+          "requests": [
+            {
+              "path": "/v1/activate",
+              "body": {
+                "licenseKey": "LK-7K2M-QX9P-4RTV-8WNB-3HCJ-6DFG-YZ5S",
+                "product": "studio",
+                "fingerprint": "8c7043769cccf05ec444ab5786d1cc104b02e8379838f154db152cd25e01134d",
+                "platform": "<platform>",
+                "appVersion": "2.4.0",
+                "sdkVersion": "<sdk-version>"
+              }
+            }
+          ],
+          "result": {
+            "ok": true,
+            "value": {
+              "status": "valid",
+              "offline": false,
+              "customer": "Acme",
+              "features": [
+                "pro"
+              ],
+              "expiresAt": "2028-01-15T08:00:00.000Z",
+              "maintenanceUntil": null,
+              "storageProtected": false,
+              "keyHint": "LK-7K2M…YZ5S",
+              "revalidateBy": "2027-01-18T08:00:00.000Z"
+            }
+          }
+        },
+        {
+          "requests": [
+            {
+              "path": "/v1/validate",
+              "body": {
+                "licenseKey": "LK-7K2M-QX9P-4RTV-8WNB-3HCJ-6DFG-YZ5S",
+                "product": "studio",
+                "fingerprint": "8c7043769cccf05ec444ab5786d1cc104b02e8379838f154db152cd25e01134d",
+                "appVersion": "2.4.0",
+                "sdkVersion": "<sdk-version>"
+              }
+            }
+          ],
+          "result": {
+            "ok": true,
+            "value": {
+              "status": "valid",
+              "offline": true,
+              "customer": "Acme",
+              "features": [
+                "pro"
+              ],
+              "expiresAt": "2028-01-15T08:00:00.000Z",
+              "maintenanceUntil": null,
+              "storageProtected": false,
+              "keyHint": "LK-7K2M…YZ5S",
+              "revalidateBy": "2027-01-18T08:00:00.000Z"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "offline grace from the app option, then over",
+      "options": {
+        "product": "studio",
+        "publicKey": [
+          "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAy+BD73exRVhWXnfdiUHFz1XQ1wirGGATKTeWUfIyb+Y=\n-----END PUBLIC KEY-----\n"
+        ],
+        "appVersion": "2.4.0",
+        "graceDays": 3
+      },
+      "machineId": "linux:0123456789abcdef0123456789abcdef",
+      "steps": [
+        {
+          "call": "activate",
+          "args": [
+            "LK-7K2M-QX9P-4RTV-8WNB-3HCJ-6DFG-YZ5S"
+          ],
+          "nowMs": 1800000000000,
+          "response": {
+            "status": 200,
+            "body": {
+              "token": "eyJhbGciOiJFZDI1NTE5IiwidHlwIjoibGljZW5zZWtpdC1sZWFzZStqd3QiLCJraWQiOiJTd1J3SU1NWUIzSE00aGV2b0FoLXdzV0R5SVM4YzU1bWlWZWFfc2xGam1BIn0.eyJpc3MiOiJsaWNlbnNla2l0Iiwic3ViIjoibGljXzEiLCJhdWQiOiJzdHVkaW8iLCJqdGkiOiJsZWFzZS05IiwiaWF0IjoxODAwMDAwMDAwLCJuYmYiOjE4MDAwMDAwMDAsImV4cCI6MTgzMTUzNjAwMCwicmV2IjoxODAwMjU5MjAwLCJmcCI6IjhjNzA0Mzc2OWNjY2YwNWVjNDQ0YWI1Nzg2ZDFjYzEwNGIwMmU4Mzc5ODM4ZjE1NGRiMTUyY2QyNWUwMTEzNGQiLCJmZWF0IjpbInBybyJdLCJjdXMiOiJBY21lIn0.2NGC1dXVzxHSUdqFiHOMXM1yNY7CILLydNArpEcOlro_BUYIgobASjB0r4dsQ_TAyzQ4ysl4A71C7TiYRsMaCA"
+            }
+          }
+        },
+        {
+          "call": "check",
+          "nowMs": 1800288000000,
+          "response": {
+            "network": true
+          }
+        },
+        {
+          "call": "check",
+          "nowMs": 1800518401000,
+          "response": {
+            "network": true
+          }
+        }
+      ],
+      "outcomes": [
+        {
+          "requests": [
+            {
+              "path": "/v1/activate",
+              "body": {
+                "licenseKey": "LK-7K2M-QX9P-4RTV-8WNB-3HCJ-6DFG-YZ5S",
+                "product": "studio",
+                "fingerprint": "8c7043769cccf05ec444ab5786d1cc104b02e8379838f154db152cd25e01134d",
+                "platform": "<platform>",
+                "appVersion": "2.4.0",
+                "sdkVersion": "<sdk-version>"
+              }
+            }
+          ],
+          "result": {
+            "ok": true,
+            "value": {
+              "status": "valid",
+              "offline": false,
+              "customer": "Acme",
+              "features": [
+                "pro"
+              ],
+              "expiresAt": "2028-01-15T08:00:00.000Z",
+              "maintenanceUntil": null,
+              "storageProtected": false,
+              "keyHint": "LK-7K2M…YZ5S",
+              "revalidateBy": "2027-01-18T08:00:00.000Z"
+            }
+          }
+        },
+        {
+          "requests": [
+            {
+              "path": "/v1/validate",
+              "body": {
+                "licenseKey": "LK-7K2M-QX9P-4RTV-8WNB-3HCJ-6DFG-YZ5S",
+                "product": "studio",
+                "fingerprint": "8c7043769cccf05ec444ab5786d1cc104b02e8379838f154db152cd25e01134d",
+                "appVersion": "2.4.0",
+                "sdkVersion": "<sdk-version>"
+              }
+            }
+          ],
+          "result": {
+            "ok": true,
+            "value": {
+              "status": "grace",
+              "offline": true,
+              "reason": "offline_grace",
+              "message": "Working offline. Connect to the internet soon to keep using the app.",
+              "customer": "Acme",
+              "features": [
+                "pro"
+              ],
+              "expiresAt": "2028-01-15T08:00:00.000Z",
+              "maintenanceUntil": null,
+              "storageProtected": false,
+              "keyHint": "LK-7K2M…YZ5S",
+              "revalidateBy": "2027-01-21T08:00:00.000Z"
+            }
+          }
+        },
+        {
+          "requests": [
+            {
+              "path": "/v1/validate",
+              "body": {
+                "licenseKey": "LK-7K2M-QX9P-4RTV-8WNB-3HCJ-6DFG-YZ5S",
+                "product": "studio",
+                "fingerprint": "8c7043769cccf05ec444ab5786d1cc104b02e8379838f154db152cd25e01134d",
+                "appVersion": "2.4.0",
+                "sdkVersion": "<sdk-version>"
+              }
+            }
+          ],
+          "result": {
+            "ok": true,
+            "value": {
+              "status": "invalid",
+              "offline": true,
+              "storageProtected": false,
+              "features": [],
+              "expiresAt": null,
+              "reason": "revalidation_required",
+              "message": "Connect to the internet to confirm your license.",
+              "keyHint": "LK-7K2M…YZ5S"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "offline grace from the lease, capped by expiry",
+      "options": {
+        "product": "studio",
+        "publicKey": [
+          "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAy+BD73exRVhWXnfdiUHFz1XQ1wirGGATKTeWUfIyb+Y=\n-----END PUBLIC KEY-----\n"
+        ],
+        "appVersion": "2.4.0",
+        "graceDays": 7
+      },
+      "machineId": "linux:0123456789abcdef0123456789abcdef",
+      "steps": [
+        {
+          "call": "activate",
+          "args": [
+            "LK-7K2M-QX9P-4RTV-8WNB-3HCJ-6DFG-YZ5S"
+          ],
+          "nowMs": 1800000000000,
+          "response": {
+            "status": 200,
+            "body": {
+              "token": "eyJhbGciOiJFZDI1NTE5IiwidHlwIjoibGljZW5zZWtpdC1sZWFzZStqd3QiLCJraWQiOiJTd1J3SU1NWUIzSE00aGV2b0FoLXdzV0R5SVM4YzU1bWlWZWFfc2xGam1BIn0.eyJpc3MiOiJsaWNlbnNla2l0Iiwic3ViIjoibGljXzEiLCJhdWQiOiJzdHVkaW8iLCJqdGkiOiJsZWFzZS0xMCIsImlhdCI6MTgwMDAwMDAwMCwibmJmIjoxODAwMDAwMDAwLCJleHAiOjE4MDAyODA4MDAsInJldiI6MTgwMDI1OTIwMCwiZnAiOiI4YzcwNDM3NjljY2NmMDVlYzQ0NGFiNTc4NmQxY2MxMDRiMDJlODM3OTgzOGYxNTRkYjE1MmNkMjVlMDExMzRkIiwiZmVhdCI6WyJwcm8iXSwiY3VzIjoiQWNtZSIsImdyYyI6ODY0MDB9.zCe3OrxYywWIh71Ap1JCWABVBMBj6mh_7TC9a7C7LEj-60oY9CtDysnNYVEC4B1qXWcSer-TsoEdBTC4r_PaBw"
+            }
+          }
+        },
+        {
+          "call": "check",
+          "nowMs": 1800266400000,
+          "response": {
+            "network": true
+          }
+        },
+        {
+          "call": "check",
+          "nowMs": 1800345601000,
+          "response": {
+            "network": true
+          }
+        }
+      ],
+      "outcomes": [
+        {
+          "requests": [
+            {
+              "path": "/v1/activate",
+              "body": {
+                "licenseKey": "LK-7K2M-QX9P-4RTV-8WNB-3HCJ-6DFG-YZ5S",
+                "product": "studio",
+                "fingerprint": "8c7043769cccf05ec444ab5786d1cc104b02e8379838f154db152cd25e01134d",
+                "platform": "<platform>",
+                "appVersion": "2.4.0",
+                "sdkVersion": "<sdk-version>"
+              }
+            }
+          ],
+          "result": {
+            "ok": true,
+            "value": {
+              "status": "valid",
+              "offline": false,
+              "customer": "Acme",
+              "features": [
+                "pro"
+              ],
+              "expiresAt": "2027-01-18T14:00:00.000Z",
+              "maintenanceUntil": null,
+              "storageProtected": false,
+              "keyHint": "LK-7K2M…YZ5S",
+              "revalidateBy": "2027-01-18T08:00:00.000Z"
+            }
+          }
+        },
+        {
+          "requests": [
+            {
+              "path": "/v1/validate",
+              "body": {
+                "licenseKey": "LK-7K2M-QX9P-4RTV-8WNB-3HCJ-6DFG-YZ5S",
+                "product": "studio",
+                "fingerprint": "8c7043769cccf05ec444ab5786d1cc104b02e8379838f154db152cd25e01134d",
+                "appVersion": "2.4.0",
+                "sdkVersion": "<sdk-version>"
+              }
+            }
+          ],
+          "result": {
+            "ok": true,
+            "value": {
+              "status": "grace",
+              "offline": true,
+              "reason": "offline_grace",
+              "message": "Working offline. Connect to the internet soon to keep using the app.",
+              "customer": "Acme",
+              "features": [
+                "pro"
+              ],
+              "expiresAt": "2027-01-18T14:00:00.000Z",
+              "maintenanceUntil": null,
+              "storageProtected": false,
+              "keyHint": "LK-7K2M…YZ5S",
+              "revalidateBy": "2027-01-18T14:00:00.000Z"
+            }
+          }
+        },
+        {
+          "requests": [
+            {
+              "path": "/v1/validate",
+              "body": {
+                "licenseKey": "LK-7K2M-QX9P-4RTV-8WNB-3HCJ-6DFG-YZ5S",
+                "product": "studio",
+                "fingerprint": "8c7043769cccf05ec444ab5786d1cc104b02e8379838f154db152cd25e01134d",
+                "appVersion": "2.4.0",
+                "sdkVersion": "<sdk-version>"
+              }
+            }
+          ],
+          "result": {
+            "ok": true,
+            "value": {
+              "status": "invalid",
+              "offline": true,
+              "storageProtected": false,
+              "features": [],
+              "expiresAt": null,
+              "reason": "expired",
+              "message": "Your license has expired.",
+              "keyHint": "LK-7K2M…YZ5S"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "default grace of 7 days",
+      "options": {
+        "product": "studio",
+        "publicKey": [
+          "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAy+BD73exRVhWXnfdiUHFz1XQ1wirGGATKTeWUfIyb+Y=\n-----END PUBLIC KEY-----\n"
+        ],
+        "appVersion": "2.4.0"
+      },
+      "machineId": "linux:0123456789abcdef0123456789abcdef",
+      "steps": [
+        {
+          "call": "activate",
+          "args": [
+            "LK-7K2M-QX9P-4RTV-8WNB-3HCJ-6DFG-YZ5S"
+          ],
+          "nowMs": 1800000000000,
+          "response": {
+            "status": 200,
+            "body": {
+              "token": "eyJhbGciOiJFZDI1NTE5IiwidHlwIjoibGljZW5zZWtpdC1sZWFzZStqd3QiLCJraWQiOiJTd1J3SU1NWUIzSE00aGV2b0FoLXdzV0R5SVM4YzU1bWlWZWFfc2xGam1BIn0.eyJpc3MiOiJsaWNlbnNla2l0Iiwic3ViIjoibGljXzEiLCJhdWQiOiJzdHVkaW8iLCJqdGkiOiJsZWFzZS0xMSIsImlhdCI6MTgwMDAwMDAwMCwibmJmIjoxODAwMDAwMDAwLCJleHAiOjE4MzE1MzYwMDAsInJldiI6MTgwMDI1OTIwMCwiZnAiOiI4YzcwNDM3NjljY2NmMDVlYzQ0NGFiNTc4NmQxY2MxMDRiMDJlODM3OTgzOGYxNTRkYjE1MmNkMjVlMDExMzRkIiwiZmVhdCI6WyJwcm8iXSwiY3VzIjoiQWNtZSJ9.VqdSJbfciGB4hvpYTyFM25yheA_bWj08tuqiV2-uQKhq9vtA1kN-FqVKEhOho_73RS0Q9VWBbDIULyasBtz3Bg"
+            }
+          }
+        },
+        {
+          "call": "check",
+          "nowMs": 1800777600000,
+          "response": {
+            "network": true
+          }
+        },
+        {
+          "call": "check",
+          "nowMs": 1800864000000,
+          "response": {
+            "network": true
+          }
+        }
+      ],
+      "outcomes": [
+        {
+          "requests": [
+            {
+              "path": "/v1/activate",
+              "body": {
+                "licenseKey": "LK-7K2M-QX9P-4RTV-8WNB-3HCJ-6DFG-YZ5S",
+                "product": "studio",
+                "fingerprint": "8c7043769cccf05ec444ab5786d1cc104b02e8379838f154db152cd25e01134d",
+                "platform": "<platform>",
+                "appVersion": "2.4.0",
+                "sdkVersion": "<sdk-version>"
+              }
+            }
+          ],
+          "result": {
+            "ok": true,
+            "value": {
+              "status": "valid",
+              "offline": false,
+              "customer": "Acme",
+              "features": [
+                "pro"
+              ],
+              "expiresAt": "2028-01-15T08:00:00.000Z",
+              "maintenanceUntil": null,
+              "storageProtected": false,
+              "keyHint": "LK-7K2M…YZ5S",
+              "revalidateBy": "2027-01-18T08:00:00.000Z"
+            }
+          }
+        },
+        {
+          "requests": [
+            {
+              "path": "/v1/validate",
+              "body": {
+                "licenseKey": "LK-7K2M-QX9P-4RTV-8WNB-3HCJ-6DFG-YZ5S",
+                "product": "studio",
+                "fingerprint": "8c7043769cccf05ec444ab5786d1cc104b02e8379838f154db152cd25e01134d",
+                "appVersion": "2.4.0",
+                "sdkVersion": "<sdk-version>"
+              }
+            }
+          ],
+          "result": {
+            "ok": true,
+            "value": {
+              "status": "grace",
+              "offline": true,
+              "reason": "offline_grace",
+              "message": "Working offline. Connect to the internet soon to keep using the app.",
+              "customer": "Acme",
+              "features": [
+                "pro"
+              ],
+              "expiresAt": "2028-01-15T08:00:00.000Z",
+              "maintenanceUntil": null,
+              "storageProtected": false,
+              "keyHint": "LK-7K2M…YZ5S",
+              "revalidateBy": "2027-01-25T08:00:00.000Z"
+            }
+          }
+        },
+        {
+          "requests": [
+            {
+              "path": "/v1/validate",
+              "body": {
+                "licenseKey": "LK-7K2M-QX9P-4RTV-8WNB-3HCJ-6DFG-YZ5S",
+                "product": "studio",
+                "fingerprint": "8c7043769cccf05ec444ab5786d1cc104b02e8379838f154db152cd25e01134d",
+                "appVersion": "2.4.0",
+                "sdkVersion": "<sdk-version>"
+              }
+            }
+          ],
+          "result": {
+            "ok": true,
+            "value": {
+              "status": "invalid",
+              "offline": true,
+              "storageProtected": false,
+              "features": [],
+              "expiresAt": null,
+              "reason": "revalidation_required",
+              "message": "Connect to the internet to confirm your license.",
+              "keyHint": "LK-7K2M…YZ5S"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "device clock set back",
+      "options": {
+        "product": "studio",
+        "publicKey": [
+          "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAy+BD73exRVhWXnfdiUHFz1XQ1wirGGATKTeWUfIyb+Y=\n-----END PUBLIC KEY-----\n"
+        ],
+        "appVersion": "2.4.0"
+      },
+      "machineId": "linux:0123456789abcdef0123456789abcdef",
+      "steps": [
+        {
+          "call": "activate",
+          "args": [
+            "LK-7K2M-QX9P-4RTV-8WNB-3HCJ-6DFG-YZ5S"
+          ],
+          "nowMs": 1800000000000,
+          "response": {
+            "status": 200,
+            "body": {
+              "token": "eyJhbGciOiJFZDI1NTE5IiwidHlwIjoibGljZW5zZWtpdC1sZWFzZStqd3QiLCJraWQiOiJTd1J3SU1NWUIzSE00aGV2b0FoLXdzV0R5SVM4YzU1bWlWZWFfc2xGam1BIn0.eyJpc3MiOiJsaWNlbnNla2l0Iiwic3ViIjoibGljXzEiLCJhdWQiOiJzdHVkaW8iLCJqdGkiOiJsZWFzZS0xMiIsImlhdCI6MTgwMDAwMDAwMCwibmJmIjoxODAwMDAwMDAwLCJleHAiOjE4MzE1MzYwMDAsInJldiI6MTgwMjU5MjAwMCwiZnAiOiI4YzcwNDM3NjljY2NmMDVlYzQ0NGFiNTc4NmQxY2MxMDRiMDJlODM3OTgzOGYxNTRkYjE1MmNkMjVlMDExMzRkIiwiZmVhdCI6WyJwcm8iXSwiY3VzIjoiQWNtZSJ9.JqHEZZx1Mj9vCCHLrVqiFzxfsvjmtqrQDIiDtW1Sn-i1lCe7JmVUdP8pceCxoYgNAEmtNFlgC8iuyoM0lbtPCw"
+            }
+          }
+        },
+        {
+          "call": "check",
+          "nowMs": 1800864000000,
+          "response": {
+            "status": 200,
+            "body": {
+              "token": "eyJhbGciOiJFZDI1NTE5IiwidHlwIjoibGljZW5zZWtpdC1sZWFzZStqd3QiLCJraWQiOiJTd1J3SU1NWUIzSE00aGV2b0FoLXdzV0R5SVM4YzU1bWlWZWFfc2xGam1BIn0.eyJpc3MiOiJsaWNlbnNla2l0Iiwic3ViIjoibGljXzEiLCJhdWQiOiJzdHVkaW8iLCJqdGkiOiJsZWFzZS0xMyIsImlhdCI6MTgwMDg2NDAwMCwibmJmIjoxODAwODY0MDAwLCJleHAiOjE4MzI0MDAwMDAsInJldiI6MTgwMzQ1NjAwMCwiZnAiOiI4YzcwNDM3NjljY2NmMDVlYzQ0NGFiNTc4NmQxY2MxMDRiMDJlODM3OTgzOGYxNTRkYjE1MmNkMjVlMDExMzRkIiwiZmVhdCI6WyJwcm8iXSwiY3VzIjoiQWNtZSJ9.erFKYvx_4zWZ5vcl5W7WzBHkS70pZQirq1UBsuaGyXOqxXMID9CKbZLL0bzl74fF6Z8XXorXLw2p31tXRJVnBA"
+            }
+          }
+        },
+        {
+          "call": "check",
+          "nowMs": 1800777600000,
+          "response": {
+            "network": true
+          }
+        },
+        {
+          "call": "check",
+          "nowMs": 1800691200000,
+          "response": {
+            "network": true
+          }
+        }
+      ],
+      "outcomes": [
+        {
+          "requests": [
+            {
+              "path": "/v1/activate",
+              "body": {
+                "licenseKey": "LK-7K2M-QX9P-4RTV-8WNB-3HCJ-6DFG-YZ5S",
+                "product": "studio",
+                "fingerprint": "8c7043769cccf05ec444ab5786d1cc104b02e8379838f154db152cd25e01134d",
+                "platform": "<platform>",
+                "appVersion": "2.4.0",
+                "sdkVersion": "<sdk-version>"
+              }
+            }
+          ],
+          "result": {
+            "ok": true,
+            "value": {
+              "status": "valid",
+              "offline": false,
+              "customer": "Acme",
+              "features": [
+                "pro"
+              ],
+              "expiresAt": "2028-01-15T08:00:00.000Z",
+              "maintenanceUntil": null,
+              "storageProtected": false,
+              "keyHint": "LK-7K2M…YZ5S",
+              "revalidateBy": "2027-02-14T08:00:00.000Z"
+            }
+          }
+        },
+        {
+          "requests": [
+            {
+              "path": "/v1/validate",
+              "body": {
+                "licenseKey": "LK-7K2M-QX9P-4RTV-8WNB-3HCJ-6DFG-YZ5S",
+                "product": "studio",
+                "fingerprint": "8c7043769cccf05ec444ab5786d1cc104b02e8379838f154db152cd25e01134d",
+                "appVersion": "2.4.0",
+                "sdkVersion": "<sdk-version>"
+              }
+            }
+          ],
+          "result": {
+            "ok": true,
+            "value": {
+              "status": "valid",
+              "offline": false,
+              "customer": "Acme",
+              "features": [
+                "pro"
+              ],
+              "expiresAt": "2028-01-25T08:00:00.000Z",
+              "maintenanceUntil": null,
+              "storageProtected": false,
+              "keyHint": "LK-7K2M…YZ5S",
+              "revalidateBy": "2027-02-24T08:00:00.000Z"
+            }
+          }
+        },
+        {
+          "requests": [
+            {
+              "path": "/v1/validate",
+              "body": {
+                "licenseKey": "LK-7K2M-QX9P-4RTV-8WNB-3HCJ-6DFG-YZ5S",
+                "product": "studio",
+                "fingerprint": "8c7043769cccf05ec444ab5786d1cc104b02e8379838f154db152cd25e01134d",
+                "appVersion": "2.4.0",
+                "sdkVersion": "<sdk-version>"
+              }
+            }
+          ],
+          "result": {
+            "ok": true,
+            "value": {
+              "status": "clock_suspect",
+              "offline": true,
+              "storageProtected": false,
+              "features": [],
+              "expiresAt": null,
+              "reason": "lease_from_future",
+              "message": "The date and time on this computer look wrong. Correct them, then connect to the internet.",
+              "keyHint": "LK-7K2M…YZ5S"
+            }
+          }
+        },
+        {
+          "requests": [
+            {
+              "path": "/v1/validate",
+              "body": {
+                "licenseKey": "LK-7K2M-QX9P-4RTV-8WNB-3HCJ-6DFG-YZ5S",
+                "product": "studio",
+                "fingerprint": "8c7043769cccf05ec444ab5786d1cc104b02e8379838f154db152cd25e01134d",
+                "appVersion": "2.4.0",
+                "sdkVersion": "<sdk-version>"
+              }
+            }
+          ],
+          "result": {
+            "ok": true,
+            "value": {
+              "status": "clock_suspect",
+              "offline": true,
+              "storageProtected": false,
+              "features": [],
+              "expiresAt": null,
+              "reason": "clock_rollback",
+              "message": "The date and time on this computer look wrong. Correct them, then connect to the internet.",
+              "keyHint": "LK-7K2M…YZ5S"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "server lease from the future at check-in",
+      "options": {
+        "product": "studio",
+        "publicKey": [
+          "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAy+BD73exRVhWXnfdiUHFz1XQ1wirGGATKTeWUfIyb+Y=\n-----END PUBLIC KEY-----\n"
+        ],
+        "appVersion": "2.4.0"
+      },
+      "machineId": "linux:0123456789abcdef0123456789abcdef",
+      "steps": [
+        {
+          "call": "activate",
+          "args": [
+            "LK-7K2M-QX9P-4RTV-8WNB-3HCJ-6DFG-YZ5S"
+          ],
+          "nowMs": 1800000000000,
+          "response": {
+            "status": 200,
+            "body": {
+              "token": "eyJhbGciOiJFZDI1NTE5IiwidHlwIjoibGljZW5zZWtpdC1sZWFzZStqd3QiLCJraWQiOiJTd1J3SU1NWUIzSE00aGV2b0FoLXdzV0R5SVM4YzU1bWlWZWFfc2xGam1BIn0.eyJpc3MiOiJsaWNlbnNla2l0Iiwic3ViIjoibGljXzEiLCJhdWQiOiJzdHVkaW8iLCJqdGkiOiJsZWFzZS0xNCIsImlhdCI6MTgwMDAwMDAwMCwibmJmIjoxODAwMDAwMDAwLCJleHAiOjE4MzE1MzYwMDAsInJldiI6MTgwMDI1OTIwMCwiZnAiOiI4YzcwNDM3NjljY2NmMDVlYzQ0NGFiNTc4NmQxY2MxMDRiMDJlODM3OTgzOGYxNTRkYjE1MmNkMjVlMDExMzRkIiwiZmVhdCI6WyJwcm8iXSwiY3VzIjoiQWNtZSJ9.fyFPLMINweTcXpxVVA9dcBuWolOcMrQuRuao1ThRe7xcf2MToloySPhFKdlE_QD10ZilWJkBXAZK8xrhEGCIBQ"
+            }
+          }
+        },
+        {
+          "call": "check",
+          "nowMs": 1800003600000,
+          "response": {
+            "status": 200,
+            "body": {
+              "token": "eyJhbGciOiJFZDI1NTE5IiwidHlwIjoibGljZW5zZWtpdC1sZWFzZStqd3QiLCJraWQiOiJTd1J3SU1NWUIzSE00aGV2b0FoLXdzV0R5SVM4YzU1bWlWZWFfc2xGam1BIn0.eyJpc3MiOiJsaWNlbnNla2l0Iiwic3ViIjoibGljXzEiLCJhdWQiOiJzdHVkaW8iLCJqdGkiOiJsZWFzZS0xNSIsImlhdCI6MTgwMDE3MjgwMCwibmJmIjoxODAwMTcyODAwLCJleHAiOjE4MzE3MDg4MDAsInJldiI6MTgwMDQzMjAwMCwiZnAiOiI4YzcwNDM3NjljY2NmMDVlYzQ0NGFiNTc4NmQxY2MxMDRiMDJlODM3OTgzOGYxNTRkYjE1MmNkMjVlMDExMzRkIiwiZmVhdCI6WyJwcm8iXSwiY3VzIjoiQWNtZSJ9.ZjQpfwNvmABmiFikdKEL9AmN6a7BPVxg5VI5DQxHOoyEBvZxW68i--9WiNGw162m-B-xwk2pPp6QdzB5aegOBw"
+            }
+          }
+        }
+      ],
+      "outcomes": [
+        {
+          "requests": [
+            {
+              "path": "/v1/activate",
+              "body": {
+                "licenseKey": "LK-7K2M-QX9P-4RTV-8WNB-3HCJ-6DFG-YZ5S",
+                "product": "studio",
+                "fingerprint": "8c7043769cccf05ec444ab5786d1cc104b02e8379838f154db152cd25e01134d",
+                "platform": "<platform>",
+                "appVersion": "2.4.0",
+                "sdkVersion": "<sdk-version>"
+              }
+            }
+          ],
+          "result": {
+            "ok": true,
+            "value": {
+              "status": "valid",
+              "offline": false,
+              "customer": "Acme",
+              "features": [
+                "pro"
+              ],
+              "expiresAt": "2028-01-15T08:00:00.000Z",
+              "maintenanceUntil": null,
+              "storageProtected": false,
+              "keyHint": "LK-7K2M…YZ5S",
+              "revalidateBy": "2027-01-18T08:00:00.000Z"
+            }
+          }
+        },
+        {
+          "requests": [
+            {
+              "path": "/v1/validate",
+              "body": {
+                "licenseKey": "LK-7K2M-QX9P-4RTV-8WNB-3HCJ-6DFG-YZ5S",
+                "product": "studio",
+                "fingerprint": "8c7043769cccf05ec444ab5786d1cc104b02e8379838f154db152cd25e01134d",
+                "appVersion": "2.4.0",
+                "sdkVersion": "<sdk-version>"
+              }
+            }
+          ],
+          "result": {
+            "ok": true,
+            "value": {
+              "status": "clock_suspect",
+              "offline": false,
+              "storageProtected": false,
+              "features": [],
+              "expiresAt": null,
+              "reason": "lease_from_future",
+              "message": "The date and time on this computer look wrong. Correct them, then connect to the internet.",
+              "keyHint": "LK-7K2M…YZ5S"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "suspended: kept offline, restored online",
+      "options": {
+        "product": "studio",
+        "publicKey": [
+          "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAy+BD73exRVhWXnfdiUHFz1XQ1wirGGATKTeWUfIyb+Y=\n-----END PUBLIC KEY-----\n"
+        ],
+        "appVersion": "2.4.0"
+      },
+      "machineId": "linux:0123456789abcdef0123456789abcdef",
+      "steps": [
+        {
+          "call": "activate",
+          "args": [
+            "LK-7K2M-QX9P-4RTV-8WNB-3HCJ-6DFG-YZ5S"
+          ],
+          "nowMs": 1800000000000,
+          "response": {
+            "status": 200,
+            "body": {
+              "token": "eyJhbGciOiJFZDI1NTE5IiwidHlwIjoibGljZW5zZWtpdC1sZWFzZStqd3QiLCJraWQiOiJTd1J3SU1NWUIzSE00aGV2b0FoLXdzV0R5SVM4YzU1bWlWZWFfc2xGam1BIn0.eyJpc3MiOiJsaWNlbnNla2l0Iiwic3ViIjoibGljXzEiLCJhdWQiOiJzdHVkaW8iLCJqdGkiOiJsZWFzZS0xNiIsImlhdCI6MTgwMDAwMDAwMCwibmJmIjoxODAwMDAwMDAwLCJleHAiOjE4MzE1MzYwMDAsInJldiI6MTgwMDI1OTIwMCwiZnAiOiI4YzcwNDM3NjljY2NmMDVlYzQ0NGFiNTc4NmQxY2MxMDRiMDJlODM3OTgzOGYxNTRkYjE1MmNkMjVlMDExMzRkIiwiZmVhdCI6WyJwcm8iXSwiY3VzIjoiQWNtZSJ9.7zZoC5YzA9HcFKYTm50jZOGKhRgTtAx7Oodlg_K6MvGmp-5RTlB9-L0lN5iKw99xNSteMgAXZoxenNR0sWfbDA"
+            }
+          }
+        },
+        {
+          "call": "check",
+          "nowMs": 1800003600000,
+          "response": {
+            "status": 403,
+            "body": {
+              "error": "license_suspended",
+              "message": "This license is suspended."
+            }
+          }
+        },
+        {
+          "call": "check",
+          "nowMs": 1800007200000,
+          "response": {
+            "network": true
+          }
+        },
+        {
+          "call": "check",
+          "nowMs": 1800010800000,
+          "response": {
+            "status": 200,
+            "body": {
+              "token": "eyJhbGciOiJFZDI1NTE5IiwidHlwIjoibGljZW5zZWtpdC1sZWFzZStqd3QiLCJraWQiOiJTd1J3SU1NWUIzSE00aGV2b0FoLXdzV0R5SVM4YzU1bWlWZWFfc2xGam1BIn0.eyJpc3MiOiJsaWNlbnNla2l0Iiwic3ViIjoibGljXzEiLCJhdWQiOiJzdHVkaW8iLCJqdGkiOiJsZWFzZS0xNyIsImlhdCI6MTgwMDAxMDgwMCwibmJmIjoxODAwMDEwODAwLCJleHAiOjE4MzE1NDY4MDAsInJldiI6MTgwMDI3MDAwMCwiZnAiOiI4YzcwNDM3NjljY2NmMDVlYzQ0NGFiNTc4NmQxY2MxMDRiMDJlODM3OTgzOGYxNTRkYjE1MmNkMjVlMDExMzRkIiwiZmVhdCI6WyJwcm8iXSwiY3VzIjoiQWNtZSJ9.1NhpUUo2l65Q_C5Qi0VqFjZVLGYATpHTpeuXkm1ZpFjc49bKSrF-XGRutna9Pr4Lg27CYpne32LNz0Emab5KBA"
+            }
+          }
+        }
+      ],
+      "outcomes": [
+        {
+          "requests": [
+            {
+              "path": "/v1/activate",
+              "body": {
+                "licenseKey": "LK-7K2M-QX9P-4RTV-8WNB-3HCJ-6DFG-YZ5S",
+                "product": "studio",
+                "fingerprint": "8c7043769cccf05ec444ab5786d1cc104b02e8379838f154db152cd25e01134d",
+                "platform": "<platform>",
+                "appVersion": "2.4.0",
+                "sdkVersion": "<sdk-version>"
+              }
+            }
+          ],
+          "result": {
+            "ok": true,
+            "value": {
+              "status": "valid",
+              "offline": false,
+              "customer": "Acme",
+              "features": [
+                "pro"
+              ],
+              "expiresAt": "2028-01-15T08:00:00.000Z",
+              "maintenanceUntil": null,
+              "storageProtected": false,
+              "keyHint": "LK-7K2M…YZ5S",
+              "revalidateBy": "2027-01-18T08:00:00.000Z"
+            }
+          }
+        },
+        {
+          "requests": [
+            {
+              "path": "/v1/validate",
+              "body": {
+                "licenseKey": "LK-7K2M-QX9P-4RTV-8WNB-3HCJ-6DFG-YZ5S",
+                "product": "studio",
+                "fingerprint": "8c7043769cccf05ec444ab5786d1cc104b02e8379838f154db152cd25e01134d",
+                "appVersion": "2.4.0",
+                "sdkVersion": "<sdk-version>"
+              }
+            }
+          ],
+          "result": {
+            "ok": true,
+            "value": {
+              "status": "invalid",
+              "offline": false,
+              "storageProtected": false,
+              "features": [],
+              "expiresAt": null,
+              "reason": "license_suspended",
+              "message": "This license is suspended.",
+              "keyHint": "LK-7K2M…YZ5S"
+            }
+          }
+        },
+        {
+          "requests": [
+            {
+              "path": "/v1/validate",
+              "body": {
+                "licenseKey": "LK-7K2M-QX9P-4RTV-8WNB-3HCJ-6DFG-YZ5S",
+                "product": "studio",
+                "fingerprint": "8c7043769cccf05ec444ab5786d1cc104b02e8379838f154db152cd25e01134d",
+                "appVersion": "2.4.0",
+                "sdkVersion": "<sdk-version>"
+              }
+            }
+          ],
+          "result": {
+            "ok": true,
+            "value": {
+              "status": "invalid",
+              "offline": true,
+              "storageProtected": false,
+              "features": [],
+              "expiresAt": null,
+              "reason": "license_suspended",
+              "message": "This license is suspended.",
+              "keyHint": "LK-7K2M…YZ5S"
+            }
+          }
+        },
+        {
+          "requests": [
+            {
+              "path": "/v1/validate",
+              "body": {
+                "licenseKey": "LK-7K2M-QX9P-4RTV-8WNB-3HCJ-6DFG-YZ5S",
+                "product": "studio",
+                "fingerprint": "8c7043769cccf05ec444ab5786d1cc104b02e8379838f154db152cd25e01134d",
+                "appVersion": "2.4.0",
+                "sdkVersion": "<sdk-version>"
+              }
+            }
+          ],
+          "result": {
+            "ok": true,
+            "value": {
+              "status": "valid",
+              "offline": false,
+              "customer": "Acme",
+              "features": [
+                "pro"
+              ],
+              "expiresAt": "2028-01-15T11:00:00.000Z",
+              "maintenanceUntil": null,
+              "storageProtected": false,
+              "keyHint": "LK-7K2M…YZ5S",
+              "revalidateBy": "2027-01-18T11:00:00.000Z"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "revoked: the key is forgotten",
+      "options": {
+        "product": "studio",
+        "publicKey": [
+          "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAy+BD73exRVhWXnfdiUHFz1XQ1wirGGATKTeWUfIyb+Y=\n-----END PUBLIC KEY-----\n"
+        ],
+        "appVersion": "2.4.0"
+      },
+      "machineId": "linux:0123456789abcdef0123456789abcdef",
+      "steps": [
+        {
+          "call": "activate",
+          "args": [
+            "LK-7K2M-QX9P-4RTV-8WNB-3HCJ-6DFG-YZ5S"
+          ],
+          "nowMs": 1800000000000,
+          "response": {
+            "status": 200,
+            "body": {
+              "token": "eyJhbGciOiJFZDI1NTE5IiwidHlwIjoibGljZW5zZWtpdC1sZWFzZStqd3QiLCJraWQiOiJTd1J3SU1NWUIzSE00aGV2b0FoLXdzV0R5SVM4YzU1bWlWZWFfc2xGam1BIn0.eyJpc3MiOiJsaWNlbnNla2l0Iiwic3ViIjoibGljXzEiLCJhdWQiOiJzdHVkaW8iLCJqdGkiOiJsZWFzZS0xOCIsImlhdCI6MTgwMDAwMDAwMCwibmJmIjoxODAwMDAwMDAwLCJleHAiOjE4MzE1MzYwMDAsInJldiI6MTgwMDI1OTIwMCwiZnAiOiI4YzcwNDM3NjljY2NmMDVlYzQ0NGFiNTc4NmQxY2MxMDRiMDJlODM3OTgzOGYxNTRkYjE1MmNkMjVlMDExMzRkIiwiZmVhdCI6WyJwcm8iXSwiY3VzIjoiQWNtZSJ9.-CIKFqeM-DD3QAIJWdKL-p6Xt1MR1BhNmDqw1mnVq06rLs4Lh6JsasZTLVJQZxmO8uGDZYRd1soUHYlLDd9YBA"
+            }
+          }
+        },
+        {
+          "call": "check",
+          "nowMs": 1800003600000,
+          "response": {
+            "status": 403,
+            "body": {
+              "error": "license_revoked",
+              "message": "This license was revoked."
+            }
+          }
+        },
+        {
+          "call": "check",
+          "nowMs": 1800007200000
+        }
+      ],
+      "outcomes": [
+        {
+          "requests": [
+            {
+              "path": "/v1/activate",
+              "body": {
+                "licenseKey": "LK-7K2M-QX9P-4RTV-8WNB-3HCJ-6DFG-YZ5S",
+                "product": "studio",
+                "fingerprint": "8c7043769cccf05ec444ab5786d1cc104b02e8379838f154db152cd25e01134d",
+                "platform": "<platform>",
+                "appVersion": "2.4.0",
+                "sdkVersion": "<sdk-version>"
+              }
+            }
+          ],
+          "result": {
+            "ok": true,
+            "value": {
+              "status": "valid",
+              "offline": false,
+              "customer": "Acme",
+              "features": [
+                "pro"
+              ],
+              "expiresAt": "2028-01-15T08:00:00.000Z",
+              "maintenanceUntil": null,
+              "storageProtected": false,
+              "keyHint": "LK-7K2M…YZ5S",
+              "revalidateBy": "2027-01-18T08:00:00.000Z"
+            }
+          }
+        },
+        {
+          "requests": [
+            {
+              "path": "/v1/validate",
+              "body": {
+                "licenseKey": "LK-7K2M-QX9P-4RTV-8WNB-3HCJ-6DFG-YZ5S",
+                "product": "studio",
+                "fingerprint": "8c7043769cccf05ec444ab5786d1cc104b02e8379838f154db152cd25e01134d",
+                "appVersion": "2.4.0",
+                "sdkVersion": "<sdk-version>"
+              }
+            }
+          ],
+          "result": {
+            "ok": true,
+            "value": {
+              "status": "invalid",
+              "offline": false,
+              "storageProtected": false,
+              "features": [],
+              "expiresAt": null,
+              "reason": "license_revoked",
+              "message": "This license was revoked.",
+              "keyHint": "LK-7K2M…YZ5S"
+            }
+          }
+        },
+        {
+          "requests": [],
+          "result": {
+            "ok": true,
+            "value": {
+              "status": "unlicensed",
+              "offline": false,
+              "storageProtected": false,
+              "features": [],
+              "expiresAt": null
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "invalid key: forgotten",
+      "options": {
+        "product": "studio",
+        "publicKey": [
+          "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAy+BD73exRVhWXnfdiUHFz1XQ1wirGGATKTeWUfIyb+Y=\n-----END PUBLIC KEY-----\n"
+        ],
+        "appVersion": "2.4.0"
+      },
+      "machineId": "linux:0123456789abcdef0123456789abcdef",
+      "steps": [
+        {
+          "call": "activate",
+          "args": [
+            "LK-7K2M-QX9P-4RTV-8WNB-3HCJ-6DFG-YZ5S"
+          ],
+          "nowMs": 1800000000000,
+          "response": {
+            "status": 200,
+            "body": {
+              "token": "eyJhbGciOiJFZDI1NTE5IiwidHlwIjoibGljZW5zZWtpdC1sZWFzZStqd3QiLCJraWQiOiJTd1J3SU1NWUIzSE00aGV2b0FoLXdzV0R5SVM4YzU1bWlWZWFfc2xGam1BIn0.eyJpc3MiOiJsaWNlbnNla2l0Iiwic3ViIjoibGljXzEiLCJhdWQiOiJzdHVkaW8iLCJqdGkiOiJsZWFzZS0xOSIsImlhdCI6MTgwMDAwMDAwMCwibmJmIjoxODAwMDAwMDAwLCJleHAiOjE4MzE1MzYwMDAsInJldiI6MTgwMDI1OTIwMCwiZnAiOiI4YzcwNDM3NjljY2NmMDVlYzQ0NGFiNTc4NmQxY2MxMDRiMDJlODM3OTgzOGYxNTRkYjE1MmNkMjVlMDExMzRkIiwiZmVhdCI6WyJwcm8iXSwiY3VzIjoiQWNtZSJ9.nQYEJP4C2fs9zVnR9uqPksnX2rMIL4bvIdzilY8zYDr-no6E-4R3OQW7yn0hqAxehjYefMvhi4AgzlUMGA5dBA"
+            }
+          }
+        },
+        {
+          "call": "check",
+          "nowMs": 1800003600000,
+          "response": {
+            "status": 404,
+            "body": {
+              "error": "invalid_key",
+              "message": "Unknown license key."
+            }
+          }
+        },
+        {
+          "call": "check",
+          "nowMs": 1800007200000
+        }
+      ],
+      "outcomes": [
+        {
+          "requests": [
+            {
+              "path": "/v1/activate",
+              "body": {
+                "licenseKey": "LK-7K2M-QX9P-4RTV-8WNB-3HCJ-6DFG-YZ5S",
+                "product": "studio",
+                "fingerprint": "8c7043769cccf05ec444ab5786d1cc104b02e8379838f154db152cd25e01134d",
+                "platform": "<platform>",
+                "appVersion": "2.4.0",
+                "sdkVersion": "<sdk-version>"
+              }
+            }
+          ],
+          "result": {
+            "ok": true,
+            "value": {
+              "status": "valid",
+              "offline": false,
+              "customer": "Acme",
+              "features": [
+                "pro"
+              ],
+              "expiresAt": "2028-01-15T08:00:00.000Z",
+              "maintenanceUntil": null,
+              "storageProtected": false,
+              "keyHint": "LK-7K2M…YZ5S",
+              "revalidateBy": "2027-01-18T08:00:00.000Z"
+            }
+          }
+        },
+        {
+          "requests": [
+            {
+              "path": "/v1/validate",
+              "body": {
+                "licenseKey": "LK-7K2M-QX9P-4RTV-8WNB-3HCJ-6DFG-YZ5S",
+                "product": "studio",
+                "fingerprint": "8c7043769cccf05ec444ab5786d1cc104b02e8379838f154db152cd25e01134d",
+                "appVersion": "2.4.0",
+                "sdkVersion": "<sdk-version>"
+              }
+            }
+          ],
+          "result": {
+            "ok": true,
+            "value": {
+              "status": "invalid",
+              "offline": false,
+              "storageProtected": false,
+              "features": [],
+              "expiresAt": null,
+              "reason": "invalid_key",
+              "message": "Unknown license key.",
+              "keyHint": "LK-7K2M…YZ5S"
+            }
+          }
+        },
+        {
+          "requests": [],
+          "result": {
+            "ok": true,
+            "value": {
+              "status": "unlicensed",
+              "offline": false,
+              "storageProtected": false,
+              "features": [],
+              "expiresAt": null
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "other definitive refusals",
+      "options": {
+        "product": "studio",
+        "publicKey": [
+          "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAy+BD73exRVhWXnfdiUHFz1XQ1wirGGATKTeWUfIyb+Y=\n-----END PUBLIC KEY-----\n"
+        ],
+        "appVersion": "2.4.0"
+      },
+      "machineId": "linux:0123456789abcdef0123456789abcdef",
+      "steps": [
+        {
+          "call": "activate",
+          "args": [
+            "LK-7K2M-QX9P-4RTV-8WNB-3HCJ-6DFG-YZ5S"
+          ],
+          "nowMs": 1800000000000,
+          "response": {
+            "status": 200,
+            "body": {
+              "token": "eyJhbGciOiJFZDI1NTE5IiwidHlwIjoibGljZW5zZWtpdC1sZWFzZStqd3QiLCJraWQiOiJTd1J3SU1NWUIzSE00aGV2b0FoLXdzV0R5SVM4YzU1bWlWZWFfc2xGam1BIn0.eyJpc3MiOiJsaWNlbnNla2l0Iiwic3ViIjoibGljXzEiLCJhdWQiOiJzdHVkaW8iLCJqdGkiOiJsZWFzZS0yMCIsImlhdCI6MTgwMDAwMDAwMCwibmJmIjoxODAwMDAwMDAwLCJleHAiOjE4MzE1MzYwMDAsInJldiI6MTgwMDI1OTIwMCwiZnAiOiI4YzcwNDM3NjljY2NmMDVlYzQ0NGFiNTc4NmQxY2MxMDRiMDJlODM3OTgzOGYxNTRkYjE1MmNkMjVlMDExMzRkIiwiZmVhdCI6WyJwcm8iXSwiY3VzIjoiQWNtZSJ9.kvfjhvDLI_zpQgR9KxrzPf3Hw3-MuhQIu3IzdcH8Brh7-OGtaSy1h0BEwONsppizw7ACkwHK6c-elVtmRlH-Dg"
+            }
+          }
+        },
+        {
+          "call": "check",
+          "nowMs": 1800003600000,
+          "response": {
+            "status": 403,
+            "body": {
+              "error": "sdk_update_required",
+              "message": "Update the app to keep using it."
+            }
+          }
+        },
+        {
+          "call": "check",
+          "nowMs": 1800007200000,
+          "response": {
+            "status": 403,
+            "body": {
+              "error": "license_expired",
+              "message": "This license has expired."
+            }
+          }
+        },
+        {
+          "call": "check",
+          "nowMs": 1800010800000,
+          "response": {
+            "status": 404,
+            "body": {
+              "error": "not_activated",
+              "message": "This device is not activated for this license"
+            }
+          }
+        },
+        {
+          "call": "check",
+          "nowMs": 1800014400000,
+          "response": {
+            "status": 403,
+            "body": {
+              "error": "vm_not_allowed",
+              "message": "Virtual machines are not allowed."
+            }
+          }
+        },
+        {
+          "call": "check",
+          "nowMs": 1800018000000,
+          "response": {
+            "network": true
+          }
+        }
+      ],
+      "outcomes": [
+        {
+          "requests": [
+            {
+              "path": "/v1/activate",
+              "body": {
+                "licenseKey": "LK-7K2M-QX9P-4RTV-8WNB-3HCJ-6DFG-YZ5S",
+                "product": "studio",
+                "fingerprint": "8c7043769cccf05ec444ab5786d1cc104b02e8379838f154db152cd25e01134d",
+                "platform": "<platform>",
+                "appVersion": "2.4.0",
+                "sdkVersion": "<sdk-version>"
+              }
+            }
+          ],
+          "result": {
+            "ok": true,
+            "value": {
+              "status": "valid",
+              "offline": false,
+              "customer": "Acme",
+              "features": [
+                "pro"
+              ],
+              "expiresAt": "2028-01-15T08:00:00.000Z",
+              "maintenanceUntil": null,
+              "storageProtected": false,
+              "keyHint": "LK-7K2M…YZ5S",
+              "revalidateBy": "2027-01-18T08:00:00.000Z"
+            }
+          }
+        },
+        {
+          "requests": [
+            {
+              "path": "/v1/validate",
+              "body": {
+                "licenseKey": "LK-7K2M-QX9P-4RTV-8WNB-3HCJ-6DFG-YZ5S",
+                "product": "studio",
+                "fingerprint": "8c7043769cccf05ec444ab5786d1cc104b02e8379838f154db152cd25e01134d",
+                "appVersion": "2.4.0",
+                "sdkVersion": "<sdk-version>"
+              }
+            }
+          ],
+          "result": {
+            "ok": true,
+            "value": {
+              "status": "invalid",
+              "offline": false,
+              "storageProtected": false,
+              "features": [],
+              "expiresAt": null,
+              "reason": "sdk_update_required",
+              "message": "Update the app to keep using it.",
+              "keyHint": "LK-7K2M…YZ5S"
+            }
+          }
+        },
+        {
+          "requests": [
+            {
+              "path": "/v1/validate",
+              "body": {
+                "licenseKey": "LK-7K2M-QX9P-4RTV-8WNB-3HCJ-6DFG-YZ5S",
+                "product": "studio",
+                "fingerprint": "8c7043769cccf05ec444ab5786d1cc104b02e8379838f154db152cd25e01134d",
+                "appVersion": "2.4.0",
+                "sdkVersion": "<sdk-version>"
+              }
+            }
+          ],
+          "result": {
+            "ok": true,
+            "value": {
+              "status": "invalid",
+              "offline": false,
+              "storageProtected": false,
+              "features": [],
+              "expiresAt": null,
+              "reason": "license_expired",
+              "message": "This license has expired.",
+              "keyHint": "LK-7K2M…YZ5S"
+            }
+          }
+        },
+        {
+          "requests": [
+            {
+              "path": "/v1/validate",
+              "body": {
+                "licenseKey": "LK-7K2M-QX9P-4RTV-8WNB-3HCJ-6DFG-YZ5S",
+                "product": "studio",
+                "fingerprint": "8c7043769cccf05ec444ab5786d1cc104b02e8379838f154db152cd25e01134d",
+                "appVersion": "2.4.0",
+                "sdkVersion": "<sdk-version>"
+              }
+            }
+          ],
+          "result": {
+            "ok": true,
+            "value": {
+              "status": "invalid",
+              "offline": false,
+              "storageProtected": false,
+              "features": [],
+              "expiresAt": null,
+              "reason": "not_activated",
+              "message": "This device is not activated for this license",
+              "keyHint": "LK-7K2M…YZ5S"
+            }
+          }
+        },
+        {
+          "requests": [
+            {
+              "path": "/v1/validate",
+              "body": {
+                "licenseKey": "LK-7K2M-QX9P-4RTV-8WNB-3HCJ-6DFG-YZ5S",
+                "product": "studio",
+                "fingerprint": "8c7043769cccf05ec444ab5786d1cc104b02e8379838f154db152cd25e01134d",
+                "appVersion": "2.4.0",
+                "sdkVersion": "<sdk-version>"
+              }
+            }
+          ],
+          "result": {
+            "ok": true,
+            "value": {
+              "status": "invalid",
+              "offline": false,
+              "storageProtected": false,
+              "features": [],
+              "expiresAt": null,
+              "reason": "vm_not_allowed",
+              "message": "Virtual machines are not allowed.",
+              "keyHint": "LK-7K2M…YZ5S"
+            }
+          }
+        },
+        {
+          "requests": [
+            {
+              "path": "/v1/validate",
+              "body": {
+                "licenseKey": "LK-7K2M-QX9P-4RTV-8WNB-3HCJ-6DFG-YZ5S",
+                "product": "studio",
+                "fingerprint": "8c7043769cccf05ec444ab5786d1cc104b02e8379838f154db152cd25e01134d",
+                "appVersion": "2.4.0",
+                "sdkVersion": "<sdk-version>"
+              }
+            }
+          ],
+          "result": {
+            "ok": true,
+            "value": {
+              "status": "invalid",
+              "offline": true,
+              "storageProtected": false,
+              "features": [],
+              "expiresAt": null,
+              "reason": "vm_not_allowed",
+              "message": "Virtual machines are not allowed.",
+              "keyHint": "LK-7K2M…YZ5S"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "server error at check-in: the saved lease is used",
+      "options": {
+        "product": "studio",
+        "publicKey": [
+          "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAy+BD73exRVhWXnfdiUHFz1XQ1wirGGATKTeWUfIyb+Y=\n-----END PUBLIC KEY-----\n"
+        ],
+        "appVersion": "2.4.0"
+      },
+      "machineId": "linux:0123456789abcdef0123456789abcdef",
+      "steps": [
+        {
+          "call": "activate",
+          "args": [
+            "LK-7K2M-QX9P-4RTV-8WNB-3HCJ-6DFG-YZ5S"
+          ],
+          "nowMs": 1800000000000,
+          "response": {
+            "status": 200,
+            "body": {
+              "token": "eyJhbGciOiJFZDI1NTE5IiwidHlwIjoibGljZW5zZWtpdC1sZWFzZStqd3QiLCJraWQiOiJTd1J3SU1NWUIzSE00aGV2b0FoLXdzV0R5SVM4YzU1bWlWZWFfc2xGam1BIn0.eyJpc3MiOiJsaWNlbnNla2l0Iiwic3ViIjoibGljXzEiLCJhdWQiOiJzdHVkaW8iLCJqdGkiOiJsZWFzZS0yMSIsImlhdCI6MTgwMDAwMDAwMCwibmJmIjoxODAwMDAwMDAwLCJleHAiOjE4MzE1MzYwMDAsInJldiI6MTgwMDI1OTIwMCwiZnAiOiI4YzcwNDM3NjljY2NmMDVlYzQ0NGFiNTc4NmQxY2MxMDRiMDJlODM3OTgzOGYxNTRkYjE1MmNkMjVlMDExMzRkIiwiZmVhdCI6WyJwcm8iXSwiY3VzIjoiQWNtZSJ9.9D1OBzoCA6pl0BSV1glzE2MHngy-AaKxkWGkCUQ57DALvzFFF4zhbH1SQNYZO7744rWWq6mzK5sLNnPbXCXuDQ"
+            }
+          }
+        },
+        {
+          "call": "check",
+          "nowMs": 1800003600000,
+          "response": {
+            "status": 500,
+            "body": {
+              "error": "internal",
+              "message": "Something went wrong."
+            }
+          }
+        },
+        {
+          "call": "check",
+          "nowMs": 1800007200000,
+          "response": {
+            "status": 429,
+            "body": {
+              "error": "rate_limited",
+              "message": "Too many requests."
+            }
+          }
+        },
+        {
+          "call": "check",
+          "nowMs": 1800010800000,
+          "response": {
+            "status": 503,
+            "raw": "unavailable"
+          }
+        }
+      ],
+      "outcomes": [
+        {
+          "requests": [
+            {
+              "path": "/v1/activate",
+              "body": {
+                "licenseKey": "LK-7K2M-QX9P-4RTV-8WNB-3HCJ-6DFG-YZ5S",
+                "product": "studio",
+                "fingerprint": "8c7043769cccf05ec444ab5786d1cc104b02e8379838f154db152cd25e01134d",
+                "platform": "<platform>",
+                "appVersion": "2.4.0",
+                "sdkVersion": "<sdk-version>"
+              }
+            }
+          ],
+          "result": {
+            "ok": true,
+            "value": {
+              "status": "valid",
+              "offline": false,
+              "customer": "Acme",
+              "features": [
+                "pro"
+              ],
+              "expiresAt": "2028-01-15T08:00:00.000Z",
+              "maintenanceUntil": null,
+              "storageProtected": false,
+              "keyHint": "LK-7K2M…YZ5S",
+              "revalidateBy": "2027-01-18T08:00:00.000Z"
+            }
+          }
+        },
+        {
+          "requests": [
+            {
+              "path": "/v1/validate",
+              "body": {
+                "licenseKey": "LK-7K2M-QX9P-4RTV-8WNB-3HCJ-6DFG-YZ5S",
+                "product": "studio",
+                "fingerprint": "8c7043769cccf05ec444ab5786d1cc104b02e8379838f154db152cd25e01134d",
+                "appVersion": "2.4.0",
+                "sdkVersion": "<sdk-version>"
+              }
+            }
+          ],
+          "result": {
+            "ok": true,
+            "value": {
+              "status": "valid",
+              "offline": true,
+              "customer": "Acme",
+              "features": [
+                "pro"
+              ],
+              "expiresAt": "2028-01-15T08:00:00.000Z",
+              "maintenanceUntil": null,
+              "storageProtected": false,
+              "keyHint": "LK-7K2M…YZ5S",
+              "revalidateBy": "2027-01-18T08:00:00.000Z"
+            }
+          }
+        },
+        {
+          "requests": [
+            {
+              "path": "/v1/validate",
+              "body": {
+                "licenseKey": "LK-7K2M-QX9P-4RTV-8WNB-3HCJ-6DFG-YZ5S",
+                "product": "studio",
+                "fingerprint": "8c7043769cccf05ec444ab5786d1cc104b02e8379838f154db152cd25e01134d",
+                "appVersion": "2.4.0",
+                "sdkVersion": "<sdk-version>"
+              }
+            }
+          ],
+          "result": {
+            "ok": true,
+            "value": {
+              "status": "valid",
+              "offline": true,
+              "customer": "Acme",
+              "features": [
+                "pro"
+              ],
+              "expiresAt": "2028-01-15T08:00:00.000Z",
+              "maintenanceUntil": null,
+              "storageProtected": false,
+              "keyHint": "LK-7K2M…YZ5S",
+              "revalidateBy": "2027-01-18T08:00:00.000Z"
+            }
+          }
+        },
+        {
+          "requests": [
+            {
+              "path": "/v1/validate",
+              "body": {
+                "licenseKey": "LK-7K2M-QX9P-4RTV-8WNB-3HCJ-6DFG-YZ5S",
+                "product": "studio",
+                "fingerprint": "8c7043769cccf05ec444ab5786d1cc104b02e8379838f154db152cd25e01134d",
+                "appVersion": "2.4.0",
+                "sdkVersion": "<sdk-version>"
+              }
+            }
+          ],
+          "result": {
+            "ok": true,
+            "value": {
+              "status": "valid",
+              "offline": true,
+              "customer": "Acme",
+              "features": [
+                "pro"
+              ],
+              "expiresAt": "2028-01-15T08:00:00.000Z",
+              "maintenanceUntil": null,
+              "storageProtected": false,
+              "keyHint": "LK-7K2M…YZ5S",
+              "revalidateBy": "2027-01-18T08:00:00.000Z"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "expired lease offline",
+      "options": {
+        "product": "studio",
+        "publicKey": [
+          "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAy+BD73exRVhWXnfdiUHFz1XQ1wirGGATKTeWUfIyb+Y=\n-----END PUBLIC KEY-----\n"
+        ],
+        "appVersion": "2.4.0"
+      },
+      "machineId": "linux:0123456789abcdef0123456789abcdef",
+      "steps": [
+        {
+          "call": "activate",
+          "args": [
+            "LK-7K2M-QX9P-4RTV-8WNB-3HCJ-6DFG-YZ5S"
+          ],
+          "nowMs": 1800000000000,
+          "response": {
+            "status": 200,
+            "body": {
+              "token": "eyJhbGciOiJFZDI1NTE5IiwidHlwIjoibGljZW5zZWtpdC1sZWFzZStqd3QiLCJraWQiOiJTd1J3SU1NWUIzSE00aGV2b0FoLXdzV0R5SVM4YzU1bWlWZWFfc2xGam1BIn0.eyJpc3MiOiJsaWNlbnNla2l0Iiwic3ViIjoibGljXzEiLCJhdWQiOiJzdHVkaW8iLCJqdGkiOiJsZWFzZS0yMiIsImlhdCI6MTgwMDAwMDAwMCwibmJmIjoxODAwMDAwMDAwLCJleHAiOjE4MDAwODY0MDAsInJldiI6MTgwMDI1OTIwMCwiZnAiOiI4YzcwNDM3NjljY2NmMDVlYzQ0NGFiNTc4NmQxY2MxMDRiMDJlODM3OTgzOGYxNTRkYjE1MmNkMjVlMDExMzRkIiwiZmVhdCI6WyJwcm8iXSwiY3VzIjoiQWNtZSJ9.liNglCtKIbUqlWw7XlvEpc8-yCTTlPEn2mVWnv7_r7ePhijyn7hrDErrqDnPPILdRniSpecEGh5gu21PcgbOAA"
+            }
+          }
+        },
+        {
+          "call": "check",
+          "nowMs": 1800086600000,
+          "response": {
+            "network": true
+          }
+        },
+        {
+          "call": "check",
+          "nowMs": 1800086701000,
+          "response": {
+            "network": true
+          }
+        }
+      ],
+      "outcomes": [
+        {
+          "requests": [
+            {
+              "path": "/v1/activate",
+              "body": {
+                "licenseKey": "LK-7K2M-QX9P-4RTV-8WNB-3HCJ-6DFG-YZ5S",
+                "product": "studio",
+                "fingerprint": "8c7043769cccf05ec444ab5786d1cc104b02e8379838f154db152cd25e01134d",
+                "platform": "<platform>",
+                "appVersion": "2.4.0",
+                "sdkVersion": "<sdk-version>"
+              }
+            }
+          ],
+          "result": {
+            "ok": true,
+            "value": {
+              "status": "valid",
+              "offline": false,
+              "customer": "Acme",
+              "features": [
+                "pro"
+              ],
+              "expiresAt": "2027-01-16T08:00:00.000Z",
+              "maintenanceUntil": null,
+              "storageProtected": false,
+              "keyHint": "LK-7K2M…YZ5S",
+              "revalidateBy": "2027-01-18T08:00:00.000Z"
+            }
+          }
+        },
+        {
+          "requests": [
+            {
+              "path": "/v1/validate",
+              "body": {
+                "licenseKey": "LK-7K2M-QX9P-4RTV-8WNB-3HCJ-6DFG-YZ5S",
+                "product": "studio",
+                "fingerprint": "8c7043769cccf05ec444ab5786d1cc104b02e8379838f154db152cd25e01134d",
+                "appVersion": "2.4.0",
+                "sdkVersion": "<sdk-version>"
+              }
+            }
+          ],
+          "result": {
+            "ok": true,
+            "value": {
+              "status": "valid",
+              "offline": true,
+              "customer": "Acme",
+              "features": [
+                "pro"
+              ],
+              "expiresAt": "2027-01-16T08:00:00.000Z",
+              "maintenanceUntil": null,
+              "storageProtected": false,
+              "keyHint": "LK-7K2M…YZ5S",
+              "revalidateBy": "2027-01-18T08:00:00.000Z"
+            }
+          }
+        },
+        {
+          "requests": [
+            {
+              "path": "/v1/validate",
+              "body": {
+                "licenseKey": "LK-7K2M-QX9P-4RTV-8WNB-3HCJ-6DFG-YZ5S",
+                "product": "studio",
+                "fingerprint": "8c7043769cccf05ec444ab5786d1cc104b02e8379838f154db152cd25e01134d",
+                "appVersion": "2.4.0",
+                "sdkVersion": "<sdk-version>"
+              }
+            }
+          ],
+          "result": {
+            "ok": true,
+            "value": {
+              "status": "invalid",
+              "offline": true,
+              "storageProtected": false,
+              "features": [],
+              "expiresAt": null,
+              "reason": "expired",
+              "message": "Your license has expired.",
+              "keyHint": "LK-7K2M…YZ5S"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "perpetual license with maintenance",
+      "options": {
+        "product": "studio",
+        "publicKey": [
+          "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAy+BD73exRVhWXnfdiUHFz1XQ1wirGGATKTeWUfIyb+Y=\n-----END PUBLIC KEY-----\n"
+        ],
+        "appVersion": "2.4.0"
+      },
+      "machineId": "linux:0123456789abcdef0123456789abcdef",
+      "steps": [
+        {
+          "call": "activate",
+          "args": [
+            "LK-7K2M-QX9P-4RTV-8WNB-3HCJ-6DFG-YZ5S"
+          ],
+          "nowMs": 1800000000000,
+          "response": {
+            "status": 200,
+            "body": {
+              "token": "eyJhbGciOiJFZDI1NTE5IiwidHlwIjoibGljZW5zZWtpdC1sZWFzZStqd3QiLCJraWQiOiJTd1J3SU1NWUIzSE00aGV2b0FoLXdzV0R5SVM4YzU1bWlWZWFfc2xGam1BIn0.eyJpc3MiOiJsaWNlbnNla2l0Iiwic3ViIjoibGljXzEiLCJhdWQiOiJzdHVkaW8iLCJqdGkiOiJsZWFzZS0yMyIsImlhdCI6MTgwMDAwMDAwMCwibmJmIjoxODAwMDAwMDAwLCJyZXYiOjE4MDAyNTkyMDAsImZwIjoiOGM3MDQzNzY5Y2NjZjA1ZWM0NDRhYjU3ODZkMWNjMTA0YjAyZTgzNzk4MzhmMTU0ZGIxNTJjZDI1ZTAxMTM0ZCIsImZlYXQiOltdLCJtbnQiOjE4MzE1MzYwMDB9.qTnRVphX-9Ez7WJHDUyAYsbwu65ut0BJ8hSciiY-nzr0uPwAR5AAGGmSvi5-aAkq87FlMqOCJOEw09IlmJ5WCw"
+            }
+          }
+        }
+      ],
+      "outcomes": [
+        {
+          "requests": [
+            {
+              "path": "/v1/activate",
+              "body": {
+                "licenseKey": "LK-7K2M-QX9P-4RTV-8WNB-3HCJ-6DFG-YZ5S",
+                "product": "studio",
+                "fingerprint": "8c7043769cccf05ec444ab5786d1cc104b02e8379838f154db152cd25e01134d",
+                "platform": "<platform>",
+                "appVersion": "2.4.0",
+                "sdkVersion": "<sdk-version>"
+              }
+            }
+          ],
+          "result": {
+            "ok": true,
+            "value": {
+              "status": "valid",
+              "offline": false,
+              "features": [],
+              "expiresAt": null,
+              "maintenanceUntil": "2028-01-15T08:00:00.000Z",
+              "storageProtected": false,
+              "keyHint": "LK-7K2M…YZ5S",
+              "revalidateBy": "2027-01-18T08:00:00.000Z"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "lease signed with an unknown key or changed",
+      "options": {
+        "product": "studio",
+        "publicKey": [
+          "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAy+BD73exRVhWXnfdiUHFz1XQ1wirGGATKTeWUfIyb+Y=\n-----END PUBLIC KEY-----\n"
+        ],
+        "appVersion": "2.4.0"
+      },
+      "machineId": "linux:0123456789abcdef0123456789abcdef",
+      "steps": [
+        {
+          "call": "activate",
+          "args": [
+            "LK-7K2M-QX9P-4RTV-8WNB-3HCJ-6DFG-YZ5S"
+          ],
+          "nowMs": 1800000000000,
+          "response": {
+            "status": 200,
+            "body": {
+              "token": "eyJhbGciOiJFZDI1NTE5IiwidHlwIjoibGljZW5zZWtpdC1sZWFzZStqd3QiLCJraWQiOiJIWUpEdWEyRXl6aURUM1YwR3VnZXN5Q1p3Vmlfb3NlMEQ2RjlOSHVDbnRRIn0.eyJpc3MiOiJsaWNlbnNla2l0Iiwic3ViIjoibCIsImF1ZCI6InN0dWRpbyIsImp0aSI6IngiLCJpYXQiOjE4MDAwMDAwMDAsIm5iZiI6MTgwMDAwMDAwMCwicmV2IjoxODAwMDAzNjAwLCJmcCI6IjhjNzA0Mzc2OWNjY2YwNWVjNDQ0YWI1Nzg2ZDFjYzEwNGIwMmU4Mzc5ODM4ZjE1NGRiMTUyY2QyNWUwMTEzNGQiLCJmZWF0IjpbXX0.XELIQcvp29Fzpl9B6fT2JTGfXQ-wg23WPjIwxlVMOCv2ahsHgqY7S8KvsSBJMX5GPkDU19IZ1Tan2VibPEKWDg"
+            }
+          }
+        },
+        {
+          "call": "activate",
+          "args": [
+            "LK-7K2M-QX9P-4RTV-8WNB-3HCJ-6DFG-YZ5S"
+          ],
+          "nowMs": 1800000000000,
+          "response": {
+            "status": 200,
+            "body": {
+              "token": "eyJhbGciOiJFZDI1NTE5IiwidHlwIjoibGljZW5zZWtpdC1sZWFzZStqd3QiLCJraWQiOiJTd1J3SU1NWUIzSE00aGV2b0FoLXdzV0R5SVM4YzU1bWlWZWFfc2xGam1BIn0.eyJpc3MiOiJsaWNlbnNla2l0Iiwic3ViIjoibGljXzEiLCJhdWQiOiJzdHVkaW8iLCJqdGkiOiJsZWFzZS0yNCIsImlhdCI6MTgwMDAwMDAwMCwibmJmIjoxODAwMDAwMDAwLCJleHAiOjE4MzE1MzYwMDAsInJldiI6MTgwMDI1OTIwMCwiZnAiOiI4YzcwNDM3NjljY2NmMDVlYzQ0NGFiNTc4NmQxY2MxMDRiMDJlODM3OTgzOGYxNTRkYjE1MmNkMjVlMDExMzRkIiwiZmVhdCI6WyJwcm8iXSwiY3VzIjoiQWNtZSJ9.WCIy3mJON1YQF_OEJnYZt3h8O4iM2Da_oAhW1KS6b49NNCOU-IfGCfemoiXPpy8Ic_rGrIs_iKtVPNlsrtvgAA"
+            }
+          }
+        }
+      ],
+      "outcomes": [
+        {
+          "requests": [
+            {
+              "path": "/v1/activate",
+              "body": {
+                "licenseKey": "LK-7K2M-QX9P-4RTV-8WNB-3HCJ-6DFG-YZ5S",
+                "product": "studio",
+                "fingerprint": "8c7043769cccf05ec444ab5786d1cc104b02e8379838f154db152cd25e01134d",
+                "platform": "<platform>",
+                "appVersion": "2.4.0",
+                "sdkVersion": "<sdk-version>"
+              }
+            }
+          ],
+          "result": {
+            "ok": false,
+            "error": {
+              "code": "unknown_key",
+              "message": "Please update the app."
+            }
+          }
+        },
+        {
+          "requests": [
+            {
+              "path": "/v1/activate",
+              "body": {
+                "licenseKey": "LK-7K2M-QX9P-4RTV-8WNB-3HCJ-6DFG-YZ5S",
+                "product": "studio",
+                "fingerprint": "8c7043769cccf05ec444ab5786d1cc104b02e8379838f154db152cd25e01134d",
+                "platform": "<platform>",
+                "appVersion": "2.4.0",
+                "sdkVersion": "<sdk-version>"
+              }
+            }
+          ],
+          "result": {
+            "ok": false,
+            "error": {
+              "code": "bad_signature",
+              "message": "The saved license was modified. Please activate again."
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "deactivate",
+      "options": {
+        "product": "studio",
+        "publicKey": [
+          "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAy+BD73exRVhWXnfdiUHFz1XQ1wirGGATKTeWUfIyb+Y=\n-----END PUBLIC KEY-----\n"
+        ],
+        "appVersion": "2.4.0"
+      },
+      "machineId": "linux:0123456789abcdef0123456789abcdef",
+      "steps": [
+        {
+          "call": "activate",
+          "args": [
+            "LK-7K2M-QX9P-4RTV-8WNB-3HCJ-6DFG-YZ5S"
+          ],
+          "nowMs": 1800000000000,
+          "response": {
+            "status": 200,
+            "body": {
+              "token": "eyJhbGciOiJFZDI1NTE5IiwidHlwIjoibGljZW5zZWtpdC1sZWFzZStqd3QiLCJraWQiOiJTd1J3SU1NWUIzSE00aGV2b0FoLXdzV0R5SVM4YzU1bWlWZWFfc2xGam1BIn0.eyJpc3MiOiJsaWNlbnNla2l0Iiwic3ViIjoibGljXzEiLCJhdWQiOiJzdHVkaW8iLCJqdGkiOiJsZWFzZS0yNSIsImlhdCI6MTgwMDAwMDAwMCwibmJmIjoxODAwMDAwMDAwLCJleHAiOjE4MzE1MzYwMDAsInJldiI6MTgwMDI1OTIwMCwiZnAiOiI4YzcwNDM3NjljY2NmMDVlYzQ0NGFiNTc4NmQxY2MxMDRiMDJlODM3OTgzOGYxNTRkYjE1MmNkMjVlMDExMzRkIiwiZmVhdCI6WyJwcm8iXSwiY3VzIjoiQWNtZSJ9.zeCA2Fh2ebLHkrtPNanZfCG1bNnI9yAgL2TFWzAzZwv-B5YEdRQmMqMz14t8ayyJlUl9USedmaY6ksPNIjlsAQ"
+            }
+          }
+        },
+        {
+          "call": "deactivate",
+          "nowMs": 1800003600000,
+          "response": {
+            "status": 200,
+            "body": {
+              "ok": true
+            }
+          }
+        },
+        {
+          "call": "check",
+          "nowMs": 1800007200000
+        },
+        {
+          "call": "deactivate",
+          "nowMs": 1800007200000
+        }
+      ],
+      "outcomes": [
+        {
+          "requests": [
+            {
+              "path": "/v1/activate",
+              "body": {
+                "licenseKey": "LK-7K2M-QX9P-4RTV-8WNB-3HCJ-6DFG-YZ5S",
+                "product": "studio",
+                "fingerprint": "8c7043769cccf05ec444ab5786d1cc104b02e8379838f154db152cd25e01134d",
+                "platform": "<platform>",
+                "appVersion": "2.4.0",
+                "sdkVersion": "<sdk-version>"
+              }
+            }
+          ],
+          "result": {
+            "ok": true,
+            "value": {
+              "status": "valid",
+              "offline": false,
+              "customer": "Acme",
+              "features": [
+                "pro"
+              ],
+              "expiresAt": "2028-01-15T08:00:00.000Z",
+              "maintenanceUntil": null,
+              "storageProtected": false,
+              "keyHint": "LK-7K2M…YZ5S",
+              "revalidateBy": "2027-01-18T08:00:00.000Z"
+            }
+          }
+        },
+        {
+          "requests": [
+            {
+              "path": "/v1/deactivate",
+              "body": {
+                "licenseKey": "LK-7K2M-QX9P-4RTV-8WNB-3HCJ-6DFG-YZ5S",
+                "product": "studio",
+                "fingerprint": "8c7043769cccf05ec444ab5786d1cc104b02e8379838f154db152cd25e01134d"
+              }
+            }
+          ],
+          "result": {
+            "ok": true,
+            "value": null
+          }
+        },
+        {
+          "requests": [],
+          "result": {
+            "ok": true,
+            "value": {
+              "status": "unlicensed",
+              "offline": false,
+              "storageProtected": false,
+              "features": [],
+              "expiresAt": null
+            }
+          }
+        },
+        {
+          "requests": [],
+          "result": {
+            "ok": true,
+            "value": null
+          }
+        }
+      ]
+    },
+    {
+      "name": "deactivate when the server no longer knows the device",
+      "options": {
+        "product": "studio",
+        "publicKey": [
+          "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAy+BD73exRVhWXnfdiUHFz1XQ1wirGGATKTeWUfIyb+Y=\n-----END PUBLIC KEY-----\n"
+        ],
+        "appVersion": "2.4.0"
+      },
+      "machineId": "linux:0123456789abcdef0123456789abcdef",
+      "steps": [
+        {
+          "call": "activate",
+          "args": [
+            "LK-7K2M-QX9P-4RTV-8WNB-3HCJ-6DFG-YZ5S"
+          ],
+          "nowMs": 1800000000000,
+          "response": {
+            "status": 200,
+            "body": {
+              "token": "eyJhbGciOiJFZDI1NTE5IiwidHlwIjoibGljZW5zZWtpdC1sZWFzZStqd3QiLCJraWQiOiJTd1J3SU1NWUIzSE00aGV2b0FoLXdzV0R5SVM4YzU1bWlWZWFfc2xGam1BIn0.eyJpc3MiOiJsaWNlbnNla2l0Iiwic3ViIjoibGljXzEiLCJhdWQiOiJzdHVkaW8iLCJqdGkiOiJsZWFzZS0yNiIsImlhdCI6MTgwMDAwMDAwMCwibmJmIjoxODAwMDAwMDAwLCJleHAiOjE4MzE1MzYwMDAsInJldiI6MTgwMDI1OTIwMCwiZnAiOiI4YzcwNDM3NjljY2NmMDVlYzQ0NGFiNTc4NmQxY2MxMDRiMDJlODM3OTgzOGYxNTRkYjE1MmNkMjVlMDExMzRkIiwiZmVhdCI6WyJwcm8iXSwiY3VzIjoiQWNtZSJ9.IRqhKIveL6GnWLR4yuBcJblrf85cPDYUMxPreW1HEJFsnm0rHBA1M0s7-qG1N8mlqGAiNfxjNGJrzQKFdK25AA"
+            }
+          }
+        },
+        {
+          "call": "deactivate",
+          "nowMs": 1800003600000,
+          "response": {
+            "status": 404,
+            "body": {
+              "error": "not_activated",
+              "message": "This device is not activated for this license"
+            }
+          }
+        },
+        {
+          "call": "check",
+          "nowMs": 1800007200000
+        }
+      ],
+      "outcomes": [
+        {
+          "requests": [
+            {
+              "path": "/v1/activate",
+              "body": {
+                "licenseKey": "LK-7K2M-QX9P-4RTV-8WNB-3HCJ-6DFG-YZ5S",
+                "product": "studio",
+                "fingerprint": "8c7043769cccf05ec444ab5786d1cc104b02e8379838f154db152cd25e01134d",
+                "platform": "<platform>",
+                "appVersion": "2.4.0",
+                "sdkVersion": "<sdk-version>"
+              }
+            }
+          ],
+          "result": {
+            "ok": true,
+            "value": {
+              "status": "valid",
+              "offline": false,
+              "customer": "Acme",
+              "features": [
+                "pro"
+              ],
+              "expiresAt": "2028-01-15T08:00:00.000Z",
+              "maintenanceUntil": null,
+              "storageProtected": false,
+              "keyHint": "LK-7K2M…YZ5S",
+              "revalidateBy": "2027-01-18T08:00:00.000Z"
+            }
+          }
+        },
+        {
+          "requests": [
+            {
+              "path": "/v1/deactivate",
+              "body": {
+                "licenseKey": "LK-7K2M-QX9P-4RTV-8WNB-3HCJ-6DFG-YZ5S",
+                "product": "studio",
+                "fingerprint": "8c7043769cccf05ec444ab5786d1cc104b02e8379838f154db152cd25e01134d"
+              }
+            }
+          ],
+          "result": {
+            "ok": true,
+            "value": null
+          }
+        },
+        {
+          "requests": [],
+          "result": {
+            "ok": true,
+            "value": {
+              "status": "unlicensed",
+              "offline": false,
+              "storageProtected": false,
+              "features": [],
+              "expiresAt": null
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "deactivate without a connection keeps the license",
+      "options": {
+        "product": "studio",
+        "publicKey": [
+          "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAy+BD73exRVhWXnfdiUHFz1XQ1wirGGATKTeWUfIyb+Y=\n-----END PUBLIC KEY-----\n"
+        ],
+        "appVersion": "2.4.0"
+      },
+      "machineId": "linux:0123456789abcdef0123456789abcdef",
+      "steps": [
+        {
+          "call": "activate",
+          "args": [
+            "LK-7K2M-QX9P-4RTV-8WNB-3HCJ-6DFG-YZ5S"
+          ],
+          "nowMs": 1800000000000,
+          "response": {
+            "status": 200,
+            "body": {
+              "token": "eyJhbGciOiJFZDI1NTE5IiwidHlwIjoibGljZW5zZWtpdC1sZWFzZStqd3QiLCJraWQiOiJTd1J3SU1NWUIzSE00aGV2b0FoLXdzV0R5SVM4YzU1bWlWZWFfc2xGam1BIn0.eyJpc3MiOiJsaWNlbnNla2l0Iiwic3ViIjoibGljXzEiLCJhdWQiOiJzdHVkaW8iLCJqdGkiOiJsZWFzZS0yNyIsImlhdCI6MTgwMDAwMDAwMCwibmJmIjoxODAwMDAwMDAwLCJleHAiOjE4MzE1MzYwMDAsInJldiI6MTgwMDI1OTIwMCwiZnAiOiI4YzcwNDM3NjljY2NmMDVlYzQ0NGFiNTc4NmQxY2MxMDRiMDJlODM3OTgzOGYxNTRkYjE1MmNkMjVlMDExMzRkIiwiZmVhdCI6WyJwcm8iXSwiY3VzIjoiQWNtZSJ9.KVW7QUtdDsTmFoTjUjlTqKlxTlLegdBLbOl8asUt2mOKIqF2UDgf89yzZ_hstC4T2CbXVPRzEgW66ieSVnfBBg"
+            }
+          }
+        },
+        {
+          "call": "deactivate",
+          "nowMs": 1800003600000,
+          "response": {
+            "network": true
+          }
+        },
+        {
+          "call": "check",
+          "nowMs": 1800007200000,
+          "response": {
+            "network": true
+          }
+        }
+      ],
+      "outcomes": [
+        {
+          "requests": [
+            {
+              "path": "/v1/activate",
+              "body": {
+                "licenseKey": "LK-7K2M-QX9P-4RTV-8WNB-3HCJ-6DFG-YZ5S",
+                "product": "studio",
+                "fingerprint": "8c7043769cccf05ec444ab5786d1cc104b02e8379838f154db152cd25e01134d",
+                "platform": "<platform>",
+                "appVersion": "2.4.0",
+                "sdkVersion": "<sdk-version>"
+              }
+            }
+          ],
+          "result": {
+            "ok": true,
+            "value": {
+              "status": "valid",
+              "offline": false,
+              "customer": "Acme",
+              "features": [
+                "pro"
+              ],
+              "expiresAt": "2028-01-15T08:00:00.000Z",
+              "maintenanceUntil": null,
+              "storageProtected": false,
+              "keyHint": "LK-7K2M…YZ5S",
+              "revalidateBy": "2027-01-18T08:00:00.000Z"
+            }
+          }
+        },
+        {
+          "requests": [
+            {
+              "path": "/v1/deactivate",
+              "body": {
+                "licenseKey": "LK-7K2M-QX9P-4RTV-8WNB-3HCJ-6DFG-YZ5S",
+                "product": "studio",
+                "fingerprint": "8c7043769cccf05ec444ab5786d1cc104b02e8379838f154db152cd25e01134d"
+              }
+            }
+          ],
+          "result": {
+            "ok": false,
+            "error": {
+              "code": "network",
+              "message": "Could not reach the license server."
+            }
+          }
+        },
+        {
+          "requests": [
+            {
+              "path": "/v1/validate",
+              "body": {
+                "licenseKey": "LK-7K2M-QX9P-4RTV-8WNB-3HCJ-6DFG-YZ5S",
+                "product": "studio",
+                "fingerprint": "8c7043769cccf05ec444ab5786d1cc104b02e8379838f154db152cd25e01134d",
+                "appVersion": "2.4.0",
+                "sdkVersion": "<sdk-version>"
+              }
+            }
+          ],
+          "result": {
+            "ok": true,
+            "value": {
+              "status": "valid",
+              "offline": true,
+              "customer": "Acme",
+              "features": [
+                "pro"
+              ],
+              "expiresAt": "2028-01-15T08:00:00.000Z",
+              "maintenanceUntil": null,
+              "storageProtected": false,
+              "keyHint": "LK-7K2M…YZ5S",
+              "revalidateBy": "2027-01-18T08:00:00.000Z"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "offline activation by file",
+      "options": {
+        "product": "studio",
+        "publicKey": [
+          "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAy+BD73exRVhWXnfdiUHFz1XQ1wirGGATKTeWUfIyb+Y=\n-----END PUBLIC KEY-----\n"
+        ],
+        "appVersion": "2.4.0"
+      },
+      "machineId": "linux:0123456789abcdef0123456789abcdef",
+      "steps": [
+        {
+          "call": "offlineRequest",
+          "args": [
+            " lk-7k2m-qx9p-4rtv-8wnb-3hcj-6dfg-yz5s "
+          ],
+          "nowMs": 1800000000000
+        },
+        {
+          "call": "offlineRequest",
+          "args": [
+            "LK-7K2M-QX9P-4RTV-8WNB-3HCJ-6DFG-YZ5S",
+            "Lab PC"
+          ],
+          "nowMs": 1800000000000
+        },
+        {
+          "call": "activateOffline",
+          "args": [
+            "{\"format\":\"licensekit-offline-license\",\"version\":1,\"product\":\"studio\",\"licenseKey\":\"lk-7k2m-qx9p-4rtv-8wnb-3hcj-6dfg-yz5s\",\"token\":\"eyJhbGciOiJFZDI1NTE5IiwidHlwIjoibGljZW5zZWtpdC1sZWFzZStqd3QiLCJraWQiOiJTd1J3SU1NWUIzSE00aGV2b0FoLXdzV0R5SVM4YzU1bWlWZWFfc2xGam1BIn0.eyJpc3MiOiJsaWNlbnNla2l0Iiwic3ViIjoibGljXzEiLCJhdWQiOiJzdHVkaW8iLCJqdGkiOiJsZWFzZS0yOCIsImlhdCI6MTgwMDAwMDAwMCwibmJmIjoxODAwMDAwMDAwLCJleHAiOjE4MzE1MzYwMDAsInJldiI6MTgwMjU5MjAwMCwiZnAiOiI4YzcwNDM3NjljY2NmMDVlYzQ0NGFiNTc4NmQxY2MxMDRiMDJlODM3OTgzOGYxNTRkYjE1MmNkMjVlMDExMzRkIiwiZmVhdCI6WyJwcm8iXSwiY3VzIjoiQWNtZSIsImdyYyI6MTIwOTYwMH0.EdVavYl-uaWYjrQRCbtNKShhDxC2WQWwgrk_nb4FlmRPvgzgxm8M-a-bpY4OpYRLO5ofu9KVKdmRSXqjgBUJDA\",\"customer\":\"Acme\",\"revalidateBy\":\"2027-02-14T08:00:00.000Z\"}"
+          ],
+          "nowMs": 1800003600000
+        },
+        {
+          "call": "check",
+          "nowMs": 1800172800000
+        },
+        {
+          "call": "check",
+          "nowMs": 1803024000000
+        },
+        {
+          "call": "check",
+          "nowMs": 1803888000000
+        },
+        {
+          "call": "deactivateOffline",
+          "nowMs": 1803888000000
+        },
+        {
+          "call": "check",
+          "nowMs": 1803888000000
+        },
+        {
+          "call": "deactivateOffline",
+          "nowMs": 1803888000000
+        }
+      ],
+      "outcomes": [
+        {
+          "requests": [],
+          "result": {
+            "ok": true,
+            "value": {
+              "format": "licensekit-offline-request",
+              "version": 1,
+              "activation": {
+                "licenseKey": "LK-7K2M-QX9P-4RTV-8WNB-3HCJ-6DFG-YZ5S",
+                "product": "studio",
+                "fingerprint": "8c7043769cccf05ec444ab5786d1cc104b02e8379838f154db152cd25e01134d",
+                "platform": "<platform>",
+                "appVersion": "2.4.0",
+                "sdkVersion": "<sdk-version>"
+              }
+            }
+          }
+        },
+        {
+          "requests": [],
+          "result": {
+            "ok": true,
+            "value": {
+              "format": "licensekit-offline-request",
+              "version": 1,
+              "activation": {
+                "licenseKey": "LK-7K2M-QX9P-4RTV-8WNB-3HCJ-6DFG-YZ5S",
+                "product": "studio",
+                "fingerprint": "8c7043769cccf05ec444ab5786d1cc104b02e8379838f154db152cd25e01134d",
+                "machineName": "Lab PC",
+                "platform": "<platform>",
+                "appVersion": "2.4.0",
+                "sdkVersion": "<sdk-version>"
+              }
+            }
+          }
+        },
+        {
+          "requests": [],
+          "result": {
+            "ok": true,
+            "value": {
+              "status": "valid",
+              "offline": true,
+              "customer": "Acme",
+              "features": [
+                "pro"
+              ],
+              "expiresAt": "2028-01-15T08:00:00.000Z",
+              "maintenanceUntil": null,
+              "storageProtected": false,
+              "keyHint": "LK-7K2M…YZ5S",
+              "offlineActivated": true,
+              "revalidateBy": "2027-02-14T08:00:00.000Z"
+            }
+          }
+        },
+        {
+          "requests": [],
+          "result": {
+            "ok": true,
+            "value": {
+              "status": "valid",
+              "offline": true,
+              "customer": "Acme",
+              "features": [
+                "pro"
+              ],
+              "expiresAt": "2028-01-15T08:00:00.000Z",
+              "maintenanceUntil": null,
+              "storageProtected": false,
+              "keyHint": "LK-7K2M…YZ5S",
+              "offlineActivated": true,
+              "revalidateBy": "2027-02-14T08:00:00.000Z"
+            }
+          }
+        },
+        {
+          "requests": [],
+          "result": {
+            "ok": true,
+            "value": {
+              "status": "grace",
+              "offline": true,
+              "reason": "offline_grace",
+              "message": "This offline license is past its renewal date. Load a new offline license file soon to keep using the app.",
+              "customer": "Acme",
+              "features": [
+                "pro"
+              ],
+              "expiresAt": "2028-01-15T08:00:00.000Z",
+              "maintenanceUntil": null,
+              "storageProtected": false,
+              "keyHint": "LK-7K2M…YZ5S",
+              "offlineActivated": true,
+              "revalidateBy": "2027-02-28T08:00:00.000Z"
+            }
+          }
+        },
+        {
+          "requests": [],
+          "result": {
+            "ok": true,
+            "value": {
+              "status": "invalid",
+              "offline": true,
+              "storageProtected": false,
+              "features": [],
+              "expiresAt": null,
+              "reason": "revalidation_required",
+              "message": "Connect to the internet to confirm your license.",
+              "keyHint": "LK-7K2M…YZ5S"
+            }
+          }
+        },
+        {
+          "requests": [],
+          "result": {
+            "ok": true,
+            "value": {
+              "format": "licensekit-offline-deactivation",
+              "version": 1,
+              "product": "studio",
+              "token": "eyJhbGciOiJFZDI1NTE5IiwidHlwIjoibGljZW5zZWtpdC1sZWFzZStqd3QiLCJraWQiOiJTd1J3SU1NWUIzSE00aGV2b0FoLXdzV0R5SVM4YzU1bWlWZWFfc2xGam1BIn0.eyJpc3MiOiJsaWNlbnNla2l0Iiwic3ViIjoibGljXzEiLCJhdWQiOiJzdHVkaW8iLCJqdGkiOiJsZWFzZS0yOCIsImlhdCI6MTgwMDAwMDAwMCwibmJmIjoxODAwMDAwMDAwLCJleHAiOjE4MzE1MzYwMDAsInJldiI6MTgwMjU5MjAwMCwiZnAiOiI4YzcwNDM3NjljY2NmMDVlYzQ0NGFiNTc4NmQxY2MxMDRiMDJlODM3OTgzOGYxNTRkYjE1MmNkMjVlMDExMzRkIiwiZmVhdCI6WyJwcm8iXSwiY3VzIjoiQWNtZSIsImdyYyI6MTIwOTYwMH0.EdVavYl-uaWYjrQRCbtNKShhDxC2WQWwgrk_nb4FlmRPvgzgxm8M-a-bpY4OpYRLO5ofu9KVKdmRSXqjgBUJDA"
+            }
+          }
+        },
+        {
+          "requests": [],
+          "result": {
+            "ok": true,
+            "value": {
+              "status": "unlicensed",
+              "offline": false,
+              "storageProtected": false,
+              "features": [],
+              "expiresAt": null
+            }
+          }
+        },
+        {
+          "requests": [],
+          "result": {
+            "ok": false,
+            "error": {
+              "code": "unlicensed",
+              "message": "This device has no license."
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "offline license files that are refused",
+      "options": {
+        "product": "studio",
+        "publicKey": [
+          "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAy+BD73exRVhWXnfdiUHFz1XQ1wirGGATKTeWUfIyb+Y=\n-----END PUBLIC KEY-----\n"
+        ],
+        "appVersion": "2.4.0"
+      },
+      "machineId": "linux:0123456789abcdef0123456789abcdef",
+      "steps": [
+        {
+          "call": "activateOffline",
+          "args": [
+            "not json"
+          ],
+          "nowMs": 1800000000000
+        },
+        {
+          "call": "activateOffline",
+          "args": [
+            "{\"format\":\"other\",\"version\":1,\"product\":\"studio\",\"licenseKey\":\"LK-7K2M-QX9P-4RTV-8WNB-3HCJ-6DFG-YZ5S\",\"token\":\"eyJhbGciOiJFZDI1NTE5IiwidHlwIjoibGljZW5zZWtpdC1sZWFzZStqd3QiLCJraWQiOiJTd1J3SU1NWUIzSE00aGV2b0FoLXdzV0R5SVM4YzU1bWlWZWFfc2xGam1BIn0.eyJpc3MiOiJsaWNlbnNla2l0Iiwic3ViIjoibGljXzEiLCJhdWQiOiJzdHVkaW8iLCJqdGkiOiJsZWFzZS0yOSIsImlhdCI6MTgwMDAwMDAwMCwibmJmIjoxODAwMDAwMDAwLCJleHAiOjE4MzE1MzYwMDAsInJldiI6MTgwMDI1OTIwMCwiZnAiOiI4YzcwNDM3NjljY2NmMDVlYzQ0NGFiNTc4NmQxY2MxMDRiMDJlODM3OTgzOGYxNTRkYjE1MmNkMjVlMDExMzRkIiwiZmVhdCI6WyJwcm8iXSwiY3VzIjoiQWNtZSJ9.ihaFbXmIYP4K5QTDbBODcMESK_Bv3MwW8yTe1EPr_1zE_nylm0_i-NH2fRxh-OTRwl-EEfsgF4wLAgNGst9uBw\"}"
+          ],
+          "nowMs": 1800000000000
+        },
+        {
+          "call": "activateOffline",
+          "args": [
+            "{\"format\":\"licensekit-offline-license\",\"version\":2,\"product\":\"studio\",\"licenseKey\":\"LK-7K2M-QX9P-4RTV-8WNB-3HCJ-6DFG-YZ5S\",\"token\":\"eyJhbGciOiJFZDI1NTE5IiwidHlwIjoibGljZW5zZWtpdC1sZWFzZStqd3QiLCJraWQiOiJTd1J3SU1NWUIzSE00aGV2b0FoLXdzV0R5SVM4YzU1bWlWZWFfc2xGam1BIn0.eyJpc3MiOiJsaWNlbnNla2l0Iiwic3ViIjoibGljXzEiLCJhdWQiOiJzdHVkaW8iLCJqdGkiOiJsZWFzZS0zMCIsImlhdCI6MTgwMDAwMDAwMCwibmJmIjoxODAwMDAwMDAwLCJleHAiOjE4MzE1MzYwMDAsInJldiI6MTgwMDI1OTIwMCwiZnAiOiI4YzcwNDM3NjljY2NmMDVlYzQ0NGFiNTc4NmQxY2MxMDRiMDJlODM3OTgzOGYxNTRkYjE1MmNkMjVlMDExMzRkIiwiZmVhdCI6WyJwcm8iXSwiY3VzIjoiQWNtZSJ9.z081FsG06M3l67S93Wh6sPzXQpggqt3vzU_4QvAK9wkN5hBa_50cmjC3o2jE21whwMgGe90OWse9bY4-CDHzDA\"}"
+          ],
+          "nowMs": 1800000000000
+        },
+        {
+          "call": "activateOffline",
+          "args": [
+            "{\"format\":\"licensekit-offline-license\",\"version\":1,\"product\":\"studio\",\"licenseKey\":\"LK-7K2M-QX9P-4RTV-8WNB-3HCJ-6DFG-YZ5S\"}"
+          ],
+          "nowMs": 1800000000000
+        },
+        {
+          "call": "activateOffline",
+          "args": [
+            "{\"format\":\"licensekit-offline-license\",\"version\":1,\"product\":\"other\",\"licenseKey\":\"LK-7K2M-QX9P-4RTV-8WNB-3HCJ-6DFG-YZ5S\",\"token\":\"eyJhbGciOiJFZDI1NTE5IiwidHlwIjoibGljZW5zZWtpdC1sZWFzZStqd3QiLCJraWQiOiJTd1J3SU1NWUIzSE00aGV2b0FoLXdzV0R5SVM4YzU1bWlWZWFfc2xGam1BIn0.eyJpc3MiOiJsaWNlbnNla2l0Iiwic3ViIjoibGljXzEiLCJhdWQiOiJzdHVkaW8iLCJqdGkiOiJsZWFzZS0zMSIsImlhdCI6MTgwMDAwMDAwMCwibmJmIjoxODAwMDAwMDAwLCJleHAiOjE4MzE1MzYwMDAsInJldiI6MTgwMDI1OTIwMCwiZnAiOiI4YzcwNDM3NjljY2NmMDVlYzQ0NGFiNTc4NmQxY2MxMDRiMDJlODM3OTgzOGYxNTRkYjE1MmNkMjVlMDExMzRkIiwiZmVhdCI6WyJwcm8iXSwiY3VzIjoiQWNtZSJ9.F9OFtcLqoyNhwNo-YVgTONmVWo0D8ViL83p_BR1gJ_GqANSt6-EvIEiySc_92aHT8B79F2CE85tmwG7TedwnAw\"}"
+          ],
+          "nowMs": 1800000000000
+        },
+        {
+          "call": "activateOffline",
+          "args": [
+            "{\"format\":\"licensekit-offline-license\",\"version\":1,\"product\":\"studio\",\"licenseKey\":\"LK-7K2M-QX9P-4RTV-8WNB-3HCJ-6DFG-YZ5S\",\"token\":\"eyJhbGciOiJFZDI1NTE5IiwidHlwIjoibGljZW5zZWtpdC1sZWFzZStqd3QiLCJraWQiOiJTd1J3SU1NWUIzSE00aGV2b0FoLXdzV0R5SVM4YzU1bWlWZWFfc2xGam1BIn0.eyJpc3MiOiJsaWNlbnNla2l0Iiwic3ViIjoibGljXzEiLCJhdWQiOiJzdHVkaW8iLCJqdGkiOiJsZWFzZS0zMiIsImlhdCI6MTgwMDAwMDAwMCwibmJmIjoxODAwMDAwMDAwLCJleHAiOjE4MzE1MzYwMDAsInJldiI6MTgwMDI1OTIwMCwiZnAiOiJlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlIiwiZmVhdCI6WyJwcm8iXSwiY3VzIjoiQWNtZSJ9._WVkpLjNtXElGSrE-KN7fJtZozUUD3_1_uxjfROXs3MeLk02ptMiRAcc0wQihsWDLtnxdaCkOfCZeqeZujl5Bg\"}"
+          ],
+          "nowMs": 1800000000000
+        },
+        {
+          "call": "activateOffline",
+          "args": [
+            "{\"format\":\"licensekit-offline-license\",\"version\":1,\"product\":\"studio\",\"licenseKey\":\"LK-7K2M-QX9P-4RTV-8WNB-3HCJ-6DFG-YZ5S\",\"token\":\"eyJhbGciOiJFZDI1NTE5IiwidHlwIjoibGljZW5zZWtpdC1sZWFzZStqd3QiLCJraWQiOiJTd1J3SU1NWUIzSE00aGV2b0FoLXdzV0R5SVM4YzU1bWlWZWFfc2xGam1BIn0.eyJpc3MiOiJsaWNlbnNla2l0Iiwic3ViIjoibGljXzEiLCJhdWQiOiJzdHVkaW8iLCJqdGkiOiJsZWFzZS0zMyIsImlhdCI6MTgwMDE3MjgwMCwibmJmIjoxODAwMTcyODAwLCJleHAiOjE4MzE3MDg4MDAsInJldiI6MTgwMDQzMjAwMCwiZnAiOiI4YzcwNDM3NjljY2NmMDVlYzQ0NGFiNTc4NmQxY2MxMDRiMDJlODM3OTgzOGYxNTRkYjE1MmNkMjVlMDExMzRkIiwiZmVhdCI6WyJwcm8iXSwiY3VzIjoiQWNtZSJ9.FYIwPmh4KKYuY_m9ui8iroFfDR9kTmVQhdUiIqWiuKOcdcpbKYPrwGz5grPc95674aufQSZdOUA30voxB8zODQ\"}"
+          ],
+          "nowMs": 1800000000000
+        },
+        {
+          "call": "check",
+          "nowMs": 1800000000000
+        }
+      ],
+      "outcomes": [
+        {
+          "requests": [],
+          "result": {
+            "ok": false,
+            "error": {
+              "code": "invalid_file",
+              "message": "This is not a Carcha Seal offline license file."
+            }
+          }
+        },
+        {
+          "requests": [],
+          "result": {
+            "ok": false,
+            "error": {
+              "code": "invalid_file",
+              "message": "This is not a Carcha Seal offline license file."
+            }
+          }
+        },
+        {
+          "requests": [],
+          "result": {
+            "ok": false,
+            "error": {
+              "code": "invalid_file",
+              "message": "This is not a Carcha Seal offline license file."
+            }
+          }
+        },
+        {
+          "requests": [],
+          "result": {
+            "ok": false,
+            "error": {
+              "code": "invalid_file",
+              "message": "This is not a Carcha Seal offline license file."
+            }
+          }
+        },
+        {
+          "requests": [],
+          "result": {
+            "ok": false,
+            "error": {
+              "code": "wrong_product",
+              "message": "This offline license file is for another product."
+            }
+          }
+        },
+        {
+          "requests": [],
+          "result": {
+            "ok": false,
+            "error": {
+              "code": "wrong_device",
+              "message": "This license is activated on another device."
+            }
+          }
+        },
+        {
+          "requests": [],
+          "result": {
+            "ok": false,
+            "error": {
+              "code": "clock_suspect",
+              "message": "The date and time on this computer look wrong. Correct them, then connect to the internet."
+            }
+          }
+        },
+        {
+          "requests": [],
+          "result": {
+            "ok": true,
+            "value": {
+              "status": "unlicensed",
+              "offline": false,
+              "storageProtected": false,
+              "features": [],
+              "expiresAt": null
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "decrypt feature data",
+      "options": {
+        "product": "studio",
+        "publicKey": [
+          "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAy+BD73exRVhWXnfdiUHFz1XQ1wirGGATKTeWUfIyb+Y=\n-----END PUBLIC KEY-----\n"
+        ],
+        "appVersion": "2.4.0"
+      },
+      "machineId": "linux:0123456789abcdef0123456789abcdef",
+      "steps": [
+        {
+          "call": "decrypt",
+          "args": [
+            "pro",
+            "TEtFMTmfH27dFbyJAWd7O9e+LZlYVsVzhVfa+ZYyCk1N3fpJtkg9vu1DPLRVBArE0UftjA=="
+          ],
+          "nowMs": 1800000000000
+        },
+        {
+          "call": "activate",
+          "args": [
+            "LK-7K2M-QX9P-4RTV-8WNB-3HCJ-6DFG-YZ5S"
+          ],
+          "nowMs": 1800000000000,
+          "response": {
+            "status": 200,
+            "body": {
+              "token": "eyJhbGciOiJFZDI1NTE5IiwidHlwIjoibGljZW5zZWtpdC1sZWFzZStqd3QiLCJraWQiOiJTd1J3SU1NWUIzSE00aGV2b0FoLXdzV0R5SVM4YzU1bWlWZWFfc2xGam1BIn0.eyJpc3MiOiJsaWNlbnNla2l0Iiwic3ViIjoibGljXzEiLCJhdWQiOiJzdHVkaW8iLCJqdGkiOiJsZWFzZS0zNCIsImlhdCI6MTgwMDAwMDAwMCwibmJmIjoxODAwMDAwMDAwLCJleHAiOjE4MzE1MzYwMDAsInJldiI6MTgwMDI1OTIwMCwiZnAiOiI4YzcwNDM3NjljY2NmMDVlYzQ0NGFiNTc4NmQxY2MxMDRiMDJlODM3OTgzOGYxNTRkYjE1MmNkMjVlMDExMzRkIiwiZmVhdCI6WyJwcm8iLCJleHBvcnQiXSwiY3VzIjoiQWNtZSIsImZrIjp7InBybyI6IlFNeU9OUzRUcktfSWpmUWpfc19hRi10d3FYZTQ4RFdrZ0p1QXNMY1NYa1NPa1oyNER0cXFDdWlzU2RZN1g1VEpjRDhiSHFHei1GYkJucWxmIiwicHJvfnByZXZpb3VzIjoiWlFEbHM2SUJ3LUNLRHF6MHlhRDVkWEh3bk1MYV8wX1JSM3dyWUdNR29NZFVlMWZzZTZfNHJ0YWRfSFJKcEZrYmp1MHZPMmw4bWRJVnhzaXcifX0.UK0lXw7peI28ZeTazAMGjZ1clVqaT47q91BOS55nJFB1-MF4QNKkgzRTCmeknMLVgnDnlOGl-I7oCOifFW39AQ"
+            }
+          }
+        },
+        {
+          "call": "decrypt",
+          "args": [
+            "pro",
+            "TEtFMcVXKsqTZk8dSd9IIB4s+n7IwjRtcvVcqYgN0aGNeN6GvlLIIwgbJXJDpNXpHSLKmQ=="
+          ],
+          "nowMs": 1800003600000
+        },
+        {
+          "call": "decrypt",
+          "args": [
+            "pro",
+            "TEtFMTVsng+JqaJfycAbRT4PempcDX2hWt38u3pZNx/fGiV7pGGWdhAZ6E0n/lLlaBN9a/4k1NcD4cuPM50OPMdojulnYyKdqo8="
+          ],
+          "nowMs": 1800003600000
+        },
+        {
+          "call": "decrypt",
+          "args": [
+            "export",
+            "TEtFMbOwlhTKMPbmn6c0cOntFx0rZVhDO4DAZAaVx19/z12nhIHocEtG1Nlu1RONWBvOYQ=="
+          ],
+          "nowMs": 1800003600000
+        },
+        {
+          "call": "decrypt",
+          "args": [
+            "other",
+            "TEtFMaAVpA3uYQtAI6KcMl6IBzDMIyW+hpr77v2zTVZZTZe4lnd/vVok8ic4J6VIzLXSLw=="
+          ],
+          "nowMs": 1800003600000
+        },
+        {
+          "call": "decrypt",
+          "args": [
+            "pro",
+            "TEtFMW+hrDyppQput1C+bwv58tK1DMy7vq7I/ifVPykbg4VGuoaXA8Vq4VS6xaY8NocMwg=="
+          ],
+          "nowMs": 1800003600000
+        },
+        {
+          "call": "decrypt",
+          "args": [
+            "pro",
+            "TEtFMYg3rYIWTggpPypY16GPwVeZkaMYXmADAitIT2C9Tp/gb0ZrxGj5bHOov72k4/pUZw=="
+          ],
+          "nowMs": 1800345600000
+        },
+        {
+          "call": "decrypt",
+          "args": [
+            "pro",
+            "TEtFMVw+EC3I1oyVVTubeSMlhnBY9zQ6OB9FQq14c1+6H0TkxNOR/M1RerHcpXKfKPxdAQ=="
+          ],
+          "nowMs": 1800950400000
+        }
+      ],
+      "outcomes": [
+        {
+          "requests": [],
+          "result": {
+            "ok": false,
+            "error": {
+              "code": "unlicensed",
+              "message": "This device has no license."
+            }
+          }
+        },
+        {
+          "requests": [
+            {
+              "path": "/v1/activate",
+              "body": {
+                "licenseKey": "LK-7K2M-QX9P-4RTV-8WNB-3HCJ-6DFG-YZ5S",
+                "product": "studio",
+                "fingerprint": "8c7043769cccf05ec444ab5786d1cc104b02e8379838f154db152cd25e01134d",
+                "platform": "<platform>",
+                "appVersion": "2.4.0",
+                "sdkVersion": "<sdk-version>"
+              }
+            }
+          ],
+          "result": {
+            "ok": true,
+            "value": {
+              "status": "valid",
+              "offline": false,
+              "customer": "Acme",
+              "features": [
+                "pro",
+                "export"
+              ],
+              "expiresAt": "2028-01-15T08:00:00.000Z",
+              "maintenanceUntil": null,
+              "storageProtected": false,
+              "keyHint": "LK-7K2M…YZ5S",
+              "revalidateBy": "2027-01-18T08:00:00.000Z"
+            }
+          }
+        },
+        {
+          "requests": [],
+          "result": {
+            "ok": true,
+            "value": "ZmVhdHVyZSBkYXRhIGZvciBwcm8="
+          }
+        },
+        {
+          "requests": [],
+          "result": {
+            "ok": true,
+            "value": "ZGF0YSBlbmNyeXB0ZWQgYmVmb3JlIHRoZSBrZXkgd2FzIHJlcGxhY2Vk"
+          }
+        },
+        {
+          "requests": [],
+          "result": {
+            "ok": false,
+            "error": {
+              "code": "feature_not_licensed",
+              "message": "This license does not include \"export\"."
+            }
+          }
+        },
+        {
+          "requests": [],
+          "result": {
+            "ok": false,
+            "error": {
+              "code": "feature_not_licensed",
+              "message": "This license does not include \"other\"."
+            }
+          }
+        },
+        {
+          "requests": [],
+          "result": {
+            "ok": false,
+            "error": {
+              "code": "decrypt_failed",
+              "message": "The data could not be decrypted with this license."
+            }
+          }
+        },
+        {
+          "requests": [],
+          "result": {
+            "ok": true,
+            "value": "ZmVhdHVyZSBkYXRhIGZvciBwcm8="
+          }
+        },
+        {
+          "requests": [],
+          "result": {
+            "ok": false,
+            "error": {
+              "code": "revalidation_required",
+              "message": "Connect to the internet to confirm your license."
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "machine id cannot be read",
+      "options": {
+        "product": "studio",
+        "publicKey": [
+          "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAy+BD73exRVhWXnfdiUHFz1XQ1wirGGATKTeWUfIyb+Y=\n-----END PUBLIC KEY-----\n"
+        ],
+        "appVersion": "2.4.0"
+      },
+      "machineId": null,
+      "steps": [
+        {
+          "call": "check",
+          "nowMs": 1800000000000
+        },
+        {
+          "call": "activate",
+          "args": [
+            "LK-7K2M-QX9P-4RTV-8WNB-3HCJ-6DFG-YZ5S"
+          ],
+          "nowMs": 1800000000000
+        }
+      ],
+      "outcomes": [
+        {
+          "requests": [],
+          "result": {
+            "ok": true,
+            "value": {
+              "status": "invalid",
+              "offline": false,
+              "storageProtected": false,
+              "features": [],
+              "expiresAt": null,
+              "reason": "machine_id_unavailable",
+              "message": "This computer's id could not be read. Try again; if it keeps failing, contact the app's support."
+            }
+          }
+        },
+        {
+          "requests": [],
+          "result": {
+            "ok": false,
+            "error": {
+              "code": "machine_id_unavailable",
+              "message": "This computer's id could not be read. Try again; if it keeps failing, contact the app's support."
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
