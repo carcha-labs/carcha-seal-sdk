@@ -51,6 +51,93 @@ reading of the Regulation, not legal advice.
 - **Your app's own obligations**: its risk assessment, conformity assessment, technical documentation, CE marking,
   information for your users (Annex II), its support period, and Article 14 reporting for your app.
 
+## Information for you (Annex II)
+
+What Annex II asks to accompany Carcha Seal, for you as the vendor who builds it into an app. Points 2, 3, 7 and 9
+(vulnerability contact, identification, support period, SBOM) are in [SECURITY.md](SECURITY.md).
+
+### Manufacturer
+
+Carcha Labs, security@carchalabs.com, https://carchalabs.com.
+Postal address: to be added here before 11 December 2027.
+
+### Intended purpose, security environment, essential functions, security properties
+
+- **Intended purpose.** Licensing a desktop app built with Electron or Node.js: licence keys, activation on a limited
+  number of computers, offline use for a set time, paid features unlocked per licence.
+- **Not intended for:** controlling access to systems or data, identifying people, or protecting anything that must
+  hold against someone who controls the computer the app runs on.
+- **Security environment.** The SDK runs in your app on your customer's computer, which your customer controls. It
+  talks to the Carcha Seal server over HTTPS.
+- **Essential functions.** Activate, check (online, and offline until the lease's check-in date plus the grace
+  period), deactivate, offline activation with files, opening data or code encrypted for a feature.
+- **Security properties: what Seal protects.**
+  - A lease cannot be forged or changed without your signing key: it is checked with the public keys built into your
+    app, and again in the native module.
+  - A lease works on the computer it was issued for only.
+  - Data you encrypt for a feature opens only with a licence that includes the feature, on that computer, and the
+    content key stays in native code when the native module is trusted.
+  - The licence key and device data travel over HTTPS only; device data leaves the computer only as hashes.
+- **What Seal does not protect against.** Someone who controls the computer can change your app, its memory or the
+  SDK's checks, and so run it without a licence with enough effort; Seal makes that harder, not impossible. A
+  feature's decrypted data is in memory while your app uses it.
+
+### Foreseeable circumstances that may lead to significant risks
+
+- An outdated SDK: fixes reach your customers only when you ship them (point 8(c)). The server can ask apps to update
+  (`sdk_update_recommended`, `sdk_update_required`).
+- Pinning only the current public key: a key rotation then breaks installed apps. Pin both keys the console shows
+  (`publicKey: [current, next]`).
+- Storing the lease unprotected: pass `secureStore` (Electron `safeStorage`), or the licence key in `license.dat` can
+  be copied.
+- Sending a person's name as the machine name (`activate(key, machineName)`): send a device label, or nothing.
+- Shipping your app without Electron's fuses and ASAR integrity: code can then be changed before the SDK runs.
+- Sharing a product code with another vendor on the hosted service: device hashes are keyed by product code until
+  a later release keys them per vendor.
+- Leaking a feature key: replace it in the console and encrypt your data again; the previous key keeps opening older
+  data until the next replacement.
+
+### Instructions
+
+#### (a) Secure use, at first use and after
+
+1. Get the server address and both public keys from the console (Settings) and build them into your app.
+2. Pass `secureStore` with Electron `safeStorage`.
+3. Enable Electron's fuses (`RunAsNode` off, `EnableEmbeddedAsarIntegrityValidation` and `OnlyLoadAppFromAsar` on)
+   and sign your app.
+4. Ship the native module (`@carchalabs/seal-hwid`) unpacked from the ASAR, so the second check and native decryption
+   run.
+5. Call `check()` at startup and every few hours; show the notices it returns (`notices`).
+6. Keep API keys on your backend only; never in the app.
+7. Turn on two-factor sign-in for your console account.
+
+#### (b) How changes can affect the security of data
+
+Options that send or keep less: no machine name; `hardware: false` (no hardware hashes, weaker binding);
+`allowFallbackFingerprint` only if the operating system's machine id cannot be read, since the fallback uses the
+host name. Details: `PRIVACY.md`.
+
+#### (c) How security updates are installed
+
+The SDK is a library inside your app; it does not update itself and installs nothing. Security fixes are published to
+npm as patch versions, marked as security fixes in the changelog and announced in a GitHub security advisory. Update
+the dependency, rebuild your app and ship it through your app's update channel. The server's operator can set a
+minimum SDK version: older apps first get a notice (`sdk_update_recommended`), then from a set date a refusal
+(`sdk_update_required`), so outdated copies stop rather than run with a known flaw. You can do the same for your app's
+own version (`app_update_required`).
+
+#### (d) Secure decommissioning and removing user data
+
+- On a computer: `deactivate()` frees the seat and deletes `license.dat`.
+- On the server: erase a device or a licence with its data (console, or `POST /api/activations/:id/erase` and
+  `POST /api/licenses/:id/erase`); delete your account under Settings. Backups keep data until they rotate out (14
+  copies).
+
+#### (e) Turning off automatic security updates
+
+Not applicable: the SDK has no automatic update to turn off, because a library inside your app cannot replace itself
+(see (c)). Your app's own updater decides.
+
 Personal data that the Carcha Seal server processes for you is described in the privacy notice:
 https://seal.carchalabs.com/privacy/.
 
