@@ -1,0 +1,31 @@
+[package]
+name = "seal_native"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.85"
+description = "C interface of Carcha Seal for C, C++, C# and Java: lease verification, feature decryption, device key and hardware components."
+license = "MIT"
+publish = false
+
+[lib]
+# rlib for the Rust tests, staticlib for native apps that link it, cdylib for
+# .NET P/Invoke and the JVM.
+crate-type = ["rlib", "staticlib", "cdylib"]
+
+[dependencies]
+seal_hwid = { path = "../hwid" }
+seal_lease = { path = "../lease" }
+base64 = "0.22"
+
+[dev-dependencies]
+serde_json = "1"
+
+[features]
+# Test builds only (CI): exports seal_test_decrypt_feature_with_secret, so the shared vectors
+# can be run through the C interface. Published builds always derive the secret from the hardware.
+test-device-secret = []
+
+[profile.release]
+lto = true
+codegen-units = 1
+strip = true

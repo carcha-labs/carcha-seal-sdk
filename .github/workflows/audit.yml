@@ -29,7 +29,7 @@ jobs:
         with:
           path: ~/.cargo/bin/cargo-audit
           key: cargo-audit-${{ env.CARGO_AUDIT_VERSION }}-${{ runner.os }}
-      - name: cargo audit (hwid, lease, hwid-node)
+      - name: cargo audit (hwid, lease, native, hwid-node)
         run: |
           command -v cargo-audit || cargo install cargo-audit --locked --version "$CARGO_AUDIT_VERSION"
           for lock in packages/hwid/Cargo.lock packages/lease/Cargo.lock packages/hwid-node/Cargo.lock; do
