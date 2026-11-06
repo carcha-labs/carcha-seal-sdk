@@ -59,6 +59,7 @@ export interface SecureStore {
 }
 
 export interface SealOptions {
+  /** The license server: https://, or http:// on this computer only (localhost, 127.x.x.x, [::1]). */
   serverUrl: string;
   product: string;
   publicKey: string | string[];
@@ -152,6 +153,24 @@ export class LicenseError extends Error {
   }
 }
 
+/**
+ * Refuses a server address that would send requests in plain text (OWASP ASVS 4.1.2, 12.2.1): every request
+ * carries the license key and the device's fingerprint. http:// is accepted for this computer only, where a server
+ * under development runs; `localhost` and the loopback addresses do not leave the machine.
+ */
+function checkServerUrl(serverUrl: string): void {
+  let url: URL;
+  try {
+    url = new URL(serverUrl);
+  } catch {
+    throw new LicenseError('invalid_server_url', 'serverUrl is not a valid URL.');
+  }
+  if (url.protocol === 'https:') return;
+  const loopback = url.hostname === 'localhost' || url.hostname === '[::1]' || /^127(\.\d{1,3}){3}$/.test(url.hostname);
+  if (url.protocol === 'http:' && loopback) return;
+  throw new LicenseError('insecure_server_url', 'serverUrl must start with https:// (http:// only for localhost).');
+}
+
 const REASON_TEXT: Record<LeaseFailure, string> = {
   malformed: 'The saved license is damaged. Please activate again.',
   bad_signature: 'The saved license was modified. Please activate again.',
@@ -183,6 +202,7 @@ export class Seal {
   private deviceKeyCache?: string | null;
 
   constructor(private readonly opts: SealOptions) {
+    checkServerUrl(opts.serverUrl);
     this.file = join(opts.storageDir, 'license.dat');
     this.keys = keySet(Array.isArray(opts.publicKey) ? opts.publicKey : [opts.publicKey]);
   }
@@ -261,6 +281,9 @@ export class Seal {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
+        // A redirect is refused, not followed: it could take the request, license key included, to another
+        // address or to http:// (ASVS 4.1.2). The server answers its API at the configured address.
+        redirect: 'error',
         signal: AbortSignal.timeout(this.opts.requestTimeoutMs ?? 8000),
       });
     } catch {

@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- The license server is reached over https only. A `serverUrl` with `http://` is refused when the SDK is created (`LicenseError` with code `insecure_server_url`), except on this computer (`localhost`, `127.x.x.x`, `[::1]`) for a server under development; an address that is not a URL is `invalid_server_url`. Every request carries the license key and the device's fingerprint.
+- A redirect from the license server is no longer followed; the request fails with `network`. A redirect could take the request, license key included, to another address.
+
 ## 0.5.0
 
 The package is now `@carchalabs/seal-electron` (Carcha Seal, formerly LicenseKit); `@carchalabs/licensekit-electron` is deprecated and gets no further releases. Same behaviour as 0.4.0.

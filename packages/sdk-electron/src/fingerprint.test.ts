@@ -5,7 +5,7 @@ import { generateSigningKeys } from '@carchalabs/seal-core';
 import { LicenseError, LicenseKit, Seal } from './index';
 
 test('an unusable public key is rejected when the SDK is created', () => {
-  assert.throws(() => new Seal({ serverUrl: 'http://x', product: 'a', publicKey: '', storageDir: '/tmp' }));
+  assert.throws(() => new Seal({ serverUrl: 'https://x', product: 'a', publicKey: '', storageDir: '/tmp' }));
 });
 
 test('machine id is stable across calls', async () => {
@@ -16,7 +16,7 @@ test('machine id is stable across calls', async () => {
 });
 
 test('fingerprint is a per-product sha256, never the raw id', async () => {
-  const opts = { serverUrl: 'http://x', publicKey: generateSigningKeys().publicKeyPem, storageDir: '/tmp', machineId: async () => 'raw-id' };
+  const opts = { serverUrl: 'https://x', publicKey: generateSigningKeys().publicKeyPem, storageDir: '/tmp', machineId: async () => 'raw-id' };
   const f1 = await new Seal({ ...opts, product: 'a' }).fingerprint();
   const f2 = await new Seal({ ...opts, product: 'b' }).fingerprint();
   assert.match(f1, /^[a-f0-9]{64}$/);
