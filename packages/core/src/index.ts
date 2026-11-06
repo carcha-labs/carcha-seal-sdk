@@ -418,6 +418,12 @@ export type FeatureDecryptResult =
  * Verifies the lease, unwraps the feature's content key for this license key and device, and
  * decrypts data encrypted for the feature. The native module does the same (decryptFeature).
  */
+/**
+ * The fk entry for a feature's previous content key: after the vendor replaces a key, leases carry the previous one
+ * too, so data encrypted before still opens. `~` cannot appear in a feature name, so the entry never clashes with one.
+ */
+export const PREVIOUS_KEY_SUFFIX = '~previous';
+
 export function decryptFeature(
   token: string,
   options: LeaseVerifyOptions,
@@ -437,7 +443,17 @@ export function decryptFeature(
       epk !== undefined
         ? deviceFeatureWrapKey(licenseKey, options.product, options.fingerprintHash, jti, deviceSecret!, epk)
         : featureWrapKey(licenseKey, options.product, options.fingerprintHash, jti);
-    return { ok: true, data: decryptForFeature(unwrapFeatureKey(wrapped, wrapKey, feature), feature, encrypted) };
+    // The current key first; then the previous one, when the vendor replaced the key and this data is older.
+    const previousEntry = feature + PREVIOUS_KEY_SUFFIX;
+    const previous = verified.claims.fk?.[previousEntry];
+    for (const [entry, value] of [[feature, wrapped], ...(typeof previous === 'string' ? [[previousEntry, previous]] : [])]) {
+      try {
+        return { ok: true, data: decryptForFeature(unwrapFeatureKey(value, wrapKey, entry), feature, encrypted) };
+      } catch {
+        // try the next key
+      }
+    }
+    return { ok: false, reason: 'decrypt_failed' };
   } catch {
     return { ok: false, reason: 'decrypt_failed' };
   }

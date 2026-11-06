@@ -2,7 +2,7 @@ import { KeyObject } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
 import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
-import { hostname, platform } from 'node:os';
+import { platform } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { compileFunction } from 'node:vm';
 import { decodeLease, decryptFeature, hashFingerprint, keySet, LeaseClaims, LeaseFailure, LeaseVerifyOptions, LeaseVerifyResult, verifyLease } from '@carchalabs/seal-core';
@@ -399,14 +399,15 @@ export class Seal {
     return this.emptyState('invalid', offline, { reason: strict.reason, message: REASON_TEXT[strict.reason], keyHint });
   }
 
-  async activate(licenseKey: string, machineName = hostname()): Promise<LicenseState> {
+  /** machineName: the name to show the vendor for this device. Nothing is sent when the app gives none (host names often hold a person's name). */
+  async activate(licenseKey: string, machineName?: string): Promise<LicenseState> {
     const fingerprint = await this.fingerprint();
     const key = licenseKey.trim().toUpperCase();
     const response = await this.post('/v1/activate', {
       licenseKey: key,
       product: this.opts.product,
       fingerprint,
-      machineName: machineName.slice(0, 80),
+      machineName: machineName?.slice(0, 80),
       platform: platform(),
       appVersion: this.opts.appVersion,
       sdkVersion: SDK_VERSION,
@@ -564,13 +565,13 @@ export class Seal {
    * POST /v1/offline/activate (or its offline activation page). It holds what activate() would send:
    * the license key, this device's fingerprint and hashed hardware parts, never raw serial numbers.
    */
-  async offlineRequest(licenseKey: string, machineName = hostname()): Promise<string> {
+  async offlineRequest(licenseKey: string, machineName?: string): Promise<string> {
     const fingerprint = await this.fingerprint();
     const activation = {
       licenseKey: licenseKey.trim().toUpperCase(),
       product: this.opts.product,
       fingerprint,
-      machineName: machineName.slice(0, 80),
+      machineName: machineName?.slice(0, 80),
       platform: platform(),
       appVersion: this.opts.appVersion,
       sdkVersion: SDK_VERSION,

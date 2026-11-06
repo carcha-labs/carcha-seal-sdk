@@ -320,6 +320,10 @@ pub fn decrypt_for_feature(content_key: &[u8; 32], feature: &str, encrypted: &[u
     open(content_key, sealed, &format!("LKE1:{feature}"))
 }
 
+/// The fk entry for a feature's previous content key, kept for one replacement so data encrypted before still opens.
+/// `~` cannot appear in a feature name, so the entry never clashes with one.
+pub const PREVIOUS_KEY_SUFFIX: &str = "~previous";
+
 /// Why feature data could not be decrypted.
 #[derive(Debug, PartialEq, Eq)]
 pub enum DecryptError {
@@ -367,8 +371,14 @@ pub fn decrypt_feature(
             .ok_or(DecryptError::Failed)?,
         None => feature_wrap_key(license_key, options.product, options.fingerprint_hash, lease_id),
     };
-    let content_key = unwrap_feature_key(wrapped, &wrap_key, feature).ok_or(DecryptError::Failed)?;
-    decrypt_for_feature(&content_key, feature, encrypted).ok_or(DecryptError::Failed)
+    // The current key first; then the previous one, when the vendor replaced the key and this data is older.
+    let previous_entry = format!("{feature}{PREVIOUS_KEY_SUFFIX}");
+    let previous = claims.get("fk").and_then(|fk| fk.get(&previous_entry)).and_then(Value::as_str);
+    [Some((wrapped, feature)), previous.map(|w| (w, previous_entry.as_str()))]
+        .into_iter()
+        .flatten()
+        .find_map(|(wrapped, entry)| decrypt_for_feature(&unwrap_feature_key(wrapped, &wrap_key, entry)?, feature, encrypted))
+        .ok_or(DecryptError::Failed)
 }
 
 #[cfg(test)]

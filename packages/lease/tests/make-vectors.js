@@ -137,6 +137,23 @@ decrypts.push(
   ['device: epk not 32 bytes', deviceLease({ epkOverride: 'AAAA' }), LICENSE, 'pro', forPro, deviceSecret],
   ['device: secret given, lease not wrapped for a device', featureLease(), LICENSE, 'pro', forPro, deviceSecret],
 );
+// A replaced key (K1b): leases carry the previous key too, as fk["pro~previous"], so data encrypted before still opens.
+const replacedKey = core.generateFeatureKey();
+const PREVIOUS = 'pro' + core.PREVIOUS_KEY_SUFFIX;
+const replacedLease = ({ jti = 'lease-r', previous = true, wrapPreviousAs = PREVIOUS } = {}) => {
+  const wrapKey = core.featureWrapKey(LICENSE, 'studio', FP, jti);
+  const fk = { pro: core.wrapFeatureKey(replacedKey, wrapKey, 'pro'), ...(previous ? { [PREVIOUS]: core.wrapFeatureKey(contentKeys.pro, wrapKey, wrapPreviousAs) } : {}) };
+  return core.signLease(claims({ jti, feat: ['pro'], fk }), privateKey);
+};
+const forNewPro = core.encryptForFeature(replacedKey, 'pro', plaintext);
+decrypts.push(
+  ['replaced key: new data opens with the current key', replacedLease(), LICENSE, 'pro', forNewPro],
+  ['replaced key: older data opens with the previous key', replacedLease(), LICENSE, 'pro', forPro],
+  ['replaced key: older data, lease without the previous key', replacedLease({ previous: false }), LICENSE, 'pro', forPro],
+  ['replaced key: previous key wrapped for another entry', replacedLease({ wrapPreviousAs: 'pro' }), LICENSE, 'pro', forPro],
+  ['replaced key: older data modified', replacedLease(), LICENSE, 'pro', tampered],
+  ['replaced key: another license key', replacedLease(), 'LK-0000-0000-0000-0000-0000-0000-0000', 'pro', forPro],
+);
 const decryptVectors = decrypts.map(([name, token, licenseKey, feature, data, secret]) => {
   const r = core.decryptFeature(token, { keys: [pem], ...base }, licenseKey, feature, data, secret);
   return {
