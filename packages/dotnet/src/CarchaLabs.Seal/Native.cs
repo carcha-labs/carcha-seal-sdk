@@ -11,6 +11,14 @@ namespace CarchaLabs.Seal
     {
         internal const string Library = "seal_native";
 
+#if NETFRAMEWORK
+        // Runs before the first call into the library: loads the copy for this process's CPU.
+        static Native()
+        {
+            NetFrameworkLoader.Load();
+        }
+#endif
+
         internal const int ResultSend = 1;
         internal const int ResultDone = 2;
         internal const int ResultError = 3;

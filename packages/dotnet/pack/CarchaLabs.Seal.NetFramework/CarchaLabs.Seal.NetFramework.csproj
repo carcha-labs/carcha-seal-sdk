@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- CarchaLabs.Seal.NetFramework: the library for .NET Framework apps. No runtimes/ folder: .NET Framework does not
+       use it (and AnyCPU projects need packages that do not have one). The build targets copy seal_native.dll for
+       each CPU to carcha-seal\{x86,x64,arm64}\, and the library loads the one that matches the process. build/
+       serves packages.config projects, buildTransitive/ PackageReference ones (Microsoft, "Native files in .NET
+       packages"). -->
+  <Import Project="../Pack.props" />
+  <PropertyGroup>
+    <TargetFramework>net462</TargetFramework>
+    <PackageId>CarchaLabs.Seal.NetFramework</PackageId>
+    <Description>Carcha Seal for .NET Framework 4.6.2+ apps (AnyCPU, x86, x64, ARM64; PackageReference or packages.config), with the native library for each Windows CPU. Install CarchaLabs.Seal instead: it picks this package or CarchaLabs.Seal.Runtime for your app.</Description>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <None Include="$(SealLibraryBin)net462/CarchaLabs.Seal.dll;$(SealLibraryBin)net462/CarchaLabs.Seal.xml" Pack="true" PackagePath="lib/net462" />
+    <None Include="build/CarchaLabs.Seal.NetFramework.targets" Pack="true" PackagePath="buildTransitive/net462/CarchaLabs.Seal.NetFramework.targets" />
+    <None Include="build/CarchaLabs.Seal.NetFramework.build.targets" Pack="true" PackagePath="build/net462/CarchaLabs.Seal.NetFramework.targets" />
+    <None Include="$(SealNativeDir)win-x86/seal_native.dll" Condition="Exists('$(SealNativeDir)win-x86/seal_native.dll')" Pack="true" PackagePath="native/win-x86/" />
+    <None Include="$(SealNativeDir)win-x64/seal_native.dll" Condition="Exists('$(SealNativeDir)win-x64/seal_native.dll')" Pack="true" PackagePath="native/win-x64/" />
+    <None Include="$(SealNativeDir)win-arm64/seal_native.dll" Condition="Exists('$(SealNativeDir)win-arm64/seal_native.dll')" Pack="true" PackagePath="native/win-arm64/" />
+    <None Include="../../README.md" Pack="true" PackagePath="/" />
+  </ItemGroup>
+</Project>

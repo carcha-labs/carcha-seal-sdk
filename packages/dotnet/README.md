@@ -40,7 +40,25 @@ byte[] model = seal.Decrypt("pro", encryptedModel);   // data you encrypted for 
 
 `SealOptions.HttpClient` takes your own `HttpClient`; turn off automatic redirects on its handler (`AllowAutoRedirect = false`), as the library's own does: a redirect is never followed. One operation runs at a time on a `SealClient`; concurrent calls wait for each other.
 
-The NuGet package (with the native library for each platform, and the .NET Framework build targets) is not published yet.
+## Packages
+
+Not on nuget.org yet. `pack/` builds three packages, the layout Microsoft recommends for a native library used from both .NET and .NET Framework ("Native files in .NET packages"):
+
+| Package | For | Holds |
+| --- | --- | --- |
+| `CarchaLabs.Seal` | What apps install | No files: it depends on one of the two below, chosen by the app's target framework |
+| `CarchaLabs.Seal.Runtime` | .NET 5+ (and other .NET Standard 2.0 hosts) | The library under `ref/` and `runtimes/any/lib/` (net10.0, netstandard2.0), the native library under `runtimes/<rid>/native/` |
+| `CarchaLabs.Seal.NetFramework` | .NET Framework 4.6.2+: AnyCPU, x86, x64, ARM64; PackageReference or packages.config | The library (net462), the native library for each Windows CPU, and build targets that copy them to `carcha-seal\<cpu>\` next to the app; the library loads the one that matches the process |
+
+Put the native libraries (`cargo build --release --manifest-path ../native/Cargo.toml`, no features) in `artifacts/native/<rid>/`: `seal_native.dll` for `win-x86`, `win-x64`, `win-arm64`; `libseal_native.dylib` for `osx-x64`, `osx-arm64`; `libseal_native.so` for `linux-x64`, `linux-arm64`. Then:
+
+```
+dotnet pack pack/CarchaLabs.Seal.Runtime
+dotnet pack pack/CarchaLabs.Seal.NetFramework
+dotnet pack pack/CarchaLabs.Seal
+```
+
+The packages are written to `artifacts/packages/`. A platform with no file in `artifacts/native/` is left out of them.
 
 ## Tests
 

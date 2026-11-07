@@ -1,0 +1,4 @@
+<Project>
+  <!-- packages.config projects import build/; the copy rules live in buildTransitive/. -->
+  <Import Project="$(MSBuildThisFileDirectory)..\..\buildTransitive\net462\CarchaLabs.Seal.NetFramework.targets" />
+</Project>

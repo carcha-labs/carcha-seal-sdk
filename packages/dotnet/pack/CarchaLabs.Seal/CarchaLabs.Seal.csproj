@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Packs CarchaLabs.Seal.nuspec: the package apps install (no files, one dependency per framework). -->
+  <Import Project="../Pack.props" />
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <NuspecFile>CarchaLabs.Seal.nuspec</NuspecFile>
+    <NuspecProperties>version=$(Version)</NuspecProperties>
+  </PropertyGroup>
+</Project>

@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- CarchaLabs.Seal: what apps install. It holds no files; it depends on CarchaLabs.Seal.NetFramework for .NET
+     Framework apps and on CarchaLabs.Seal.Runtime for the others (Microsoft's three-package layout for native
+     libraries that serve both, "Native files in .NET packages"). -->
+<package xmlns="http://schemas.microsoft.com/packaging/2013/05/nuspec.xsd">
+  <metadata>
+    <id>CarchaLabs.Seal</id>
+    <version>$version$</version>
+    <authors>Carcha Labs</authors>
+    <license type="expression">MIT</license>
+    <projectUrl>https://seal.carchalabs.com</projectUrl>
+    <repository type="git" url="https://github.com/carcha-labs/carcha-seal-sdk" />
+    <readme>README.md</readme>
+    <tags>licensing license-key offline activation carcha-seal</tags>
+    <description>Carcha Seal for .NET: licensing for desktop apps that keeps working offline. Activation, check-ins, offline grace, clock checks, offline license files and feature decryption. .NET 10, .NET Standard 2.0 and .NET Framework 4.6.2+ on Windows (x86, x64, ARM64), macOS and Linux.</description>
+    <dependencies>
+      <group targetFramework="net10.0">
+        <dependency id="CarchaLabs.Seal.Runtime" version="[$version$]" />
+      </group>
+      <group targetFramework="netstandard2.0">
+        <dependency id="CarchaLabs.Seal.Runtime" version="[$version$]" />
+      </group>
+      <group targetFramework="net462">
+        <dependency id="CarchaLabs.Seal.NetFramework" version="[$version$]" />
+      </group>
+    </dependencies>
+  </metadata>
+  <files>
+    <file src="empty/_._" target="lib/net10.0/_._" />
+    <file src="empty/_._" target="lib/netstandard2.0/_._" />
+    <file src="empty/_._" target="lib/net462/_._" />
+    <file src="../../README.md" target="README.md" />
+  </files>
+</package>

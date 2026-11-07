@@ -1,0 +1,22 @@
+<Project>
+  <!-- Copies the native library for each Windows CPU next to the app, as carcha-seal\<cpu>\seal_native.dll; the
+       CarchaLabs.Seal library loads the one that matches the running process (x86, x64 or ARM64), so AnyCPU apps
+       work too. -->
+  <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)..\..\native\win-x86\seal_native.dll" Condition="Exists('$(MSBuildThisFileDirectory)..\..\native\win-x86\seal_native.dll')">
+      <Link>carcha-seal\x86\seal_native.dll</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Visible>false</Visible>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)..\..\native\win-x64\seal_native.dll" Condition="Exists('$(MSBuildThisFileDirectory)..\..\native\win-x64\seal_native.dll')">
+      <Link>carcha-seal\x64\seal_native.dll</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Visible>false</Visible>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)..\..\native\win-arm64\seal_native.dll" Condition="Exists('$(MSBuildThisFileDirectory)..\..\native\win-arm64\seal_native.dll')">
+      <Link>carcha-seal\arm64\seal_native.dll</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Visible>false</Visible>
+    </None>
+  </ItemGroup>
+</Project>

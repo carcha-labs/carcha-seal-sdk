@@ -1,2 +1,4 @@
 bin/
 obj/
+# Native libraries put here for packing, and the packages made.
+artifacts/

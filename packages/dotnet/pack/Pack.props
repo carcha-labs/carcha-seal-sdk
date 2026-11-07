@@ -1,0 +1,27 @@
+<Project>
+  <!-- Shared by the pack projects: the library's build output and the native files, laid out as
+       $(SealNativeDir)<rid>/<file> (win-x86, win-x64, win-arm64, osx-x64, osx-arm64, linux-x64, linux-arm64). -->
+  <PropertyGroup>
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <IncludeSymbols>false</IncludeSymbols>
+    <NoBuild>false</NoBuild>
+    <Version>0.1.0</Version>
+    <Authors>Carcha Labs</Authors>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://seal.carchalabs.com</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/carcha-labs/carcha-seal-sdk</RepositoryUrl>
+    <PackageTags>licensing;license-key;offline;activation;carcha-seal</PackageTags>
+    <PackageOutputPath>$(MSBuildThisFileDirectory)../artifacts/packages/</PackageOutputPath>
+    <SealLibrary>$(MSBuildThisFileDirectory)../src/CarchaLabs.Seal/</SealLibrary>
+    <SealLibraryBin>$(SealLibrary)bin/Release/</SealLibraryBin>
+    <SealNativeDir Condition="'$(SealNativeDir)' == ''">$(MSBuildThisFileDirectory)../artifacts/native/</SealNativeDir>
+    <!-- The pack projects hold no code. Each sets the target frameworks its package serves, so pack writes a
+         dependency group (empty) for each one (NuGet, NU5128). -->
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+  </PropertyGroup>
+
+  <!-- The library is built (all its target frameworks, Release) before the files are packed. -->
+  <Target Name="SealBuildLibrary" BeforeTargets="_GetPackageFiles">
+    <MSBuild Projects="$(SealLibrary)CarchaLabs.Seal.csproj" Targets="Build" Properties="Configuration=Release" />
+  </Target>
+</Project>
