@@ -2,7 +2,7 @@
 // leaves the previous record instead of a cut-off file that would read as "unlicensed".
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmdirSync, statSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmdirSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { generateSigningKeys } from '@carchalabs/seal-core';
@@ -24,4 +24,16 @@ test('license.dat is replaced whole, owner-only, and a failed write keeps the sa
   await assert.rejects(save({ licenseKey: 'LK-C' }));
   assert.deepEqual(JSON.parse(readFileSync(file, 'utf8')), { licenseKey: 'LK-B' });
   rmdirSync(file + '.tmp');
+});
+
+test('a license.dat that is not a saved record reads as no license, as in the native SDKs', async () => {
+  const dir = mkdtempSync(join(tmpdir(), 'seal-store-'));
+  const seal = new Seal({
+    serverUrl: 'https://x', product: 'p', publicKey: generateSigningKeys().publicKeyPem, storageDir: dir, machineId: async () => 'm', hardware: false,
+    fetchImpl: async () => { throw new Error('offline'); },
+  });
+  for (const text of ['{"licenseKey":5,"token":"x.y.z"}', '[1,2]', '"text"', '{"token":"x.y.z"}', 'null', 'not json']) {
+    writeFileSync(join(dir, 'license.dat'), text);
+    assert.equal((await seal.check()).status, 'unlicensed', text);
+  }
 });

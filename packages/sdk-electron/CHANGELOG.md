@@ -6,6 +6,7 @@
 - A redirect from the license server is no longer followed; the request fails with `network`. A redirect could take the request, license key included, to another address.
 - `activate(key)` and `offlineRequest(key)` no longer send the computer's host name when you pass no `machineName`: host names often hold a person's name, and the device stays unnamed in the console. Pass a name to keep showing one.
 - A check-in answered with HTTP 2xx but no lease from your license server for this device (a TLS-inspecting proxy's or captive portal's own page) counts as no answer: the saved lease is kept and used offline. A broken answer could not unlock anything, but a non-JSON one could leave the device without its saved lease.
+- A `license.dat` that is not a saved record (damaged or edited) reads as no license instead of making `check()` throw a TypeError.
 - `license.dat` is replaced whole: written to `license.dat.tmp` and renamed over it, so a crash or a full disk while saving leaves the previous record instead of a cut-off file that reads as unlicensed.
 - Feature keys can be replaced on the server: leases then carry the previous key too, and `decrypt` / `requireEncrypted` open data encrypted under either. Through the native module this needs `@carchalabs/seal-hwid` from this release.
 

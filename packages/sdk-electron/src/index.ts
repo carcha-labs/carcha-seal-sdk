@@ -193,6 +193,21 @@ const REASON_TEXT: Record<LeaseFailure, string> = {
 
 const toIso = (seconds: number) => new Date(seconds * 1000).toISOString();
 
+/** A saved record of the shape save() writes, keeping only its known fields; null for anything else. */
+function parseStored(value: unknown): Stored | null {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) return null;
+  const v = value as Record<string, unknown>;
+  if (typeof v.licenseKey !== 'string') return null;
+  const stored: Stored = { licenseKey: v.licenseKey };
+  if (typeof v.token === 'string') stored.token = v.token;
+  if (typeof v.lastSeen === 'number' && Number.isFinite(v.lastSeen)) stored.lastSeen = v.lastSeen;
+  const r = v.refused as Record<string, unknown> | undefined;
+  if (r && typeof r.code === 'string' && typeof r.message === 'string' && typeof r.at === 'number') stored.refused = { code: r.code, message: r.message, at: r.at };
+  if (Array.isArray(v.notices)) stored.notices = v.notices.filter((n): n is LicenseNotice => !!n && typeof n.code === 'string');
+  if (v.offline === true) stored.offline = true;
+  return stored;
+}
+
 function noticesFrom(response: any): { notices?: LicenseNotice[] } {
   const list = Array.isArray(response?.notices) ? response.notices.filter((n: any) => n && typeof n.code === 'string') : [];
   return list.length ? { notices: list } : {};
@@ -260,11 +275,12 @@ export class Seal {
     );
   }
 
+  /** The saved record; null when there is none, or it cannot be read or is not a record (as no license). */
   private async load(): Promise<Stored | null> {
     try {
       const buf = await readFile(this.file);
       const text = this.opts.secureStore ? await this.opts.secureStore.decrypt(buf) : buf.toString('utf8');
-      return JSON.parse(text);
+      return parseStored(JSON.parse(text));
     } catch {
       return null;
     }
