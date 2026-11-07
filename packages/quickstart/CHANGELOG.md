@@ -5,7 +5,7 @@ technically feasible.
 
 ## Unreleased
 
-No changes yet.
+- The app version the quickstart reports is its own package version (it was fixed at 0.4.0).
 
 ## 0.5.0 and earlier
 

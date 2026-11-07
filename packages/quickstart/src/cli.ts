@@ -7,6 +7,9 @@ export const PRODUCT = 'licensekit-demo';
 export const DEFAULT_SERVER_URL = 'https://seal.carchalabs.com';
 export const DEVICE_NAME = 'Carcha Seal quickstart';
 const COMMAND = 'npx @carchalabs/seal-quickstart';
+/** Sent as the app version, so the console shows which quickstart each device ran. */
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+export const QUICKSTART_VERSION: string = require('../package.json').version;
 
 export interface RunOptions {
   out: (line: string) => void;
@@ -69,7 +72,7 @@ export async function run(args: string[], options: RunOptions): Promise<number> 
     product: PRODUCT,
     publicKey: options.publicKeys ?? bundledPublicKeys(),
     storageDir: options.storageDir ?? defaultStorageDir(platform(), process.env, homedir()),
-    appVersion: '0.4.0',
+    appVersion: QUICKSTART_VERSION,
     fetchImpl: options.fetchImpl,
     machineId: options.machineId,
     hardware: options.hardware,
