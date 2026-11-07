@@ -501,7 +501,18 @@ pub unsafe extern "C" fn seal_client_decrypt(client: *const SealClient, feature:
     with_client(client, |c, _| match c.decrypt(feature, &data, now_ms) {
         Ok(plain) => {
             use base64::Engine;
-            let mut r = base(SEAL_RESULT_DONE, json!({ "ok": true, "value": base64::engine::general_purpose::STANDARD.encode(&plain) }));
+            // The plaintext is in the JSON too (base64), so the JSON is built without copies that would be freed
+            // unwiped, and seal_result_free wipes it with the data.
+            let mut encoded = base64::engine::general_purpose::STANDARD.encode(&plain);
+            let mut text = String::with_capacity(encoded.len() + 32);
+            text.push_str(r#"{"ok":true,"value":""#);
+            text.push_str(&encoded);
+            text.push_str(r#""}"#);
+            // SAFETY: zero bytes keep the string valid UTF-8, and it is not used again.
+            wipe(unsafe { encoded.as_bytes_mut() });
+            let mut r = base(SEAL_RESULT_DONE, Value::Null);
+            // Base64 and the JSON around it hold no NUL, and the capacity has room for the terminator: no copy.
+            r.json = CString::new(text).unwrap_or_default();
             r.data = Some(plain);
             r
         }
@@ -521,12 +532,19 @@ pub unsafe extern "C" fn seal_result_free(result: *mut SealResult) {
         // SAFETY: from Box::into_raw, freed once per the contract.
         let mut r = unsafe { Box::from_raw(result) };
         if let Some(data) = r.data.as_mut() {
-            // Feature plaintext: overwritten before the memory is released.
-            for b in data.iter_mut() {
-                // SAFETY: a valid, aligned byte of the vector.
-                unsafe { std::ptr::write_volatile(b, 0) };
-            }
+            // Feature plaintext, here and as base64 in the JSON: overwritten before the memory is released.
+            wipe(data);
+            let mut json = std::mem::take(&mut r.json).into_bytes_with_nul();
+            wipe(&mut json);
         }
+    }
+}
+
+/// Overwrites bytes with zeros in a way the compiler does not remove.
+fn wipe(bytes: &mut [u8]) {
+    for b in bytes.iter_mut() {
+        // SAFETY: a valid, aligned byte of the slice.
+        unsafe { std::ptr::write_volatile(b, 0) };
     }
 }
 
