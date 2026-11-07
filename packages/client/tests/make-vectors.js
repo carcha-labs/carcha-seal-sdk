@@ -208,6 +208,17 @@ const scenarios = [
     at(S, 'check'),
     at(S, 'activate', [KEY]),
   ], { machineId: null }),
+  // A TLS-inspecting proxy or captive portal answering 200 with its own page: no lease from this server for this
+  // device, so it counts as no answer and the saved lease stays (it used to replace it and lock the device out).
+  scenario('a 2xx without a lease for this device is no answer: the saved lease is kept', [
+    at(S, 'activate', [KEY], ok(lease(S))),
+    at(S + H, 'check', null, { status: 200, raw: '<html>Blocked by your network administrator</html>' }),
+    at(S + 2 * H, 'check', null, { status: 200, body: {} }),
+    at(S + 3 * H, 'check', null, ok('not-a-lease')),
+    at(S + 4 * H, 'check', null, ok(lease(S + 4 * H, { fp: core.hashFingerprint('linux:another-machine', PRODUCT) }))),
+    at(S + 5 * H, 'check', null, NETWORK),
+    at(S + 6 * H, 'check', null, ok(lease(S + 6 * H))),
+  ]),
 ];
 
 async function main() {

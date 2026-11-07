@@ -2425,7 +2425,7 @@
           "response": {
             "status": 200,
             "body": {
-              "token": "eyJhbGciOiJFZDI1NTE5IiwidHlwIjoibGljZW5zZWtpdC1sZWFzZStqd3QiLCJraWQiOiJIWUpEdWEyRXl6aURUM1YwR3VnZXN5Q1p3Vmlfb3NlMEQ2RjlOSHVDbnRRIn0.eyJpc3MiOiJsaWNlbnNla2l0Iiwic3ViIjoibCIsImF1ZCI6InN0dWRpbyIsImp0aSI6IngiLCJpYXQiOjE4MDAwMDAwMDAsIm5iZiI6MTgwMDAwMDAwMCwicmV2IjoxODAwMDAzNjAwLCJmcCI6IjhjNzA0Mzc2OWNjY2YwNWVjNDQ0YWI1Nzg2ZDFjYzEwNGIwMmU4Mzc5ODM4ZjE1NGRiMTUyY2QyNWUwMTEzNGQiLCJmZWF0IjpbXX0.XELIQcvp29Fzpl9B6fT2JTGfXQ-wg23WPjIwxlVMOCv2ahsHgqY7S8KvsSBJMX5GPkDU19IZ1Tan2VibPEKWDg"
+              "token": "eyJhbGciOiJFZDI1NTE5IiwidHlwIjoibGljZW5zZWtpdC1sZWFzZStqd3QiLCJraWQiOiJhd2I1Q3d4TFhnRHc1UkxvNVlKbFlocGdFeExsN2pfVWRWLWZ2RW5tRUJZIn0.eyJpc3MiOiJsaWNlbnNla2l0Iiwic3ViIjoibCIsImF1ZCI6InN0dWRpbyIsImp0aSI6IngiLCJpYXQiOjE4MDAwMDAwMDAsIm5iZiI6MTgwMDAwMDAwMCwicmV2IjoxODAwMDAzNjAwLCJmcCI6IjhjNzA0Mzc2OWNjY2YwNWVjNDQ0YWI1Nzg2ZDFjYzEwNGIwMmU4Mzc5ODM4ZjE1NGRiMTUyY2QyNWUwMTEzNGQiLCJmZWF0IjpbXX0.W4LH8NklRoLCSFXSUHPoJNwhfVZyQTqDkl80epZvHMBv9_cr6OnDY80XAZ1Mx1bfXA6BCko37m17LWejCs2eBA"
             }
           }
         },
@@ -3205,7 +3205,7 @@
           "call": "decrypt",
           "args": [
             "pro",
-            "TEtFMTmfH27dFbyJAWd7O9e+LZlYVsVzhVfa+ZYyCk1N3fpJtkg9vu1DPLRVBArE0UftjA=="
+            "TEtFMXCCuNVVK62yKNUymZYmROXL/OztyI68I1fnlEUC3ixB0KnI5M0jWIumRkq6+k22eQ=="
           ],
           "nowMs": 1800000000000
         },
@@ -3218,7 +3218,7 @@
           "response": {
             "status": 200,
             "body": {
-              "token": "eyJhbGciOiJFZDI1NTE5IiwidHlwIjoibGljZW5zZWtpdC1sZWFzZStqd3QiLCJraWQiOiJTd1J3SU1NWUIzSE00aGV2b0FoLXdzV0R5SVM4YzU1bWlWZWFfc2xGam1BIn0.eyJpc3MiOiJsaWNlbnNla2l0Iiwic3ViIjoibGljXzEiLCJhdWQiOiJzdHVkaW8iLCJqdGkiOiJsZWFzZS0zNCIsImlhdCI6MTgwMDAwMDAwMCwibmJmIjoxODAwMDAwMDAwLCJleHAiOjE4MzE1MzYwMDAsInJldiI6MTgwMDI1OTIwMCwiZnAiOiI4YzcwNDM3NjljY2NmMDVlYzQ0NGFiNTc4NmQxY2MxMDRiMDJlODM3OTgzOGYxNTRkYjE1MmNkMjVlMDExMzRkIiwiZmVhdCI6WyJwcm8iLCJleHBvcnQiXSwiY3VzIjoiQWNtZSIsImZrIjp7InBybyI6IlFNeU9OUzRUcktfSWpmUWpfc19hRi10d3FYZTQ4RFdrZ0p1QXNMY1NYa1NPa1oyNER0cXFDdWlzU2RZN1g1VEpjRDhiSHFHei1GYkJucWxmIiwicHJvfnByZXZpb3VzIjoiWlFEbHM2SUJ3LUNLRHF6MHlhRDVkWEh3bk1MYV8wX1JSM3dyWUdNR29NZFVlMWZzZTZfNHJ0YWRfSFJKcEZrYmp1MHZPMmw4bWRJVnhzaXcifX0.UK0lXw7peI28ZeTazAMGjZ1clVqaT47q91BOS55nJFB1-MF4QNKkgzRTCmeknMLVgnDnlOGl-I7oCOifFW39AQ"
+              "token": "eyJhbGciOiJFZDI1NTE5IiwidHlwIjoibGljZW5zZWtpdC1sZWFzZStqd3QiLCJraWQiOiJTd1J3SU1NWUIzSE00aGV2b0FoLXdzV0R5SVM4YzU1bWlWZWFfc2xGam1BIn0.eyJpc3MiOiJsaWNlbnNla2l0Iiwic3ViIjoibGljXzEiLCJhdWQiOiJzdHVkaW8iLCJqdGkiOiJsZWFzZS0zNCIsImlhdCI6MTgwMDAwMDAwMCwibmJmIjoxODAwMDAwMDAwLCJleHAiOjE4MzE1MzYwMDAsInJldiI6MTgwMDI1OTIwMCwiZnAiOiI4YzcwNDM3NjljY2NmMDVlYzQ0NGFiNTc4NmQxY2MxMDRiMDJlODM3OTgzOGYxNTRkYjE1MmNkMjVlMDExMzRkIiwiZmVhdCI6WyJwcm8iLCJleHBvcnQiXSwiY3VzIjoiQWNtZSIsImZrIjp7InBybyI6ImMxWXNMdXFucVp4TUtQOFpKUlhZZ3gtVHlVc3VEYmpSaTZZRG5rdXBLUUJ1ZUpEcU1YRUFaV3lvVWg4N1RPSEx0RWZJaWg2SHlQZ2YtdWY1IiwicHJvfnByZXZpb3VzIjoiWTNXX1ZnTXJiYThDZF9iWS1yN09VSmNBbm9LcFU0enlCT1BIeVgtaGQzNGl3d2hYNTk0bDBqQ095TXhKQThRT0hxR3UyelZxS0lUNlN5SFYifX0.j8nhtopINJ_QNNPwhr9hTWd3QTZkAm3tWCB0ZKipWSYWAUnWip7LVsMTwPDxQcLui1oZ3cm464L34NwmujlJDQ"
             }
           }
         },
@@ -3226,7 +3226,7 @@
           "call": "decrypt",
           "args": [
             "pro",
-            "TEtFMcVXKsqTZk8dSd9IIB4s+n7IwjRtcvVcqYgN0aGNeN6GvlLIIwgbJXJDpNXpHSLKmQ=="
+            "TEtFMasQGlNzpEKvkToqqMnb/Zraieqn+M396MR62kA5T3RZfr/gbWiFC0QnbR8rUQx2VQ=="
           ],
           "nowMs": 1800003600000
         },
@@ -3234,7 +3234,7 @@
           "call": "decrypt",
           "args": [
             "pro",
-            "TEtFMTVsng+JqaJfycAbRT4PempcDX2hWt38u3pZNx/fGiV7pGGWdhAZ6E0n/lLlaBN9a/4k1NcD4cuPM50OPMdojulnYyKdqo8="
+            "TEtFMV4KV7nHDk5A6ceSj6s6ZvEPWylOCkcVtWoecBYC9GyMZA3o4S3+8AXZ3RRHLozGeZzLe/pkxj4UeDB4lu9ae34W/Qa1SGM="
           ],
           "nowMs": 1800003600000
         },
@@ -3242,7 +3242,7 @@
           "call": "decrypt",
           "args": [
             "export",
-            "TEtFMbOwlhTKMPbmn6c0cOntFx0rZVhDO4DAZAaVx19/z12nhIHocEtG1Nlu1RONWBvOYQ=="
+            "TEtFMVguemp2KBJX6vEI7GsMnB/bQ1WPRp/ETZyitps5AnaZDURPjDuHLmfwRZRKV3MUIQ=="
           ],
           "nowMs": 1800003600000
         },
@@ -3250,7 +3250,7 @@
           "call": "decrypt",
           "args": [
             "other",
-            "TEtFMaAVpA3uYQtAI6KcMl6IBzDMIyW+hpr77v2zTVZZTZe4lnd/vVok8ic4J6VIzLXSLw=="
+            "TEtFMZQZYdLsSq+c2cpCKkikRNgFaCckcZLrh3XmP1z7cMRdzpPjYM3bL1C7gS+RYlDTuA=="
           ],
           "nowMs": 1800003600000
         },
@@ -3258,7 +3258,7 @@
           "call": "decrypt",
           "args": [
             "pro",
-            "TEtFMW+hrDyppQput1C+bwv58tK1DMy7vq7I/ifVPykbg4VGuoaXA8Vq4VS6xaY8NocMwg=="
+            "TEtFMTuwLo9/hGH75mpARPNZl97BQsU6TrQ/FR36HHM4IrIqezbeHekQw2CtPYoVhDdXJQ=="
           ],
           "nowMs": 1800003600000
         },
@@ -3266,7 +3266,7 @@
           "call": "decrypt",
           "args": [
             "pro",
-            "TEtFMYg3rYIWTggpPypY16GPwVeZkaMYXmADAitIT2C9Tp/gb0ZrxGj5bHOov72k4/pUZw=="
+            "TEtFMRLZGYuipntiuwMvgRGTf3cviR+LqaVnvzELqi8mexr5VnbpbUVEctxmuKAbfdvGmg=="
           ],
           "nowMs": 1800345600000
         },
@@ -3274,7 +3274,7 @@
           "call": "decrypt",
           "args": [
             "pro",
-            "TEtFMVw+EC3I1oyVVTubeSMlhnBY9zQ6OB9FQq14c1+6H0TkxNOR/M1RerHcpXKfKPxdAQ=="
+            "TEtFMV+kYQhIX0RSpP8WwiFXzuTjbzGpqCuSxK/pR9S+Y7SHI53vgZhOG1u77Tn3yR0cpQ=="
           ],
           "nowMs": 1800950400000
         }
@@ -3431,6 +3431,298 @@
             "error": {
               "code": "machine_id_unavailable",
               "message": "This computer's id could not be read. Try again; if it keeps failing, contact the app's support."
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "a 2xx without a lease for this device is no answer: the saved lease is kept",
+      "options": {
+        "product": "studio",
+        "publicKey": [
+          "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAy+BD73exRVhWXnfdiUHFz1XQ1wirGGATKTeWUfIyb+Y=\n-----END PUBLIC KEY-----\n"
+        ],
+        "appVersion": "2.4.0"
+      },
+      "machineId": "linux:0123456789abcdef0123456789abcdef",
+      "steps": [
+        {
+          "call": "activate",
+          "args": [
+            "LK-7K2M-QX9P-4RTV-8WNB-3HCJ-6DFG-YZ5S"
+          ],
+          "nowMs": 1800000000000,
+          "response": {
+            "status": 200,
+            "body": {
+              "token": "eyJhbGciOiJFZDI1NTE5IiwidHlwIjoibGljZW5zZWtpdC1sZWFzZStqd3QiLCJraWQiOiJTd1J3SU1NWUIzSE00aGV2b0FoLXdzV0R5SVM4YzU1bWlWZWFfc2xGam1BIn0.eyJpc3MiOiJsaWNlbnNla2l0Iiwic3ViIjoibGljXzEiLCJhdWQiOiJzdHVkaW8iLCJqdGkiOiJsZWFzZS0zNiIsImlhdCI6MTgwMDAwMDAwMCwibmJmIjoxODAwMDAwMDAwLCJleHAiOjE4MzE1MzYwMDAsInJldiI6MTgwMDI1OTIwMCwiZnAiOiI4YzcwNDM3NjljY2NmMDVlYzQ0NGFiNTc4NmQxY2MxMDRiMDJlODM3OTgzOGYxNTRkYjE1MmNkMjVlMDExMzRkIiwiZmVhdCI6WyJwcm8iXSwiY3VzIjoiQWNtZSJ9.gMKIprrmmVfpMfYTiFC0UqxUdFHnM2wvn0aeGwjUqwrsR_H6hjNJoK0hdBTXsn9GFYKVOuOgmaeq3o05rs0gCA"
+            }
+          }
+        },
+        {
+          "call": "check",
+          "nowMs": 1800003600000,
+          "response": {
+            "status": 200,
+            "raw": "<html>Blocked by your network administrator</html>"
+          }
+        },
+        {
+          "call": "check",
+          "nowMs": 1800007200000,
+          "response": {
+            "status": 200,
+            "body": {}
+          }
+        },
+        {
+          "call": "check",
+          "nowMs": 1800010800000,
+          "response": {
+            "status": 200,
+            "body": {
+              "token": "not-a-lease"
+            }
+          }
+        },
+        {
+          "call": "check",
+          "nowMs": 1800014400000,
+          "response": {
+            "status": 200,
+            "body": {
+              "token": "eyJhbGciOiJFZDI1NTE5IiwidHlwIjoibGljZW5zZWtpdC1sZWFzZStqd3QiLCJraWQiOiJTd1J3SU1NWUIzSE00aGV2b0FoLXdzV0R5SVM4YzU1bWlWZWFfc2xGam1BIn0.eyJpc3MiOiJsaWNlbnNla2l0Iiwic3ViIjoibGljXzEiLCJhdWQiOiJzdHVkaW8iLCJqdGkiOiJsZWFzZS0zNyIsImlhdCI6MTgwMDAxNDQwMCwibmJmIjoxODAwMDE0NDAwLCJleHAiOjE4MzE1NTA0MDAsInJldiI6MTgwMDI3MzYwMCwiZnAiOiI1NjA4ZDUyMDkzZDQ3MWVkOTYzOGE2MTA4NDZjMjU3MWYwY2ViMmUzZmNiZDIxMzQyY2MxZjBlMGM4ZTdlMjJjIiwiZmVhdCI6WyJwcm8iXSwiY3VzIjoiQWNtZSJ9.hW4SutyoKo-LRYqneRDlSGSIUYlLrRXEnC9I5zXQDVX41ggzbCCdpwls1m36KbDVu7FxD5ALocjFAdjZsqE9Ag"
+            }
+          }
+        },
+        {
+          "call": "check",
+          "nowMs": 1800018000000,
+          "response": {
+            "network": true
+          }
+        },
+        {
+          "call": "check",
+          "nowMs": 1800021600000,
+          "response": {
+            "status": 200,
+            "body": {
+              "token": "eyJhbGciOiJFZDI1NTE5IiwidHlwIjoibGljZW5zZWtpdC1sZWFzZStqd3QiLCJraWQiOiJTd1J3SU1NWUIzSE00aGV2b0FoLXdzV0R5SVM4YzU1bWlWZWFfc2xGam1BIn0.eyJpc3MiOiJsaWNlbnNla2l0Iiwic3ViIjoibGljXzEiLCJhdWQiOiJzdHVkaW8iLCJqdGkiOiJsZWFzZS0zOCIsImlhdCI6MTgwMDAyMTYwMCwibmJmIjoxODAwMDIxNjAwLCJleHAiOjE4MzE1NTc2MDAsInJldiI6MTgwMDI4MDgwMCwiZnAiOiI4YzcwNDM3NjljY2NmMDVlYzQ0NGFiNTc4NmQxY2MxMDRiMDJlODM3OTgzOGYxNTRkYjE1MmNkMjVlMDExMzRkIiwiZmVhdCI6WyJwcm8iXSwiY3VzIjoiQWNtZSJ9.KBjF-re946LdLgT8X7EK1BM2ZStKOkmaA97JwATQlzyTpj3MnPLkqZ68OR23Iu1keVjJvVokqTwb5UXhlB7xAQ"
+            }
+          }
+        }
+      ],
+      "outcomes": [
+        {
+          "requests": [
+            {
+              "path": "/v1/activate",
+              "body": {
+                "licenseKey": "LK-7K2M-QX9P-4RTV-8WNB-3HCJ-6DFG-YZ5S",
+                "product": "studio",
+                "fingerprint": "8c7043769cccf05ec444ab5786d1cc104b02e8379838f154db152cd25e01134d",
+                "platform": "<platform>",
+                "appVersion": "2.4.0",
+                "sdkVersion": "<sdk-version>"
+              }
+            }
+          ],
+          "result": {
+            "ok": true,
+            "value": {
+              "status": "valid",
+              "offline": false,
+              "customer": "Acme",
+              "features": [
+                "pro"
+              ],
+              "expiresAt": "2028-01-15T08:00:00.000Z",
+              "maintenanceUntil": null,
+              "storageProtected": false,
+              "keyHint": "LK-7K2M…YZ5S",
+              "revalidateBy": "2027-01-18T08:00:00.000Z"
+            }
+          }
+        },
+        {
+          "requests": [
+            {
+              "path": "/v1/validate",
+              "body": {
+                "licenseKey": "LK-7K2M-QX9P-4RTV-8WNB-3HCJ-6DFG-YZ5S",
+                "product": "studio",
+                "fingerprint": "8c7043769cccf05ec444ab5786d1cc104b02e8379838f154db152cd25e01134d",
+                "appVersion": "2.4.0",
+                "sdkVersion": "<sdk-version>"
+              }
+            }
+          ],
+          "result": {
+            "ok": true,
+            "value": {
+              "status": "valid",
+              "offline": true,
+              "customer": "Acme",
+              "features": [
+                "pro"
+              ],
+              "expiresAt": "2028-01-15T08:00:00.000Z",
+              "maintenanceUntil": null,
+              "storageProtected": false,
+              "keyHint": "LK-7K2M…YZ5S",
+              "revalidateBy": "2027-01-18T08:00:00.000Z"
+            }
+          }
+        },
+        {
+          "requests": [
+            {
+              "path": "/v1/validate",
+              "body": {
+                "licenseKey": "LK-7K2M-QX9P-4RTV-8WNB-3HCJ-6DFG-YZ5S",
+                "product": "studio",
+                "fingerprint": "8c7043769cccf05ec444ab5786d1cc104b02e8379838f154db152cd25e01134d",
+                "appVersion": "2.4.0",
+                "sdkVersion": "<sdk-version>"
+              }
+            }
+          ],
+          "result": {
+            "ok": true,
+            "value": {
+              "status": "valid",
+              "offline": true,
+              "customer": "Acme",
+              "features": [
+                "pro"
+              ],
+              "expiresAt": "2028-01-15T08:00:00.000Z",
+              "maintenanceUntil": null,
+              "storageProtected": false,
+              "keyHint": "LK-7K2M…YZ5S",
+              "revalidateBy": "2027-01-18T08:00:00.000Z"
+            }
+          }
+        },
+        {
+          "requests": [
+            {
+              "path": "/v1/validate",
+              "body": {
+                "licenseKey": "LK-7K2M-QX9P-4RTV-8WNB-3HCJ-6DFG-YZ5S",
+                "product": "studio",
+                "fingerprint": "8c7043769cccf05ec444ab5786d1cc104b02e8379838f154db152cd25e01134d",
+                "appVersion": "2.4.0",
+                "sdkVersion": "<sdk-version>"
+              }
+            }
+          ],
+          "result": {
+            "ok": true,
+            "value": {
+              "status": "valid",
+              "offline": true,
+              "customer": "Acme",
+              "features": [
+                "pro"
+              ],
+              "expiresAt": "2028-01-15T08:00:00.000Z",
+              "maintenanceUntil": null,
+              "storageProtected": false,
+              "keyHint": "LK-7K2M…YZ5S",
+              "revalidateBy": "2027-01-18T08:00:00.000Z"
+            }
+          }
+        },
+        {
+          "requests": [
+            {
+              "path": "/v1/validate",
+              "body": {
+                "licenseKey": "LK-7K2M-QX9P-4RTV-8WNB-3HCJ-6DFG-YZ5S",
+                "product": "studio",
+                "fingerprint": "8c7043769cccf05ec444ab5786d1cc104b02e8379838f154db152cd25e01134d",
+                "appVersion": "2.4.0",
+                "sdkVersion": "<sdk-version>"
+              }
+            }
+          ],
+          "result": {
+            "ok": true,
+            "value": {
+              "status": "valid",
+              "offline": true,
+              "customer": "Acme",
+              "features": [
+                "pro"
+              ],
+              "expiresAt": "2028-01-15T08:00:00.000Z",
+              "maintenanceUntil": null,
+              "storageProtected": false,
+              "keyHint": "LK-7K2M…YZ5S",
+              "revalidateBy": "2027-01-18T08:00:00.000Z"
+            }
+          }
+        },
+        {
+          "requests": [
+            {
+              "path": "/v1/validate",
+              "body": {
+                "licenseKey": "LK-7K2M-QX9P-4RTV-8WNB-3HCJ-6DFG-YZ5S",
+                "product": "studio",
+                "fingerprint": "8c7043769cccf05ec444ab5786d1cc104b02e8379838f154db152cd25e01134d",
+                "appVersion": "2.4.0",
+                "sdkVersion": "<sdk-version>"
+              }
+            }
+          ],
+          "result": {
+            "ok": true,
+            "value": {
+              "status": "valid",
+              "offline": true,
+              "customer": "Acme",
+              "features": [
+                "pro"
+              ],
+              "expiresAt": "2028-01-15T08:00:00.000Z",
+              "maintenanceUntil": null,
+              "storageProtected": false,
+              "keyHint": "LK-7K2M…YZ5S",
+              "revalidateBy": "2027-01-18T08:00:00.000Z"
+            }
+          }
+        },
+        {
+          "requests": [
+            {
+              "path": "/v1/validate",
+              "body": {
+                "licenseKey": "LK-7K2M-QX9P-4RTV-8WNB-3HCJ-6DFG-YZ5S",
+                "product": "studio",
+                "fingerprint": "8c7043769cccf05ec444ab5786d1cc104b02e8379838f154db152cd25e01134d",
+                "appVersion": "2.4.0",
+                "sdkVersion": "<sdk-version>"
+              }
+            }
+          ],
+          "result": {
+            "ok": true,
+            "value": {
+              "status": "valid",
+              "offline": false,
+              "customer": "Acme",
+              "features": [
+                "pro"
+              ],
+              "expiresAt": "2028-01-15T14:00:00.000Z",
+              "maintenanceUntil": null,
+              "storageProtected": false,
+              "keyHint": "LK-7K2M…YZ5S",
+              "revalidateBy": "2027-01-18T14:00:00.000Z"
             }
           }
         }

@@ -33,6 +33,10 @@ const DEFINITIVE: [&str; 8] = [
 /// The license itself is gone: the key is forgotten too.
 const FORGET_KEY: [&str; 2] = ["invalid_key", "license_revoked"];
 const CLOCK_TOLERANCE_SECONDS: i64 = 24 * 3600;
+/// A check-in answered 2xx whose lease fails for one of these reasons did not come from this app's license server for
+/// this device (a TLS-inspecting proxy's or captive portal's page, say): it is treated as no answer, and the saved
+/// lease is kept. A lease that fails only on time is the server's, and is used. As the Electron SDK.
+const NOT_A_LEASE_FOR_THIS_DEVICE: [&str; 8] = ["malformed", "unsupported_algorithm", "wrong_type", "unknown_key", "bad_signature", "wrong_issuer", "wrong_product", "wrong_device"];
 const DEFAULT_GRACE_DAYS: f64 = 7.0;
 /// The server accepts at most this many hardware components.
 const MAX_COMPONENTS: usize = 32;
@@ -729,10 +733,17 @@ impl<S: Storage> Client<S> {
         let now = now_sec(now_ms);
         match Self::read_response(response) {
             Ok(response) => {
-                let token = Self::token_of(&response);
-                let fresh = Stored { license_key: stored.license_key, token: Some(token.clone()), last_seen: Some(now), notices: Self::notices_from(&response), ..Default::default() };
-                self.save(&fresh)?;
-                Ok(self.state_from_lease(&fresh, &token, false, now))
+                if let Some(token) = response.get("token").and_then(Value::as_str).map(String::from) {
+                    let fresh = Stored { license_key: stored.license_key.clone(), token: Some(token.clone()), last_seen: Some(now), notices: Self::notices_from(&response), ..Default::default() };
+                    let state = self.state_from_lease(&fresh, &token, false, now);
+                    let not_a_lease = state.status == Status::Invalid && state.reason.as_deref().is_some_and(|r| NOT_A_LEASE_FOR_THIS_DEVICE.contains(&r));
+                    if !not_a_lease {
+                        self.save(&fresh)?;
+                        return Ok(state);
+                    }
+                }
+                // A 2xx without a lease from this server for this device: as no answer.
+                self.offline_check(stored, now)
             }
             Err(e) => {
                 let key_hint = stored.key_hint();
@@ -752,15 +763,20 @@ impl<S: Storage> Client<S> {
                     (s.reason, s.message, s.key_hint) = (Some(e.code), Some(e.message), Some(key_hint));
                     return Ok(s);
                 }
-                let Some(token) = stored.token.clone() else {
-                    let (code, message, _) = stored.refused.clone().unwrap_or(("not_activated".into(), "This device is not activated for this license".into(), 0));
-                    let mut s = self.empty_state(Status::Invalid, true);
-                    (s.reason, s.message, s.key_hint) = (Some(code), Some(message), Some(key_hint));
-                    return Ok(s);
-                };
-                self.offline_state(stored, &token, now)
+                self.offline_check(stored, now)
             }
         }
+    }
+
+    /// The state from the saved record when the server gave no usable answer.
+    fn offline_check(&mut self, stored: Stored, now: i64) -> Result<State, LicenseError> {
+        let Some(token) = stored.token.clone() else {
+            let (code, message, _) = stored.refused.clone().unwrap_or(("not_activated".into(), "This device is not activated for this license".into(), 0));
+            let mut s = self.empty_state(Status::Invalid, true);
+            (s.reason, s.message, s.key_hint) = (Some(code), Some(message), Some(stored.key_hint()));
+            return Ok(s);
+        };
+        self.offline_state(stored, &token, now)
     }
 
     // ---- deactivate ----

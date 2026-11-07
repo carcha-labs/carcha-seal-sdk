@@ -139,6 +139,12 @@ const MAX_COMPONENTS = 32;
  *  re-activate), so the key is kept and the next successful online check restores the license on its own. */
 const FORGET_KEY = new Set(['invalid_key', 'license_revoked']);
 const CLOCK_TOLERANCE_SECONDS = 24 * 3600;
+/**
+ * A check-in answered 2xx whose lease fails for one of these reasons did not come from this app's license server for
+ * this device (a TLS-inspecting proxy's or captive portal's page, say): it is treated as no answer, and the saved lease
+ * is kept. A lease that fails only on time (not_yet_valid, expired, revalidation_required) is the server's, and is used.
+ */
+const NOT_A_LEASE_FOR_THIS_DEVICE = new Set(['malformed', 'unsupported_algorithm', 'wrong_type', 'unknown_key', 'bad_signature', 'wrong_issuer', 'wrong_product', 'wrong_device']);
 const DEFAULT_GRACE_DAYS = 7;
 const CLOCK_MESSAGE = 'The date and time on this computer look wrong. Correct them, then connect to the internet.';
 
@@ -448,8 +454,9 @@ export class Seal {
       }
       return state;
     }
+    let response: any;
     try {
-      const response = await this.post('/v1/validate', {
+      response = await this.post('/v1/validate', {
         licenseKey: stored.licenseKey,
         product: this.opts.product,
         fingerprint: this.fingerprintCache,
@@ -458,27 +465,40 @@ export class Seal {
         ...(await this.hardware()),
         ...this.deviceKey(),
       });
-      const fresh: Leased = { licenseKey: stored.licenseKey, token: response.token, lastSeen: this.nowSec(), ...noticesFrom(response) };
-      await this.save(fresh);
-      return this.stateFromLease(fresh, false);
     } catch (e) {
-      const keyHint = `${stored.licenseKey.slice(0, 7)}…${stored.licenseKey.slice(-4)}`;
       if (e instanceof LicenseError && DEFINITIVE.has(e.code)) {
         // Persist the refusal: drop the signed lease so going offline cannot bring the license back.
         if (FORGET_KEY.has(e.code)) await this.clear();
         else await this.save({ licenseKey: stored.licenseKey, lastSeen: stored.lastSeen, refused: { code: e.code, message: e.message, at: this.nowSec() } });
+        const keyHint = `${stored.licenseKey.slice(0, 7)}…${stored.licenseKey.slice(-4)}`;
         return this.emptyState('invalid', false, { reason: e.code, message: e.message, keyHint });
       }
-      if (!stored.token) {
-        const refused = stored.refused ?? { code: 'not_activated', message: 'This device is not activated for this license' };
-        return this.emptyState('invalid', true, { reason: refused.code, message: refused.message, keyHint });
-      }
-      const state = this.stateFromLease({ ...stored, token: stored.token }, true);
-      if (state.status === 'valid' || state.status === 'grace') {
-        await this.save({ ...stored, lastSeen: Math.max(stored.lastSeen ?? 0, this.nowSec()) });
-      }
-      return state;
+      return this.offlineCheck(stored);
     }
+    if (typeof response?.token === 'string') {
+      const fresh: Leased = { licenseKey: stored.licenseKey, token: response.token, lastSeen: this.nowSec(), ...noticesFrom(response) };
+      const state = this.stateFromLease(fresh, false);
+      if (!(state.status === 'invalid' && NOT_A_LEASE_FOR_THIS_DEVICE.has(state.reason ?? ''))) {
+        await this.save(fresh);
+        return state;
+      }
+    }
+    // A 2xx without a lease from this server for this device: as no answer.
+    return this.offlineCheck(stored);
+  }
+
+  /** The state from the saved record when the server gave no usable answer; a usable lease moves lastSeen forward. */
+  private async offlineCheck(stored: Stored): Promise<LicenseState> {
+    if (!stored.token) {
+      const keyHint = `${stored.licenseKey.slice(0, 7)}…${stored.licenseKey.slice(-4)}`;
+      const refused = stored.refused ?? { code: 'not_activated', message: 'This device is not activated for this license' };
+      return this.emptyState('invalid', true, { reason: refused.code, message: refused.message, keyHint });
+    }
+    const state = this.stateFromLease({ ...stored, token: stored.token }, true);
+    if (state.status === 'valid' || state.status === 'grace') {
+      await this.save({ ...stored, lastSeen: Math.max(stored.lastSeen ?? 0, this.nowSec()) });
+    }
+    return state;
   }
 
   /**
