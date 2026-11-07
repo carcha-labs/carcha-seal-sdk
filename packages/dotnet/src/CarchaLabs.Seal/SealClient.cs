@@ -280,6 +280,9 @@ namespace CarchaLabs.Seal
                         int status = (int)answer.StatusCode;
                         // A redirect could take the license key to another address or to http:// (ASVS 4.1.2): never followed.
                         if (status >= 300 && status < 400) return SealHttpResponse.NoAnswer;
+                        // An HttpClient of the app's that follows redirects has already followed one: its answer is not used.
+                        Uri? answered = answer.RequestMessage?.RequestUri;
+                        if (answered != null && answered != new Uri(request.Url)) return SealHttpResponse.NoAnswer;
                         byte[] body = await answer.Content.ReadAsByteArrayAsync().ConfigureAwait(false);
                         return new SealHttpResponse(status, body);
                     }

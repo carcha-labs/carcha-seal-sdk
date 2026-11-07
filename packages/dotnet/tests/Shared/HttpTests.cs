@@ -87,6 +87,31 @@ public class HttpTests
         Assert.NotSame(reached, await Task.WhenAny(reached, Task.Delay(300, TestContext.Current.CancellationToken)));
     }
 
+    [Theory]
+    [InlineData("307 Temporary Redirect")]
+    [InlineData("308 Permanent Redirect")]
+    public async Task The_answer_after_a_redirect_followed_by_the_apps_own_HttpClient_is_not_used(string status)
+    {
+        const string activated = "{\"token\":\"not-a-lease\"}";
+        var (target, reached) = ServeOnce(_ => $"HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {activated.Length}\r\nConnection: close\r\n\r\n{activated}");
+        var (url, _) = ServeOnce(_ => $"HTTP/1.1 {status}\r\nLocation: {target}/v1/activate\r\nContent-Length: 0\r\nConnection: close\r\n\r\n");
+        // HttpClient's default handler follows redirects (AllowAutoRedirect = true), against the README's advice.
+        using var followsRedirects = new System.Net.Http.HttpClient();
+        using var client = new SealClient(new SealOptions
+        {
+            Product = "studio",
+            ServerUrl = url,
+            PublicKeys = (string)JsonNode.Parse(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "vectors.json")))!["publicKey"]!,
+            StorageDirectory = Path.Combine(Path.GetTempPath(), "seal-dotnet-http-" + Guid.NewGuid().ToString("N")),
+            MachineId = "linux:0123456789abcdef0123456789abcdef",
+            Hardware = false,
+            HttpClient = followsRedirects,
+        });
+        var e = await Assert.ThrowsAsync<LicenseException>(() => client.ActivateAsync("LK-AAAA-BBBB", cancellationToken: TestContext.Current.CancellationToken));
+        Assert.Equal("network", e.Code);
+        Assert.Contains("post /v1/activate", (await reached).ToLowerInvariant()); // the app's HttpClient did follow it
+    }
+
     [Fact]
     public async Task No_connection_is_a_network_error_and_check_falls_back_to_nothing_saved()
     {
