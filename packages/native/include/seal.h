@@ -1,8 +1,9 @@
 /*
- * Carcha Seal native library: lease verification, feature decryption, this
- * device's public key and hardware components, for apps written in C, C++,
- * C# and Java. The same rules, order and failure reasons as verifyLease and
- * decryptFeature in @carchalabs/seal-core.
+ * Carcha Seal native library, for apps written in C, C++, C# and Java: the
+ * license client (the Electron SDK's behaviour, with the HTTP request left to
+ * the app), lease verification, feature decryption, this device's public key
+ * and hardware components. The same rules, order and failure reasons as
+ * verifyLease and decryptFeature in @carchalabs/seal-core.
  *
  * Link the static library (seal_native.lib / libseal_native.a) into native
  * apps, or load the shared one (seal_native.dll / libseal_native.dylib /
@@ -137,6 +138,125 @@ int32_t seal_device_public_key(const char *product, char *out, size_t out_len);
  * (pass out = NULL, out_len = 0 to ask). Hardware is read on each call.
  */
 int32_t seal_hardware(const char *product, char *out, size_t out_len, size_t *needed);
+
+/* ---- License client ----------------------------------------------------
+ *
+ * The same behaviour as the Electron SDK's Seal class: activation, check-ins,
+ * offline grace, clock checks, refusals kept offline, offline license files
+ * and feature decryption. The library does no network I/O: an operation that
+ * needs the server returns a result of kind SEAL_RESULT_SEND; POST its body
+ * (Content-Type: application/json, User-Agent: seal_client_user_agent) to the
+ * server URL + seal_result_request_path, refusing redirects, with a timeout,
+ * then pass the status and body to the matching *_finish function (status 0
+ * when there was no answer). Every function returns a result to free with
+ * seal_result_free, or NULL when an argument is invalid.
+ *
+ *   seal_result *r = seal_client_check_begin(client, now_ms);
+ *   if (seal_result_kind(r) == SEAL_RESULT_SEND) {
+ *       int status = post(url, seal_result_request_path(r), seal_result_request_body(r), &body, &len);
+ *       seal_result_free(r);
+ *       r = seal_client_check_finish(client, status, body, len, now_ms);
+ *   }
+ *   if (seal_state_status(r) == SEAL_STATUS_VALID) ...
+ *   seal_result_free(r);
+ */
+
+typedef struct seal_client seal_client;
+typedef struct seal_result seal_result;
+
+typedef struct seal_client_options {
+    /* Your product code. */
+    const char *product;
+    /* The Ed25519 public keys you trust, as for seal_keys_new. */
+    const char *public_keys;
+    /* The folder that keeps license.dat (created when needed). */
+    const char *storage_dir;
+    /* Your app's version, sent so you can require a minimum; NULL: not sent. */
+    const char *app_version;
+    /* Offline grace when the lease has none; below 0 (the default): 7 days. */
+    double grace_days;
+    /* Lowercase name of the SDK for the User-Agent ("cpp", "dotnet", "java"); NULL: "c". */
+    const char *sdk_name;
+    /* The raw machine id; NULL (the default): this machine's OS id, as the Electron SDK reads it. */
+    const char *machine_id;
+    /* 1 (the default): send hashed hardware components and this device's public key; 0: none. */
+    int32_t hardware;
+} seal_client_options;
+
+/* Sets the defaults (see above). Set product, public_keys and storage_dir yourself. */
+void seal_client_options_init(seal_client_options *options);
+/* A client; NULL when product, public_keys or storage_dir is missing or invalid. One call at a time
+ * runs on a client; concurrent calls wait. Free with seal_client_free. */
+seal_client *seal_client_new(const seal_client_options *options);
+void seal_client_free(seal_client *client);
+/* The User-Agent to send with every request, e.g. "carcha-seal-native/0.2.0 (cpp)". Lives as long as the client. */
+const char *seal_client_user_agent(const seal_client *client);
+
+/* machine_name: the name to show the vendor, or NULL to send none (a host name often holds a person's name). */
+seal_result *seal_client_activate_begin(seal_client *client, const char *license_key, const char *machine_name);
+seal_result *seal_client_activate_finish(seal_client *client, int32_t http_status, const uint8_t *body, size_t body_len, double now_ms);
+seal_result *seal_client_check_begin(seal_client *client, double now_ms);
+seal_result *seal_client_check_finish(seal_client *client, int32_t http_status, const uint8_t *body, size_t body_len, double now_ms);
+seal_result *seal_client_deactivate_begin(seal_client *client);
+seal_result *seal_client_deactivate_finish(seal_client *client, int32_t http_status, const uint8_t *body, size_t body_len);
+/* Offline activation: the request file for this machine (seal_result_text), the license file the
+ * server issued for it, and the deactivation file that gives the seat back (seal_result_text). */
+seal_result *seal_client_offline_request(seal_client *client, const char *license_key, const char *machine_name);
+seal_result *seal_client_activate_offline(seal_client *client, const char *license_file, double now_ms);
+seal_result *seal_client_deactivate_offline(seal_client *client);
+/* Decrypts data encrypted for a feature with the saved lease, offline (seal_result_data). */
+seal_result *seal_client_decrypt(seal_client *client, const char *feature, const uint8_t *data, size_t data_len, double now_ms);
+
+/* Result kinds. */
+#define SEAL_RESULT_SEND 1  /* send the request, then call *_finish */
+#define SEAL_RESULT_DONE 2  /* finished: a state, a file text, data, or nothing */
+#define SEAL_RESULT_ERROR 3 /* refused or failed: seal_result_error_code and _message */
+
+/* License statuses. */
+#define SEAL_STATUS_VALID 1
+#define SEAL_STATUS_GRACE 2
+#define SEAL_STATUS_INVALID 3
+#define SEAL_STATUS_UNLICENSED 4
+#define SEAL_STATUS_CLOCK_SUSPECT 5
+
+/* State flags. */
+#define SEAL_FLAG_OFFLINE 1
+#define SEAL_FLAG_STORAGE_PROTECTED 2
+#define SEAL_FLAG_OFFLINE_ACTIVATED 3
+
+/* State text fields; dates are ISO 8601 UTC. */
+#define SEAL_FIELD_REASON 1
+#define SEAL_FIELD_MESSAGE 2
+#define SEAL_FIELD_CUSTOMER 3
+#define SEAL_FIELD_EXPIRES_AT 4
+#define SEAL_FIELD_MAINTENANCE_UNTIL 5
+#define SEAL_FIELD_REVALIDATE_BY 6
+#define SEAL_FIELD_KEY_HINT 7
+#define SEAL_FIELD_NOTICES_JSON 8 /* the server's notices as a JSON array */
+
+void seal_result_free(seal_result *result);
+/* SEAL_RESULT_SEND, _DONE or _ERROR. */
+int32_t seal_result_kind(const seal_result *result);
+/* The whole result as JSON: {"send":{"path","body"}}, {"ok":true,"value":...} or {"ok":false,"error":{"code","message"}}. */
+const char *seal_result_json(const seal_result *result);
+const char *seal_result_request_path(const seal_result *result);
+const char *seal_result_request_body(const seal_result *result);
+const char *seal_result_error_code(const seal_result *result);
+const char *seal_result_error_message(const seal_result *result);
+const char *seal_result_text(const seal_result *result);
+/* Decrypted data; overwritten when the result is freed. */
+const uint8_t *seal_result_data(const seal_result *result, size_t *len);
+/* The state of activate, check and activate_offline: SEAL_STATUS_*, or 0 when the result holds none. */
+int32_t seal_state_status(const seal_result *result);
+/* 1 or 0; -1 when the result holds no state. */
+int32_t seal_state_flag(const seal_result *result, int32_t flag);
+/* NULL when the field is absent. */
+const char *seal_state_text(const seal_result *result, int32_t field);
+size_t seal_state_feature_count(const seal_result *result);
+const char *seal_state_feature(const seal_result *result, size_t index);
+/* 1 when the state is valid or in grace and grants the feature. */
+int32_t seal_state_has_feature(const seal_result *result, const char *feature);
+/* Strings returned by seal_result_* and seal_state_* live as long as the result. */
 
 #ifdef __cplusplus
 }

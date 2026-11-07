@@ -117,6 +117,26 @@ pub fn device_secret(key: &[u8]) -> Option<[u8; 32]> {
     hash::device_secret(key, read_platform().raws)
 }
 
+/// The OS-provided machine id the Electron SDK reads (readMachineId in @carchalabs/seal-electron), so the
+/// native SDKs compute the same device fingerprint hash: "mac:" + IOPlatformUUID, "win:" + MachineGuid
+/// (64-bit registry view), "linux:" + /etc/machine-id (or /var/lib/dbus/machine-id), trimmed. None when
+/// the OS does not report it. For the fingerprint hash only; never send it as is.
+pub fn os_machine_id() -> Option<String> {
+    let raws = read_platform().raws;
+    os_machine_id_from(&raws)
+}
+
+fn os_machine_id_from(raws: &[Raw]) -> Option<String> {
+    let (prefix, kind) = if cfg!(target_os = "macos") {
+        ("mac", Kind::Uuid)
+    } else if cfg!(windows) {
+        ("win", Kind::Os)
+    } else {
+        ("linux", Kind::Os)
+    };
+    raws.iter().find(|r| r.kind == kind).map(|r| r.value.trim()).filter(|v| !v.is_empty()).map(|v| format!("{prefix}:{v}"))
+}
+
 #[cfg(target_os = "linux")]
 fn read_platform() -> Reading {
     let (raws, vm) = linux::read(&linux::Fs::system());
@@ -137,4 +157,38 @@ fn read_platform() -> Reading {
 #[cfg(not(any(target_os = "linux", target_os = "macos", windows)))]
 fn read_platform() -> Reading {
     Reading { raws: Vec::new(), vm: false, notes: Vec::new() }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn raw(kind: Kind, value: &str) -> Raw {
+        Raw { kind, value: value.into() }
+    }
+
+    #[test]
+    fn os_machine_id_is_the_electron_sdks_raw_id() {
+        let raws = [raw(Kind::Uuid, "UUID-1"), raw(Kind::Os, " 0123456789abcdef0123456789abcdef \n"), raw(Kind::Cpu, "cpu")];
+        let expected = if cfg!(target_os = "macos") {
+            "mac:UUID-1"
+        } else if cfg!(windows) {
+            "win:0123456789abcdef0123456789abcdef"
+        } else {
+            "linux:0123456789abcdef0123456789abcdef"
+        };
+        assert_eq!(os_machine_id_from(&raws).as_deref(), Some(expected));
+        assert_eq!(os_machine_id_from(&[raw(Kind::Cpu, "cpu")]), None);
+        assert_eq!(os_machine_id_from(&[raw(Kind::Uuid, " "), raw(Kind::Os, " ")]), None);
+    }
+
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn this_machine_matches_etc_machine_id() {
+        let file = std::fs::read_to_string("/etc/machine-id").or_else(|_| std::fs::read_to_string("/var/lib/dbus/machine-id"));
+        match file.map(|s| s.trim().to_string()).ok().filter(|s| !s.is_empty()) {
+            Some(id) => assert_eq!(os_machine_id(), Some(format!("linux:{id}"))),
+            None => assert_eq!(os_machine_id(), None),
+        }
+    }
 }

@@ -1,9 +1,9 @@
 [package]
 name = "seal_native"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2024"
 rust-version = "1.85"
-description = "C interface of Carcha Seal for C, C++, C# and Java: lease verification, feature decryption, device key and hardware components."
+description = "C interface of Carcha Seal for C, C++, C# and Java: the license client, lease verification, feature decryption, device key and hardware components."
 license = "MIT"
 publish = false
 
@@ -15,9 +15,8 @@ crate-type = ["rlib", "staticlib", "cdylib"]
 [dependencies]
 seal_hwid = { path = "../hwid" }
 seal_lease = { path = "../lease" }
+seal_client = { path = "../client" }
 base64 = "0.22"
-
-[dev-dependencies]
 serde_json = "1"
 
 [features]

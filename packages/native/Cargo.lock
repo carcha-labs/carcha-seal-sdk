@@ -328,6 +328,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "seal_client"
+version = "0.1.0"
+dependencies = [
+ "seal_lease",
+ "serde_json",
+ "sha2",
+]
+
+[[package]]
 name = "seal_hwid"
 version = "0.3.0"
 dependencies = [
@@ -352,9 +361,10 @@ dependencies = [
 
 [[package]]
 name = "seal_native"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "base64",
+ "seal_client",
  "seal_hwid",
  "seal_lease",
  "serde_json",

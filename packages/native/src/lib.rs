@@ -10,6 +10,9 @@
 use std::ffi::{CStr, c_char};
 use std::panic::{AssertUnwindSafe, catch_unwind};
 
+mod client;
+pub use client::*;
+
 use seal_lease::{DEFAULT_LEEWAY_SECONDS, DecryptError, Failure, Options, TrustedKey};
 
 pub const SEAL_OK: i32 = 0;
