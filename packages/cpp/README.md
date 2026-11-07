@@ -48,7 +48,7 @@ std::vector<uint8_t> model = client.decrypt("pro", encrypted_model);   // data y
 
 To send requests through your own HTTP stack (Qt, libcurl, WinHTTP), set `options.transport`: POST `request.body` to `request.url` with `Content-Type: application/json` and `request.user_agent`, refuse redirects, use a timeout, and return status 0 when there was no answer.
 
-One call at a time runs on a `Client`; calls from several threads wait for each other.
+One operation at a time runs on a `Client`, its request to the server included; calls from several threads wait for each other.
 
 ## Tests
 

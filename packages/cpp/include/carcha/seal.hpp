@@ -12,7 +12,8 @@
 //   if (state.has_feature("pro")) { ... }
 //
 // Operations that fail throw carcha::seal::LicenseError with the SDK's code and a message to show.
-// One call at a time runs on a Client; calls from several threads wait for each other.
+// One operation at a time runs on a Client, request and answer included; calls from several threads wait for each
+// other.
 #pragma once
 
 #include <seal.h>
@@ -21,6 +22,7 @@
 #include <cstdint>
 #include <functional>
 #include <memory>
+#include <mutex>
 #include <optional>
 #include <stdexcept>
 #include <string>
@@ -232,6 +234,7 @@ class Client {
   /// often holds a person's name).
   State activate(std::string_view license_key, const std::optional<std::string>& machine_name = std::nullopt) {
     const std::string key(license_key);
+    const std::lock_guard<std::mutex> lock(*mutex_);
     auto begin = detail::checked(seal_client_activate_begin(client_.get(), key.c_str(), detail::c_or_null(machine_name)));
     return detail::state_of(finish(begin, [this](int status, const std::string& body, double now) {
       return seal_client_activate_finish(client_.get(), status, bytes(body), body.size(), now);
@@ -240,6 +243,7 @@ class Client {
 
   /// Checks the license: online when the server answers, otherwise from the saved lease with its offline grace.
   State check() {
+    const std::lock_guard<std::mutex> lock(*mutex_);
     const double now = options_.now_ms();
     auto begin = detail::checked(seal_client_check_begin(client_.get(), now));
     return detail::state_of(finish(begin, [this](int status, const std::string& body, double at) {
@@ -249,6 +253,7 @@ class Client {
 
   /// Releases this device's seat on the server and removes the license here.
   void deactivate() {
+    const std::lock_guard<std::mutex> lock(*mutex_);
     auto begin = detail::checked(seal_client_deactivate_begin(client_.get()));
     detail::throw_if_error(finish(begin, [this](int status, const std::string& body, double) {
       return seal_client_deactivate_finish(client_.get(), status, bytes(body), body.size());
@@ -258,21 +263,27 @@ class Client {
   /// Offline activation, step 1: the request file (JSON text) for a machine that cannot reach the server.
   std::string offline_request(std::string_view license_key, const std::optional<std::string>& machine_name = std::nullopt) {
     const std::string key(license_key);
+    const std::lock_guard<std::mutex> lock(*mutex_);
     return detail::text_of(detail::checked(seal_client_offline_request(client_.get(), key.c_str(), detail::c_or_null(machine_name))));
   }
 
   /// Offline activation, step 2: loads the license file the server issued for this machine's request.
   State activate_offline(std::string_view license_file) {
     const std::string file(license_file);
+    const std::lock_guard<std::mutex> lock(*mutex_);
     return detail::state_of(detail::checked(seal_client_activate_offline(client_.get(), file.c_str(), options_.now_ms())));
   }
 
   /// Gives an offline machine's seat back: removes the license, returns the deactivation file (JSON text).
-  std::string deactivate_offline() { return detail::text_of(detail::checked(seal_client_deactivate_offline(client_.get()))); }
+  std::string deactivate_offline() {
+    const std::lock_guard<std::mutex> lock(*mutex_);
+    return detail::text_of(detail::checked(seal_client_deactivate_offline(client_.get())));
+  }
 
   /// Decrypts data you encrypted for a feature, offline, with the saved lease. The content key stays in the library.
   std::vector<uint8_t> decrypt(std::string_view feature, const std::vector<uint8_t>& data) {
     const std::string name(feature);
+    const std::lock_guard<std::mutex> lock(*mutex_);
     auto r = detail::checked(seal_client_decrypt(client_.get(), name.c_str(), data.empty() ? nullptr : data.data(), data.size(), options_.now_ms()));
     detail::throw_if_error(r);
     size_t len = 0;
@@ -298,6 +309,8 @@ class Client {
 
   Options options_;
   std::unique_ptr<seal_client, detail::ClientDeleter> client_;
+  /// Held for a whole operation: its begin, the request and its finish. A pointer, so a Client can still be moved.
+  std::unique_ptr<std::mutex> mutex_ = std::make_unique<std::mutex>();
 };
 
 }  // namespace carcha::seal

@@ -10,7 +10,10 @@
  * libseal_native.so).
  *
  * Strings are UTF-8 and NUL-terminated. Every function is safe to call from
- * several threads at once. No function unwinds into the caller.
+ * several threads at once; on one client, an operation that sends a request
+ * is its *_begin and *_finish call together, and another operation must not
+ * start in between (the C++ and C# SDKs hold a lock across both). No function
+ * unwinds into the caller.
  */
 #ifndef SEAL_H
 #define SEAL_H
@@ -194,7 +197,9 @@ void seal_client_options_init(seal_client_options *options);
  * "invalid_machine_id", "invalid_options" (NULL). Static. */
 const char *seal_client_options_error(const seal_client_options *options);
 /* A client; NULL when seal_client_options_error names a problem. One call at a time runs on a
- * client; concurrent calls wait. Free with seal_client_free. */
+ * client; concurrent calls wait. Between an operation's *_begin and its *_finish, start no other
+ * operation on the client: its *_begin replaces the pending request, and the first *_finish then
+ * fails with "no_request". Free with seal_client_free. */
 seal_client *seal_client_new(const seal_client_options *options);
 void seal_client_free(seal_client *client);
 /* The User-Agent to send with every request, e.g. "carcha-seal-native/0.3.0 (cpp)". Lives as long as the client. */
