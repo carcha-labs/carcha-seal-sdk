@@ -9,12 +9,13 @@ use std::sync::Mutex;
 use seal_client::{Client, Config, FileStorage, Hardware, LicenseError, Outcome, Request, Response, State, Status};
 use serde_json::{Value, json};
 
-use crate::{SealKeys, parse_keys, product_key, text};
+use crate::{parse_keys, product_key, text};
 
 /// The `seal_client_options` struct of the header.
 #[repr(C)]
 pub struct SealClientOptions {
     pub product: *const c_char,
+    pub server_url: *const c_char,
     pub public_keys: *const c_char,
     pub storage_dir: *const c_char,
     pub app_version: *const c_char,
@@ -27,6 +28,7 @@ pub struct SealClientOptions {
 /// The client behind a `seal_client *`. One operation at a time; the lock makes concurrent calls wait.
 pub struct SealClient {
     inner: Mutex<Client<FileStorage>>,
+    server_url: String,
     user_agent: CString,
 }
 
@@ -35,6 +37,7 @@ pub struct SealResult {
     kind: i32,
     json: CString,
     path: Option<CString>,
+    url: Option<CString>,
     body: Option<CString>,
     error: Option<(CString, CString)>,
     state: Option<(State, StateStrings)>,
@@ -89,6 +92,7 @@ pub unsafe extern "C" fn seal_client_options_init(options: *mut SealClientOption
     if !options.is_null() {
         let defaults = SealClientOptions {
             product: std::ptr::null(),
+            server_url: std::ptr::null(),
             public_keys: std::ptr::null(),
             storage_dir: std::ptr::null(),
             app_version: std::ptr::null(),
@@ -107,7 +111,85 @@ fn hardware_of(product: &str) -> Option<Hardware> {
     Some(Hardware { components: collected.components.into_iter().map(|c| (c.kind.as_str().to_string(), c.hash)).collect(), vm: collected.vm })
 }
 
-/// A client from the options; NULL when a required option is missing or invalid.
+/// Options read and checked: what seal_client_new builds a client from.
+struct Parsed<'a> {
+    product: &'a str,
+    server_url: &'a str,
+    keys: Vec<seal_lease::TrustedKey>,
+    dir: &'a str,
+    app_version: Option<&'a str>,
+    grace_days: Option<f64>,
+    sdk_name: &'a str,
+    machine_id: Option<&'a str>,
+    hardware: bool,
+}
+
+/// Reads the options; the error is the name of what is wrong (see seal_client_options_error).
+///
+/// # Safety
+/// The options' strings must be NULL or NUL-terminated.
+unsafe fn parse(o: &SealClientOptions) -> Result<Parsed<'_>, &'static str> {
+    // SAFETY: per this function's contract (all the reads below).
+    let given = |p: *const c_char, name: &'static str| -> Result<Option<&str>, &'static str> {
+        if p.is_null() { Ok(None) } else { unsafe { text(p) }.map(Some).ok_or(name) }
+    };
+    let product = given(o.product, "invalid_product")?.filter(|p| !p.is_empty()).ok_or("invalid_product")?;
+    let server_url = given(o.server_url, "invalid_server_url")?.ok_or("invalid_server_url")?;
+    if let Err(e) = seal_client::check_server_url(server_url) {
+        return Err(if e.code == "insecure_server_url" { "insecure_server_url" } else { "invalid_server_url" });
+    }
+    let keys = given(o.public_keys, "invalid_public_keys")?.and_then(parse_keys).ok_or("invalid_public_keys")?.keys;
+    let dir = given(o.storage_dir, "invalid_storage_dir")?.filter(|d| !d.is_empty()).ok_or("invalid_storage_dir")?;
+    if !(o.grace_days.is_finite() || o.grace_days < 0.0) {
+        return Err("invalid_grace_days");
+    }
+    let sdk_name = given(o.sdk_name, "invalid_sdk_name")?.unwrap_or("c");
+    if !valid_sdk_name(sdk_name) {
+        return Err("invalid_sdk_name");
+    }
+    Ok(Parsed {
+        product,
+        server_url,
+        keys,
+        dir,
+        app_version: given(o.app_version, "invalid_app_version")?,
+        grace_days: (o.grace_days >= 0.0).then_some(o.grace_days),
+        sdk_name,
+        machine_id: given(o.machine_id, "invalid_machine_id")?,
+        hardware: o.hardware != 0,
+    })
+}
+
+/// What is wrong with the options, or NULL when a client can be made from them. Static. See seal.h.
+///
+/// # Safety
+/// `options` must be NULL or point to a seal_client_options whose strings are NULL or NUL-terminated.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn seal_client_options_error(options: *const SealClientOptions) -> *const c_char {
+    catch_unwind(AssertUnwindSafe(|| {
+        // SAFETY: per this function's contract.
+        let Some(o) = (unsafe { options.as_ref() }) else { return c"invalid_options".as_ptr() };
+        // SAFETY: per this function's contract.
+        match unsafe { parse(o) } {
+            Ok(_) => std::ptr::null(),
+            Err(name) => match name {
+                "invalid_product" => c"invalid_product",
+                "invalid_server_url" => c"invalid_server_url",
+                "insecure_server_url" => c"insecure_server_url",
+                "invalid_public_keys" => c"invalid_public_keys",
+                "invalid_storage_dir" => c"invalid_storage_dir",
+                "invalid_grace_days" => c"invalid_grace_days",
+                "invalid_sdk_name" => c"invalid_sdk_name",
+                "invalid_app_version" => c"invalid_app_version",
+                _ => c"invalid_machine_id",
+            }
+            .as_ptr(),
+        }
+    }))
+    .unwrap_or(c"invalid_options".as_ptr())
+}
+
+/// A client from the options; NULL when seal_client_options_error names a problem.
 ///
 /// # Safety
 /// `options` must be NULL or point to a seal_client_options whose strings are NULL or NUL-terminated.
@@ -116,44 +198,32 @@ pub unsafe extern "C" fn seal_client_new(options: *const SealClientOptions) -> *
     catch_unwind(AssertUnwindSafe(|| {
         // SAFETY: per this function's contract.
         let Some(o) = (unsafe { options.as_ref() }) else { return std::ptr::null_mut() };
-        // SAFETY: the strings are NULL or NUL-terminated per the contract.
-        let (product, keys, dir) = unsafe { (text(o.product), text(o.public_keys), text(o.storage_dir)) };
-        let (Some(product), Some(SealKeys { keys }), Some(dir)) = (product, keys.and_then(parse_keys), dir) else {
-            return std::ptr::null_mut();
-        };
-        if product.is_empty() || dir.is_empty() || !(o.grace_days.is_finite() || o.grace_days < 0.0) {
-            return std::ptr::null_mut();
-        }
-        // SAFETY: as above.
-        let (app_version, sdk_name, machine_id) = unsafe { (text(o.app_version), text(o.sdk_name), text(o.machine_id)) };
-        let sdk_name = sdk_name.unwrap_or("c");
-        if !valid_sdk_name(sdk_name) || (!o.app_version.is_null() && app_version.is_none()) || (!o.machine_id.is_null() && machine_id.is_none()) {
-            return std::ptr::null_mut();
-        }
-        let mut config = Config::new(product, keys, SDK_VERSION, platform());
-        config.grace_days = (o.grace_days >= 0.0).then_some(o.grace_days);
-        config.app_version = app_version.map(String::from);
-        config.machine_id = match machine_id {
+        // SAFETY: per this function's contract.
+        let Ok(p) = (unsafe { parse(o) }) else { return std::ptr::null_mut() };
+        let mut config = Config::new(p.product, p.keys, SDK_VERSION, platform());
+        config.grace_days = p.grace_days;
+        config.app_version = p.app_version.map(String::from);
+        config.machine_id = match p.machine_id {
             Some(id) => {
                 let id = id.to_string();
                 Box::new(move || Some(id.clone()))
             }
             None => Box::new(seal_hwid::os_machine_id),
         };
-        if o.hardware != 0 {
-            let p = product.to_string();
-            config.hardware = Box::new(move || hardware_of(&p));
-            let p = product.to_string();
+        if p.hardware {
+            let product = p.product.to_string();
+            config.hardware = Box::new(move || hardware_of(&product));
+            let product = p.product.to_string();
             config.device_public_key = Box::new(move || {
                 use base64::Engine;
-                seal_hwid::device_secret(product_key(&p).as_bytes())
+                seal_hwid::device_secret(product_key(&product).as_bytes())
                     .map(|s| base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(seal_lease::device_public_key(&s)))
             });
-            let p = product.to_string();
-            config.device_secret = Box::new(move || seal_hwid::device_secret(product_key(&p).as_bytes()));
+            let product = p.product.to_string();
+            config.device_secret = Box::new(move || seal_hwid::device_secret(product_key(&product).as_bytes()));
         }
-        let user_agent = cstring(&format!("carcha-seal-native/{SDK_VERSION} ({sdk_name})"));
-        let client = SealClient { inner: Mutex::new(Client::new(config, FileStorage::new(dir))), user_agent };
+        let user_agent = cstring(&format!("carcha-seal-native/{SDK_VERSION} ({})", p.sdk_name));
+        let client = SealClient { inner: Mutex::new(Client::new(config, FileStorage::new(p.dir))), server_url: p.server_url.to_string(), user_agent };
         Box::into_raw(Box::new(client))
     }))
     .unwrap_or(std::ptr::null_mut())
@@ -202,12 +272,14 @@ fn state_strings(state: &State) -> StateStrings {
 }
 
 fn base(kind: i32, json: Value) -> SealResult {
-    SealResult { kind, json: cstring(&json.to_string()), path: None, body: None, error: None, state: None, text: None, data: None }
+    SealResult { kind, json: cstring(&json.to_string()), path: None, url: None, body: None, error: None, state: None, text: None, data: None }
 }
 
-fn send(request: Request) -> SealResult {
-    let mut r = base(SEAL_RESULT_SEND, json!({ "send": { "path": request.path, "body": request.body } }));
+fn send(server_url: &str, request: Request) -> SealResult {
+    let url = seal_client::request_url(server_url, &request);
+    let mut r = base(SEAL_RESULT_SEND, json!({ "send": { "url": url, "path": request.path, "body": request.body } }));
     r.path = Some(cstring(request.path));
+    r.url = Some(cstring(&url));
     r.body = Some(cstring(&request.body.to_string()));
     r
 }
@@ -254,13 +326,13 @@ fn into_ptr(result: SealResult) -> *mut SealResult {
 }
 
 /// Runs an operation on the client under its lock; NULL for a NULL client or a panic.
-fn with_client(client: *const SealClient, f: impl FnOnce(&mut Client<FileStorage>) -> SealResult) -> *mut SealResult {
+fn with_client(client: *const SealClient, f: impl FnOnce(&mut Client<FileStorage>, &str) -> SealResult) -> *mut SealResult {
     catch_unwind(AssertUnwindSafe(|| {
         // SAFETY: a live pointer from seal_client_new per the callers' contracts.
         let Some(c) = (unsafe { client.as_ref() }) else { return std::ptr::null_mut() };
         // A panic in an earlier call is caught at the boundary; the client's state stays usable.
         let mut inner = c.inner.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
-        into_ptr(f(&mut inner))
+        into_ptr(f(&mut inner, &c.server_url))
     }))
     .unwrap_or(std::ptr::null_mut())
 }
@@ -299,8 +371,8 @@ pub unsafe extern "C" fn seal_client_activate_begin(client: *const SealClient, l
     if !machine_name.is_null() && name.is_none() {
         return std::ptr::null_mut();
     }
-    with_client(client, |c| match c.activate_begin(key, name) {
-        Outcome::Send(r) => send(r),
+    with_client(client, |c, server| match c.activate_begin(key, name) {
+        Outcome::Send(r) => send(server, r),
         Outcome::Done(d) => done_state(d),
     })
 }
@@ -316,7 +388,7 @@ pub unsafe extern "C" fn seal_client_activate_finish(client: *const SealClient, 
     if !now_ms.is_finite() {
         return std::ptr::null_mut();
     }
-    with_client(client, |c| done_state(c.activate_finish(answer, now_ms)))
+    with_client(client, |c, _| done_state(c.activate_finish(answer, now_ms)))
 }
 
 /// Starts a license check.
@@ -328,8 +400,8 @@ pub unsafe extern "C" fn seal_client_check_begin(client: *const SealClient, now_
     if !now_ms.is_finite() {
         return std::ptr::null_mut();
     }
-    with_client(client, |c| match c.check_begin(now_ms) {
-        Outcome::Send(r) => send(r),
+    with_client(client, |c, server| match c.check_begin(now_ms) {
+        Outcome::Send(r) => send(server, r),
         Outcome::Done(d) => done_state(d),
     })
 }
@@ -345,7 +417,7 @@ pub unsafe extern "C" fn seal_client_check_finish(client: *const SealClient, htt
     if !now_ms.is_finite() {
         return std::ptr::null_mut();
     }
-    with_client(client, |c| done_state(c.check_finish(answer, now_ms)))
+    with_client(client, |c, _| done_state(c.check_finish(answer, now_ms)))
 }
 
 /// Starts deactivation (releases this device's seat).
@@ -354,8 +426,8 @@ pub unsafe extern "C" fn seal_client_check_finish(client: *const SealClient, htt
 /// `client` a live seal_client.
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn seal_client_deactivate_begin(client: *const SealClient) -> *mut SealResult {
-    with_client(client, |c| match c.deactivate_begin() {
-        Outcome::Send(r) => send(r),
+    with_client(client, |c, server| match c.deactivate_begin() {
+        Outcome::Send(r) => send(server, r),
         Outcome::Done(d) => done_unit(d),
     })
 }
@@ -368,7 +440,7 @@ pub unsafe extern "C" fn seal_client_deactivate_begin(client: *const SealClient)
 pub unsafe extern "C" fn seal_client_deactivate_finish(client: *const SealClient, http_status: i32, body: *const u8, body_len: usize) -> *mut SealResult {
     // SAFETY: per this function's contract.
     let Some(answer) = (unsafe { response(http_status, body, body_len) }) else { return std::ptr::null_mut() };
-    with_client(client, |c| done_unit(c.deactivate_finish(answer)))
+    with_client(client, |c, _| done_unit(c.deactivate_finish(answer)))
 }
 
 /// The offline activation request file (JSON text, seal_result_text) for this machine.
@@ -383,7 +455,7 @@ pub unsafe extern "C" fn seal_client_offline_request(client: *const SealClient, 
     if !machine_name.is_null() && name.is_none() {
         return std::ptr::null_mut();
     }
-    with_client(client, |c| done_text(c.offline_request(key, name)))
+    with_client(client, |c, _| done_text(c.offline_request(key, name)))
 }
 
 /// Loads an offline license file (JSON text) the server issued for this machine.
@@ -397,7 +469,7 @@ pub unsafe extern "C" fn seal_client_activate_offline(client: *const SealClient,
     if !now_ms.is_finite() {
         return std::ptr::null_mut();
     }
-    with_client(client, |c| done_state(c.activate_offline(file, now_ms)))
+    with_client(client, |c, _| done_state(c.activate_offline(file, now_ms)))
 }
 
 /// Removes an offline license and returns the deactivation file (JSON text, seal_result_text).
@@ -406,7 +478,7 @@ pub unsafe extern "C" fn seal_client_activate_offline(client: *const SealClient,
 /// `client` a live seal_client.
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn seal_client_deactivate_offline(client: *const SealClient) -> *mut SealResult {
-    with_client(client, |c| done_text(c.deactivate_offline()))
+    with_client(client, |c, _| done_text(c.deactivate_offline()))
 }
 
 /// Decrypts data encrypted for a feature with the saved lease (seal_result_data).
@@ -426,7 +498,7 @@ pub unsafe extern "C" fn seal_client_decrypt(client: *const SealClient, feature:
         // SAFETY: data_len readable bytes per the contract.
         unsafe { std::slice::from_raw_parts(data, data_len) }.to_vec()
     };
-    with_client(client, |c| match c.decrypt(feature, &data, now_ms) {
+    with_client(client, |c, _| match c.decrypt(feature, &data, now_ms) {
         Ok(plain) => {
             use base64::Engine;
             let mut r = base(SEAL_RESULT_DONE, json!({ "ok": true, "value": base64::engine::general_purpose::STANDARD.encode(&plain) }));
@@ -497,6 +569,16 @@ fn ptr(s: &Option<CString>) -> *const c_char {
 pub unsafe extern "C" fn seal_result_request_path(result: *const SealResult) -> *const c_char {
     // SAFETY: per this function's contract.
     unsafe { get(result) }.map_or(std::ptr::null(), |r| ptr(&r.path))
+}
+
+/// The whole address to POST to (server URL + path); NULL unless SEAL_RESULT_SEND.
+///
+/// # Safety
+/// As seal_result_json.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn seal_result_request_url(result: *const SealResult) -> *const c_char {
+    // SAFETY: per this function's contract.
+    unsafe { get(result) }.map_or(std::ptr::null(), |r| ptr(&r.url))
 }
 
 /// The JSON body to POST, as is; NULL unless SEAL_RESULT_SEND.

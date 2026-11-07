@@ -38,9 +38,9 @@ jobs:
       - name: License client (clippy, every scenario recorded from the Electron SDK)
         working-directory: packages/client
         run: cargo clippy --all-targets -- -D warnings && cargo test
-      - name: C interface (clippy, every lease and decrypt vector through the C functions)
+      - name: C interface (clippy; every lease and decrypt vector and client scenario through the C functions; the HTTP client against a local server)
         working-directory: packages/native
-        run: cargo clippy --all-targets --features test-device-secret -- -D warnings && cargo test --features test-device-secret
+        run: cargo clippy --all-targets --features "test-device-secret http" -- -D warnings && cargo clippy --all-targets -- -D warnings && cargo test --features "test-device-secret http"
       - name: C program over every lease vector, linked against the static library
         if: runner.os != 'Windows'
         working-directory: packages/native

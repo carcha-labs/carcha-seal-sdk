@@ -402,6 +402,30 @@ pub struct Client<S: Storage> {
     pending: Option<Pending>,
 }
 
+/// Refuses a server address that would send requests in plain text (OWASP ASVS 4.1.2, 12.2.1), as the Electron SDK's
+/// checkServerUrl: every request carries the license key and the device's fingerprint. http:// is accepted for this
+/// computer only (localhost, 127.x.x.x, [::1]), where a server under development runs.
+pub fn check_server_url(server_url: &str) -> Result<(), LicenseError> {
+    let url = url::Url::parse(server_url).map_err(|_| LicenseError::new("invalid_server_url", "serverUrl is not a valid URL."))?;
+    if url.scheme() == "https" {
+        return Ok(());
+    }
+    let host = url.host_str().unwrap_or_default();
+    let ipv4_loopback = host.strip_prefix("127.").is_some_and(|rest| {
+        let parts: Vec<&str> = rest.split('.').collect();
+        parts.len() == 3 && parts.iter().all(|p| (1..=3).contains(&p.len()) && p.bytes().all(|b| b.is_ascii_digit()))
+    });
+    if url.scheme() == "http" && (host == "localhost" || host == "[::1]" || ipv4_loopback) {
+        return Ok(());
+    }
+    Err(LicenseError::new("insecure_server_url", "serverUrl must start with https:// (http:// only for localhost)."))
+}
+
+/// The address a request goes to: the server URL without trailing slashes, then the request's path.
+pub fn request_url(server_url: &str, request: &Request) -> String {
+    format!("{}{}", server_url.trim_end_matches('/'), request.path)
+}
+
 /// SHA-256 of "licensekit:<product>:<raw machine id>", lowercase hex: the device fingerprint the lease carries.
 pub fn hash_fingerprint(raw_machine_id: &str, product: &str) -> String {
     hex(&Sha256::digest(format!("licensekit:{product}:{raw_machine_id}").as_bytes()))
@@ -875,6 +899,20 @@ mod tests {
         assert_eq!(back, serde_json::from_str::<Value>(text).unwrap());
         assert!(Stored::parse("not json").is_none());
         assert!(Stored::parse(r#"{"token":"t"}"#).is_none(), "no license key");
+    }
+
+    /// The cases of sdk-electron/src/server-url.test.ts.
+    #[test]
+    fn server_url_https_only_and_http_for_this_computer() {
+        for url in ["https://seal.carchalabs.com", "https://licenses.example.com:8443/base/", "http://localhost:4000", "http://127.0.0.1:4000", "http://127.8.9.10", "http://[::1]:4000"] {
+            assert_eq!(check_server_url(url), Ok(()), "{url}");
+        }
+        for url in ["http://seal.carchalabs.com", "http://192.168.1.10:4000", "http://localhost.example.com", "http://127.0.0.1.example.com", "ftp://seal.carchalabs.com", "ws://localhost"] {
+            assert_eq!(check_server_url(url).unwrap_err().code, "insecure_server_url", "{url}");
+        }
+        assert_eq!(check_server_url("seal.carchalabs.com").unwrap_err().code, "invalid_server_url", "no scheme");
+        let request = Request { path: "/v1/validate", body: json!({}) };
+        assert_eq!(request_url("https://seal.carchalabs.com/acme//", &request), "https://seal.carchalabs.com/acme/v1/validate");
     }
 
     #[test]

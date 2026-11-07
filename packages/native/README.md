@@ -8,12 +8,15 @@ The app passes the Ed25519 public keys it trusts to `seal_keys_new`, from its ow
 
 ## License client
 
-The library does no network I/O. An operation that needs the server returns a result of kind `SEAL_RESULT_SEND`: POST its body to the server URL + `seal_result_request_path` with your own HTTP stack (so your app's proxy and certificate settings apply), with `Content-Type: application/json`, `User-Agent: seal_client_user_agent(client)`, redirects refused and a timeout, then pass the status (0 when there was no answer) and body to the matching `*_finish` function.
+The client does no network I/O. An operation that needs the server returns a result of kind `SEAL_RESULT_SEND`: POST its body to `seal_result_request_url` with `Content-Type: application/json`, `User-Agent: seal_client_user_agent(client)`, redirects refused and a timeout, then pass the status (0 when there was no answer) and body to the matching `*_finish` function. Use your own HTTP stack (so your app's proxy and certificate settings apply), or `seal_http_post` in builds with the `http` feature.
+
+The server URL must be `https://`; `http://` is accepted for this computer only (localhost, 127.x.x.x, `[::1]`), as in the Electron SDK. `seal_client_options_error` names what is wrong with the options.
 
 ```c
 seal_client_options options;
 seal_client_options_init(&options);
 options.product = "studio";
+options.server_url = "https://seal.carchalabs.com/<your slug>";
 options.public_keys = VENDOR_PUBLIC_KEYS_PEM;            /* compiled into your app */
 options.storage_dir = app_data_folder;                   /* license.dat is kept here */
 options.sdk_name = "cpp";
@@ -21,9 +24,11 @@ seal_client *client = seal_client_new(&options);
 
 seal_result *r = seal_client_check_begin(client, now_ms);
 if (seal_result_kind(r) == SEAL_RESULT_SEND) {
-    int status = post(server, seal_result_request_path(r), seal_result_request_body(r), &body, &len);
+    int status = seal_http_post(seal_result_request_url(r), seal_client_user_agent(client),
+                                seal_result_request_body(r), 8000, &body, &len);
     seal_result_free(r);
     r = seal_client_check_finish(client, status, body, len, now_ms);
+    seal_bytes_free(body, len);
 }
 if (seal_state_has_feature(r, "pro")) { /* ... */ }
 seal_result_free(r);
@@ -37,6 +42,7 @@ seal_result_free(r);
 | `seal_client_offline_request`, `seal_client_activate_offline`, `seal_client_deactivate_offline` | Offline activation by file |
 | `seal_client_decrypt` | Decrypts data encrypted for a feature, offline |
 | `seal_result_*`, `seal_state_*` | The request to send, the error, the license state, a file text or decrypted data |
+| `seal_http_post`, `seal_bytes_free` | The built-in HTTP client (feature `http`): OS certificate check, `HTTPS_PROXY` / `ALL_PROXY` and the Windows user proxy setting (not PAC scripts), redirects not followed |
 
 Every request carries `sdkVersion` = this library's version (the client logic is here, so it is the version that matters for a minimum-SDK rule) and the User-Agent `carcha-seal-native/<version> (<sdk_name>)`. The device fingerprint is computed from the same OS machine id as the Electron SDK's.
 
@@ -64,7 +70,7 @@ seal_keys_free(keys);
 | `seal_hardware` | This machine's components, one HMAC-SHA256 each, as JSON |
 
 ```
-cargo test --features test-device-secret   # unit tests, every lease and decrypt vector, and every client scenario, through the C functions
+cargo test --features "test-device-secret http"   # unit tests, every lease and decrypt vector, every client scenario through the C functions, the HTTP client against a local server
 tests/c/run.sh                             # C programs linked against the static library: every lease vector, and the client
 ```
 

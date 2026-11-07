@@ -21,12 +21,14 @@ int main(int argc, char **argv) {
     seal_client_options_init(&options);
     EXPECT(options.grace_days < 0 && options.hardware == 1 && options.machine_id == NULL, "defaults");
     options.product = "studio";
+    options.server_url = "https://seal.example.com/acme/";
     options.public_keys = KEY;
     options.storage_dir = argv[1];
     options.app_version = "9.9.9";
     options.sdk_name = "ctest";
     options.machine_id = "linux:0123456789abcdef0123456789abcdef";
     options.hardware = 0;
+    EXPECT(seal_client_options_error(&options) == NULL, "options accepted");
     seal_client *client = seal_client_new(&options);
     if (!client) { puts("FAIL: seal_client_new"); return 1; }
     EXPECT(strstr(seal_client_user_agent(client), "carcha-seal-native/") == seal_client_user_agent(client), "user agent prefix");
@@ -40,6 +42,7 @@ int main(int argc, char **argv) {
     r = seal_client_activate_begin(client, " lk-aaaa-bbbb ", NULL);
     EXPECT(seal_result_kind(r) == SEAL_RESULT_SEND, "activation needs the server");
     EXPECT(strcmp(seal_result_request_path(r), "/v1/activate") == 0, "activation path");
+    EXPECT(strcmp(seal_result_request_url(r), "https://seal.example.com/acme/v1/activate") == 0, "activation url");
     const char *body = seal_result_request_body(r);
     EXPECT(strstr(body, "\"licenseKey\":\"LK-AAAA-BBBB\"") != NULL, "license key trimmed and upper case");
     EXPECT(strstr(body, FINGERPRINT) != NULL, "fingerprint from options.machine_id");
@@ -71,7 +74,12 @@ int main(int argc, char **argv) {
     EXPECT(seal_result_kind(NULL) == 0 && seal_state_status(NULL) == 0, "NULL result");
     seal_client_free(client);
 
+    options.server_url = "http://seal.example.com";
+    EXPECT(seal_client_options_error(&options) != NULL && strcmp(seal_client_options_error(&options), "insecure_server_url") == 0, "plain http refused");
+    EXPECT(seal_client_new(&options) == NULL, "no client over plain http");
+    options.server_url = "https://seal.example.com";
     options.storage_dir = NULL;
+    EXPECT(strcmp(seal_client_options_error(&options), "invalid_storage_dir") == 0, "no storage folder named");
     EXPECT(seal_client_new(&options) == NULL, "no storage folder");
     if (fails) return 1;
     printf("seal %s: license client through the C interface\nOK\n", seal_version());

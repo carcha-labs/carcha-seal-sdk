@@ -97,11 +97,13 @@ fn every_client_scenario_through_the_c_interface() {
             (CString::new(o["product"].as_str().unwrap()).unwrap(), CString::new(keys.join("")).unwrap(), CString::new(dir.to_str().unwrap()).unwrap(), CString::new(machine_id).unwrap());
         let app_version = o["appVersion"].as_str().map(|v| CString::new(v).unwrap());
         let sdk = CString::new("test").unwrap();
+        let server = CString::new(file["server"].as_str().unwrap()).unwrap();
         let mut options = std::mem::MaybeUninit::<SealClientOptions>::uninit();
         let client = unsafe {
             seal_client_options_init(options.as_mut_ptr());
             let mut options = options.assume_init();
             options.product = product.as_ptr();
+            options.server_url = server.as_ptr();
             options.public_keys = keys.as_ptr();
             options.storage_dir = dir_c.as_ptr();
             options.machine_id = machine.as_ptr();
@@ -111,6 +113,7 @@ fn every_client_scenario_through_the_c_interface() {
             if let Some(g) = o["graceDays"].as_f64() {
                 options.grace_days = g;
             }
+            assert!(seal_client_options_error(&options).is_null(), "{name}");
             Client(seal_client_new(&options))
         };
         assert!(!client.0.is_null(), "{name}");
@@ -136,9 +139,11 @@ fn every_client_scenario_through_the_c_interface() {
                     return begin;
                 }
                 let path = read(unsafe { seal_result_request_path(begin) }).unwrap();
+                let url = read(unsafe { seal_result_request_url(begin) }).unwrap();
+                assert_eq!(url, format!("{}{path}", file["server"].as_str().unwrap()));
                 let body: Value = serde_json::from_str(&read(unsafe { seal_result_request_body(begin) }).unwrap()).unwrap();
                 let whole: Value = serde_json::from_str(&read(unsafe { seal_result_json(begin) }).unwrap()).unwrap();
-                assert_eq!(whole, json!({ "send": { "path": path, "body": body } }));
+                assert_eq!(whole, json!({ "send": { "url": url, "path": path, "body": body } }));
                 requests.push(json!({ "path": path, "body": placeholders(body) }));
                 unsafe { seal_result_free(begin) };
                 finish()
@@ -177,39 +182,52 @@ fn every_client_scenario_through_the_c_interface() {
 
 #[test]
 fn options_that_are_refused() {
+    let server = CString::new("https://seal.example.com/acme/").unwrap();
     let (product, keys, dir) = (CString::new("studio").unwrap(), CString::new(include_str!("../../client/tests/vectors.json").split('"').nth(3).unwrap().replace("\\n", "\n")).unwrap(), CString::new("/tmp/x").unwrap());
     let base = || unsafe {
         let mut o = std::mem::MaybeUninit::<SealClientOptions>::uninit();
         seal_client_options_init(o.as_mut_ptr());
         let mut o = o.assume_init();
         o.product = product.as_ptr();
+        o.server_url = server.as_ptr();
         o.public_keys = keys.as_ptr();
         o.storage_dir = dir.as_ptr();
         o
     };
     let ok = base();
+    assert!(unsafe { seal_client_options_error(&ok) }.is_null());
     let c = unsafe { seal_client_new(&ok) };
     assert!(!c.is_null(), "the defaults with product, keys and folder");
     assert_eq!(read(unsafe { seal_client_user_agent(c) }).unwrap(), format!("carcha-seal-native/{SDK_VERSION} (c)"));
     unsafe { seal_client_free(c) };
     let bad_name = CString::new("C Sharp").unwrap();
     let empty = CString::new("").unwrap();
+    let plain = CString::new("http://seal.example.com").unwrap();
+    let no_scheme = CString::new("seal.example.com").unwrap();
+    let bad_utf8 = [0xffu8, 0];
     type Change<'a> = Box<dyn Fn(&mut SealClientOptions) + 'a>;
-    let cases: Vec<(&str, Change)> = vec![
-        ("no product", Box::new(|o| o.product = std::ptr::null())),
-        ("empty product", Box::new(|o| o.product = empty.as_ptr())),
-        ("no keys", Box::new(|o| o.public_keys = std::ptr::null())),
-        ("bad keys", Box::new(|o| o.public_keys = empty.as_ptr())),
-        ("no folder", Box::new(|o| o.storage_dir = std::ptr::null())),
-        ("NaN grace", Box::new(|o| o.grace_days = f64::NAN)),
-        ("infinite grace", Box::new(|o| o.grace_days = f64::INFINITY)),
-        ("SDK name with spaces", Box::new(|o| o.sdk_name = bad_name.as_ptr())),
+    let cases: Vec<(&str, &str, Change)> = vec![
+        ("no product", "invalid_product", Box::new(|o| o.product = std::ptr::null())),
+        ("empty product", "invalid_product", Box::new(|o| o.product = empty.as_ptr())),
+        ("no server", "invalid_server_url", Box::new(|o| o.server_url = std::ptr::null())),
+        ("server without scheme", "invalid_server_url", Box::new(|o| o.server_url = no_scheme.as_ptr())),
+        ("plain http elsewhere", "insecure_server_url", Box::new(|o| o.server_url = plain.as_ptr())),
+        ("no keys", "invalid_public_keys", Box::new(|o| o.public_keys = std::ptr::null())),
+        ("bad keys", "invalid_public_keys", Box::new(|o| o.public_keys = empty.as_ptr())),
+        ("no folder", "invalid_storage_dir", Box::new(|o| o.storage_dir = std::ptr::null())),
+        ("NaN grace", "invalid_grace_days", Box::new(|o| o.grace_days = f64::NAN)),
+        ("infinite grace", "invalid_grace_days", Box::new(|o| o.grace_days = f64::INFINITY)),
+        ("SDK name with spaces", "invalid_sdk_name", Box::new(|o| o.sdk_name = bad_name.as_ptr())),
+        ("app version not UTF-8", "invalid_app_version", Box::new(|o| o.app_version = bad_utf8.as_ptr().cast())),
+        ("machine id not UTF-8", "invalid_machine_id", Box::new(|o| o.machine_id = bad_utf8.as_ptr().cast())),
     ];
-    for (label, change) in cases {
+    for (label, error, change) in cases {
         let mut o = base();
         change(&mut o);
+        assert_eq!(read(unsafe { seal_client_options_error(&o) }).as_deref(), Some(error), "{label}");
         assert!(unsafe { seal_client_new(&o) }.is_null(), "{label}");
     }
+    assert_eq!(read(unsafe { seal_client_options_error(std::ptr::null()) }).as_deref(), Some("invalid_options"));
     assert!(unsafe { seal_client_new(std::ptr::null()) }.is_null());
     assert!(unsafe { seal_client_check_begin(std::ptr::null(), 0.0) }.is_null());
     unsafe { seal_result_free(std::ptr::null_mut()) };

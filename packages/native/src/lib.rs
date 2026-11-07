@@ -12,6 +12,10 @@ use std::panic::{AssertUnwindSafe, catch_unwind};
 
 mod client;
 pub use client::*;
+#[cfg(feature = "http")]
+mod http;
+#[cfg(feature = "http")]
+pub use http::*;
 
 use seal_lease::{DEFAULT_LEEWAY_SECONDS, DecryptError, Failure, Options, TrustedKey};
 

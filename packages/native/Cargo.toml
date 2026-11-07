@@ -1,6 +1,6 @@
 [package]
 name = "seal_native"
-version = "0.2.0"
+version = "0.3.0"
 edition = "2024"
 rust-version = "1.85"
 description = "C interface of Carcha Seal for C, C++, C# and Java: the license client, lease verification, feature decryption, device key and hardware components."
@@ -18,8 +18,12 @@ seal_lease = { path = "../lease" }
 seal_client = { path = "../client" }
 base64 = "0.22"
 serde_json = "1"
+# The built-in HTTP client (feature "http"): rustls with the OS verifier, the Windows user proxy setting.
+ureq = { version = "3.5", default-features = false, features = ["rustls", "platform-verifier", "win-system-proxy"], optional = true }
 
 [features]
+# The built-in HTTP client, seal_http_post (the C++ builds). C#, Java and apps with their own HTTP stack leave it out.
+http = ["dep:ureq"]
 # Test builds only (CI): exports seal_test_decrypt_feature_with_secret, so the shared vectors
 # can be run through the C interface. Published builds always derive the secret from the hardware.
 test-device-secret = []

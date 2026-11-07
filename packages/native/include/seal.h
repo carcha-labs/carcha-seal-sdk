@@ -145,15 +145,15 @@ int32_t seal_hardware(const char *product, char *out, size_t out_len, size_t *ne
  * offline grace, clock checks, refusals kept offline, offline license files
  * and feature decryption. The library does no network I/O: an operation that
  * needs the server returns a result of kind SEAL_RESULT_SEND; POST its body
- * (Content-Type: application/json, User-Agent: seal_client_user_agent) to the
- * server URL + seal_result_request_path, refusing redirects, with a timeout,
- * then pass the status and body to the matching *_finish function (status 0
- * when there was no answer). Every function returns a result to free with
+ * (Content-Type: application/json, User-Agent: seal_client_user_agent) to
+ * seal_result_request_url, refusing redirects, with a timeout (seal_http_post
+ * does this in builds with the built-in HTTP client), then pass the status and
+ * body to the matching *_finish function (status 0 when there was no answer). Every function returns a result to free with
  * seal_result_free, or NULL when an argument is invalid.
  *
  *   seal_result *r = seal_client_check_begin(client, now_ms);
  *   if (seal_result_kind(r) == SEAL_RESULT_SEND) {
- *       int status = post(url, seal_result_request_path(r), seal_result_request_body(r), &body, &len);
+ *       int status = post(seal_result_request_url(r), seal_result_request_body(r), &body, &len);
  *       seal_result_free(r);
  *       r = seal_client_check_finish(client, status, body, len, now_ms);
  *   }
@@ -167,6 +167,9 @@ typedef struct seal_result seal_result;
 typedef struct seal_client_options {
     /* Your product code. */
     const char *product;
+    /* The license server: https://, or http:// on this computer only (localhost, 127.x.x.x, [::1]).
+     * A hosted vendor's is https://seal.carchalabs.com/<slug>. */
+    const char *server_url;
     /* The Ed25519 public keys you trust, as for seal_keys_new. */
     const char *public_keys;
     /* The folder that keeps license.dat (created when needed). */
@@ -183,13 +186,18 @@ typedef struct seal_client_options {
     int32_t hardware;
 } seal_client_options;
 
-/* Sets the defaults (see above). Set product, public_keys and storage_dir yourself. */
+/* Sets the defaults (see above). Set product, server_url, public_keys and storage_dir yourself. */
 void seal_client_options_init(seal_client_options *options);
-/* A client; NULL when product, public_keys or storage_dir is missing or invalid. One call at a time
- * runs on a client; concurrent calls wait. Free with seal_client_free. */
+/* What is wrong with the options, or NULL when they are usable: "invalid_product",
+ * "invalid_server_url", "insecure_server_url" (http:// to another computer), "invalid_public_keys",
+ * "invalid_storage_dir", "invalid_grace_days", "invalid_sdk_name", "invalid_app_version",
+ * "invalid_machine_id", "invalid_options" (NULL). Static. */
+const char *seal_client_options_error(const seal_client_options *options);
+/* A client; NULL when seal_client_options_error names a problem. One call at a time runs on a
+ * client; concurrent calls wait. Free with seal_client_free. */
 seal_client *seal_client_new(const seal_client_options *options);
 void seal_client_free(seal_client *client);
-/* The User-Agent to send with every request, e.g. "carcha-seal-native/0.2.0 (cpp)". Lives as long as the client. */
+/* The User-Agent to send with every request, e.g. "carcha-seal-native/0.3.0 (cpp)". Lives as long as the client. */
 const char *seal_client_user_agent(const seal_client *client);
 
 /* machine_name: the name to show the vendor, or NULL to send none (a host name often holds a person's name). */
@@ -239,6 +247,8 @@ void seal_result_free(seal_result *result);
 int32_t seal_result_kind(const seal_result *result);
 /* The whole result as JSON: {"send":{"path","body"}}, {"ok":true,"value":...} or {"ok":false,"error":{"code","message"}}. */
 const char *seal_result_json(const seal_result *result);
+/* Where to POST (server URL + path), the path alone, and the JSON body as is; NULL unless SEAL_RESULT_SEND. */
+const char *seal_result_request_url(const seal_result *result);
 const char *seal_result_request_path(const seal_result *result);
 const char *seal_result_request_body(const seal_result *result);
 const char *seal_result_error_code(const seal_result *result);
@@ -257,6 +267,19 @@ const char *seal_state_feature(const seal_result *result, size_t index);
 /* 1 when the state is valid or in grace and grants the feature. */
 int32_t seal_state_has_feature(const seal_result *result, const char *feature);
 /* Strings returned by seal_result_* and seal_state_* live as long as the result. */
+
+/* ---- Built-in HTTP client (builds with the "http" feature, for C++) -------
+ *
+ * POSTs body (JSON) to url with User-Agent user_agent: certificates checked by
+ * the OS, the proxy from HTTPS_PROXY / ALL_PROXY (on Windows also the user's
+ * proxy setting; not PAC scripts), redirects not followed, at most timeout_ms.
+ * Returns the HTTP status, 0 when there was no answer (no connection, timeout,
+ * TLS failure, a redirect, an answer over 1 MB), or SEAL_E_ARGS (also for an
+ * address that is not https:// or this computer). The answer's body goes to
+ * *response / *response_len; free it with seal_bytes_free. */
+int32_t seal_http_post(const char *url, const char *user_agent, const char *body, uint32_t timeout_ms,
+                       uint8_t **response, size_t *response_len);
+void seal_bytes_free(uint8_t *bytes, size_t len);
 
 #ifdef __cplusplus
 }
