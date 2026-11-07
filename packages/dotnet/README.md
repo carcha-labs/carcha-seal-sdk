@@ -1,6 +1,6 @@
 # Carcha Seal for .NET
 
-Licensing for .NET desktop apps that keeps working offline: activation, check-ins, offline grace, clock checks, offline license files and feature decryption, with the same behaviour as the Electron SDK. `CarchaLabs.Seal` is a thin layer over the native library's C interface ([`../native`](../native)), where the client logic, lease verification and decryption run. Requests go through .NET's `HttpClient`, so your app's proxy and certificate settings apply.
+Licensing for .NET desktop apps that keeps working offline: activation, check-ins, offline grace, clock checks, offline license files and feature decryption, with the same behaviour as the Electron SDK. `CarchaLabs.Seal` is a thin layer over the native library's C interface ([`packages/native`](https://github.com/carcha-labs/carcha-seal-sdk/tree/main/packages/native)), where the client logic, lease verification and decryption run. Requests go through .NET's `HttpClient`, so your app's proxy and certificate settings apply.
 
 Targets: `net10.0` (source-generated `LibraryImport`, trimming and Native AOT), `netstandard2.0` and `net462` (`DllImport`, for .NET Framework WinForms and WPF apps).
 

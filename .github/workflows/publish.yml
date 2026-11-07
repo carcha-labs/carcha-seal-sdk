@@ -9,8 +9,10 @@ permissions:
   id-token: write
 
 jobs:
-  # The hardware module's native file, built and tested on each target (as in hwid-node.yml).
+  # The hardware module's native file, built and tested on each target (as in hwid-node.yml). Not for a .NET
+  # release (tag CarchaLabs.Seal@…): dotnet-packages.yml publishes that, and every job here needs this one or audit.
   hwid:
+    if: ${{ !startsWith(github.event.release.tag_name || '', 'CarchaLabs.Seal@') }}
     strategy:
       fail-fast: true
       matrix:
@@ -49,6 +51,7 @@ jobs:
 
   # Known advisories (audit.yml): nothing is published while a high one is open.
   audit:
+    if: ${{ !startsWith(github.event.release.tag_name || '', 'CarchaLabs.Seal@') }}
     uses: ./.github/workflows/audit.yml
 
   publish:

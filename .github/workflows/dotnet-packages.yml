@@ -1,5 +1,7 @@
 # The .NET packages (packages/dotnet/pack): the native library built for every platform the packages carry,
 # the three packages made from them, and apps that install them on each OS and CPU, .NET Framework included.
+# A GitHub release tagged CarchaLabs.Seal@<version> publishes them to nuget.org (job publish) after all of that
+# passed.
 name: dotnet-packages
 
 on:
@@ -8,6 +10,8 @@ on:
     paths: ["packages/hwid/**", "packages/lease/**", "packages/native/**", "packages/client/**", "packages/dotnet/**", ".github/workflows/dotnet-packages.yml"]
   pull_request:
     paths: ["packages/hwid/**", "packages/lease/**", "packages/native/**", "packages/client/**", "packages/dotnet/**", ".github/workflows/dotnet-packages.yml"]
+  release:
+    types: [published]
   workflow_dispatch:
 
 permissions:
@@ -221,3 +225,78 @@ jobs:
             & "bin\$($platform[0])\Legacy.exe" $env:SEAL_NATIVE_VERSION $platform[1]
             if ($LASTEXITCODE) { exit 1 }
           }
+
+  # nuget.org, for a release tagged CarchaLabs.Seal@<version> only, once every job above passed: the packages the
+  # pack job made and the apps installed. Trusted publishing (nuget.org policy: carcha-labs / carcha-seal-sdk /
+  # dotnet-packages.yml / environment nuget): NuGet/login trades this job's GitHub OIDC token for an API key that
+  # lasts an hour; no key is stored. The environment's required reviewer approves each publish. A package ID and
+  # version on nuget.org cannot be reused, even after unlisting.
+  publish:
+    needs: [pack, consumer-dotnet, consumer-framework]
+    if: github.event_name == 'release' && startsWith(github.event.release.tag_name, 'CarchaLabs.Seal@')
+    runs-on: ubuntu-24.04
+    environment: nuget
+    permissions:
+      contents: write  # the SBOMs go on the release
+      id-token: write  # NuGet/login and the attestation
+      attestations: write
+    env:
+      TAG: ${{ github.event.release.tag_name }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      - uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73  # v6.1.0
+        with:
+          dotnet-version: 10.0.x
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333  # v8.0.2
+        with:
+          name: nuget-packages
+          path: nupkg
+      - name: The tag names the version that was packed
+        run: |
+          version=${TAG#CarchaLabs.Seal@}
+          for package in CarchaLabs.Seal.Runtime CarchaLabs.Seal.NetFramework CarchaLabs.Seal; do
+            if [ ! -s "nupkg/$package.$version.nupkg" ]; then
+              echo "::error::nupkg/$package.$version.nupkg is missing: the tag ($TAG) and the version in packages/dotnet/pack/Pack.props differ"
+              ls nupkg
+              exit 1
+            fi
+          done
+          echo "VERSION=$version" >> "$GITHUB_ENV"
+      # SLSA build provenance for each package, signed with Sigstore and kept by GitHub:
+      # gh attestation verify <file>.nupkg -R carcha-labs/carcha-seal-sdk
+      - uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6  # v4.2.2
+        with:
+          subject-path: nupkg/*.nupkg
+      - name: NuGet login (OIDC, a key for one hour)
+        id: login
+        uses: NuGet/login@8d196754b4036150537f80ac539e15c2f1028841  # v1.2.0
+        with:
+          user: ${{ secrets.NUGET_USER }}
+      - name: Push, dependencies first
+        env:
+          NUGET_API_KEY: ${{ steps.login.outputs.NUGET_API_KEY }}
+        run: |
+          for package in CarchaLabs.Seal.Runtime CarchaLabs.Seal.NetFramework CarchaLabs.Seal; do
+            dotnet nuget push "nupkg/$package.$VERSION.nupkg" --api-key "$NUGET_API_KEY" --source https://api.nuget.org/v3/index.json --skip-duplicate
+          done
+      # A CycloneDX SBOM (CRA Annex I Part II(1)) of the Rust crates in the native library, for each platform the
+      # packages carry, from the committed Cargo.lock; attached to the release, as for the npm packages.
+      - name: SBOMs of the native library
+        working-directory: packages/native
+        run: |
+          cargo install cargo-cyclonedx --version 0.5.9 --locked
+          SOURCE_DATE_EPOCH=$(git log -1 --format=%ct)  # reproducible timestamp: the commit time
+          export SOURCE_DATE_EPOCH
+          mkdir -p ../../sbom
+          for t in win-x64:x86_64-pc-windows-msvc win-x86:i686-pc-windows-msvc win-arm64:aarch64-pc-windows-msvc \
+                   osx-arm64:aarch64-apple-darwin osx-x64:x86_64-apple-darwin \
+                   linux-x64:x86_64-unknown-linux-gnu linux-arm64:aarch64-unknown-linux-gnu; do
+            rid=${t%%:*} triple=${t#*:}
+            cargo cyclonedx --format json --spec-version 1.5 --describe binaries --no-build-deps \
+              --target "$triple" --target-in-filename -q
+            mv "seal_native_rlib-staticlib-cdylib_$triple.cdx.json" "../../sbom/CarchaLabs.Seal-$VERSION.$rid.cdx.json"
+          done
+      - name: Attach the SBOMs to the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "$TAG" sbom/*.cdx.json --clobber --repo "$GITHUB_REPOSITORY"
