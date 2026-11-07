@@ -5,6 +5,10 @@ using System;
 using System.Runtime.InteropServices;
 using System.Text;
 
+// seal_native is looked up next to this assembly and in the system's safe folders, never in the current directory
+// (Microsoft, CA5392: a DLL planted there would run in the app).
+[assembly: DefaultDllImportSearchPaths(DllImportSearchPath.AssemblyDirectory | DllImportSearchPath.SafeDirectories)]
+
 namespace CarchaLabs.Seal
 {
     internal static unsafe partial class Native
