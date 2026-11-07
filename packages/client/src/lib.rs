@@ -242,7 +242,8 @@ impl Storage for MemoryStorage {
     }
 }
 
-/// `license.dat` in a folder, as the Electron SDK keeps it (plain JSON; owner-only on Unix).
+/// `license.dat` in a folder, as the Electron SDK keeps it (plain JSON; owner-only on Unix). It is replaced whole: written
+/// to `license.dat.tmp` first, then renamed over it, so a crash or full disk mid-write leaves the previous record.
 pub struct FileStorage {
     file: PathBuf,
 }
@@ -269,7 +270,18 @@ impl Storage for FileStorage {
             options.mode(0o600);
         }
         use std::io::Write;
-        options.open(&self.file)?.write_all(text.as_bytes())
+        let temp = self.file.with_extension("dat.tmp");
+        let written = options.open(&temp).and_then(|mut f| {
+            f.write_all(text.as_bytes())?;
+            f.sync_all()
+        });
+        match written.and_then(|()| std::fs::rename(&temp, &self.file)) {
+            Ok(()) => Ok(()),
+            Err(e) => {
+                let _ = std::fs::remove_file(&temp);
+                Err(e)
+            }
+        }
     }
     fn clear(&mut self) -> std::io::Result<()> {
         match std::fs::remove_file(&self.file) {
@@ -880,6 +892,15 @@ mod tests {
         storage.clear().unwrap();
         storage.save(r#"{"licenseKey":"LK-A"}"#).unwrap();
         assert_eq!(storage.load().as_deref(), Some(r#"{"licenseKey":"LK-A"}"#));
+        // Replaced whole, through a temporary file that does not stay behind.
+        storage.save(r#"{"licenseKey":"LK-B"}"#).unwrap();
+        assert_eq!(storage.load().as_deref(), Some(r#"{"licenseKey":"LK-B"}"#));
+        assert!(!dir.join("nested/license.dat.tmp").exists());
+        // A write that cannot happen leaves the saved record as it was.
+        std::fs::create_dir(dir.join("nested/license.dat.tmp")).unwrap();
+        assert!(storage.save(r#"{"licenseKey":"LK-C"}"#).is_err());
+        assert_eq!(storage.load().as_deref(), Some(r#"{"licenseKey":"LK-B"}"#));
+        std::fs::remove_dir(dir.join("nested/license.dat.tmp")).unwrap();
         #[cfg(unix)]
         {
             use std::os::unix::fs::PermissionsExt;

@@ -5,6 +5,7 @@
 - The license server is reached over https only. A `serverUrl` with `http://` is refused when the SDK is created (`LicenseError` with code `insecure_server_url`), except on this computer (`localhost`, `127.x.x.x`, `[::1]`) for a server under development; an address that is not a URL is `invalid_server_url`. Every request carries the license key and the device's fingerprint.
 - A redirect from the license server is no longer followed; the request fails with `network`. A redirect could take the request, license key included, to another address.
 - `activate(key)` and `offlineRequest(key)` no longer send the computer's host name when you pass no `machineName`: host names often hold a person's name, and the device stays unnamed in the console. Pass a name to keep showing one.
+- `license.dat` is replaced whole: written to `license.dat.tmp` and renamed over it, so a crash or a full disk while saving leaves the previous record instead of a cut-off file that reads as unlicensed.
 - Feature keys can be replaced on the server: leases then carry the previous key too, and `decrypt` / `requireEncrypted` open data encrypted under either. Through the native module this needs `@carchalabs/seal-hwid` from this release.
 
 ## 0.5.0

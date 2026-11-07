@@ -1,6 +1,6 @@
 import { KeyObject } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
-import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { platform } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
@@ -264,10 +264,19 @@ export class Seal {
     }
   }
 
+  /** Replaces license.dat whole: written to license.dat.tmp, then renamed over it, so a crash or full disk mid-write
+   * leaves the previous record. */
   private async save(stored: Stored) {
     await mkdir(this.opts.storageDir, { recursive: true });
     const text = JSON.stringify(stored);
-    await writeFile(this.file, this.opts.secureStore ? await this.opts.secureStore.encrypt(text) : text, { mode: 0o600 });
+    const temp = this.file + '.tmp';
+    try {
+      await writeFile(temp, this.opts.secureStore ? await this.opts.secureStore.encrypt(text) : text, { mode: 0o600, flush: true });
+      await rename(temp, this.file);
+    } catch (e) {
+      await rm(temp, { force: true }).catch(() => {});
+      throw e;
+    }
   }
 
   private async clear() {
