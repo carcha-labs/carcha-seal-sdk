@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- net10.0 for current .NET (LibraryImport, trimming and Native AOT); netstandard2.0 and net462 for .NET Framework
+         desktop apps (DllImport). Microsoft's library guidance: start with net8.0 or later, consider netstandard2.0 and
+         net462 for .NET Framework. -->
+    <TargetFrameworks>net10.0;netstandard2.0;net462</TargetFrameworks>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <RootNamespace>CarchaLabs.Seal</RootNamespace>
+    <AssemblyName>CarchaLabs.Seal</AssemblyName>
+    <Version>0.1.0</Version>
+    <Authors>Carcha Labs</Authors>
+    <Description>Carcha Seal for .NET: licensing for desktop apps that keeps working offline. Activation, check-ins, offline grace, clock checks, offline license files and feature decryption, over the Carcha Seal native library.</Description>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://seal.carchalabs.com</PackageProjectUrl>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net462'">
+    <Reference Include="System.Net.Http" />
+  </ItemGroup>
+
+  <PropertyGroup Condition="'$(TargetFramework)' == 'net10.0'">
+    <IsAotCompatible>true</IsAotCompatible>
+  </PropertyGroup>
+
+</Project>

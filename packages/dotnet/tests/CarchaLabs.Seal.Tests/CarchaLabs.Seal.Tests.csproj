@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- The tests against the net10.0 build of the library (LibraryImport). -->
+  <Import Project="../Tests.props" />
+  <ItemGroup>
+    <ProjectReference Include="../../src/CarchaLabs.Seal/CarchaLabs.Seal.csproj" />
+  </ItemGroup>
+</Project>

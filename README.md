@@ -13,7 +13,7 @@ Carcha Seal was previously named LicenseKit, and these packages were `@carchalab
 
 [`packages/hwid`](packages/hwid) is the native core of the hardware module, in Rust, with a C interface for other languages.
 
-For apps in other languages: [`packages/client`](packages/client) is the license client in Rust (the Electron SDK's behaviour, checked against scenarios recorded from it), [`packages/native`](packages/native) its C interface (`seal.h`), and [`packages/cpp`](packages/cpp) the C++ SDK over it. C# and Java SDKs are in progress.
+For apps in other languages: [`packages/client`](packages/client) is the license client in Rust (the Electron SDK's behaviour, checked against scenarios recorded from it), [`packages/native`](packages/native) its C interface (`seal.h`), [`packages/cpp`](packages/cpp) the C++ SDK and [`packages/dotnet`](packages/dotnet) the .NET SDK over it (its NuGet package is not published yet). A Java SDK is in progress.
 
 The license server and admin console are not part of this repository.
 

@@ -6,9 +6,9 @@ name: hwid
 on:
   push:
     branches: [main]
-    paths: ["packages/hwid/**", "packages/lease/**", "packages/native/**", "packages/client/**", "packages/cpp/**", ".github/workflows/hwid.yml"]
+    paths: ["packages/hwid/**", "packages/lease/**", "packages/native/**", "packages/client/**", "packages/cpp/**", "packages/dotnet/**", ".github/workflows/hwid.yml"]
   pull_request:
-    paths: ["packages/hwid/**", "packages/lease/**", "packages/native/**", "packages/client/**", "packages/cpp/**", ".github/workflows/hwid.yml"]
+    paths: ["packages/hwid/**", "packages/lease/**", "packages/native/**", "packages/client/**", "packages/cpp/**", "packages/dotnet/**", ".github/workflows/hwid.yml"]
 
 permissions:
   contents: read
@@ -48,6 +48,12 @@ jobs:
       - name: C++ SDK (CMake builds the native library; every client scenario through seal.hpp)
         working-directory: packages/cpp
         run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release && cmake --build build --config Release && ctest --test-dir build -C Release --output-on-failure
+      - uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73  # v6.1.0
+        with:
+          dotnet-version: 10.0.x
+      - name: .NET SDK (net10.0, netstandard2.0 and net462 builds; every client scenario and the HTTP client, through net10.0 and netstandard2.0)
+        working-directory: packages/dotnet
+        run: dotnet build src/CarchaLabs.Seal -c Release && dotnet test --project tests/CarchaLabs.Seal.Tests -c Release && dotnet test --project tests/CarchaLabs.Seal.Tests.NetStandard -c Release
       - name: What this runner reads (kinds and hashes only)
         run: cargo run --release --example probe
       - name: Probe for running on a real Windows PC

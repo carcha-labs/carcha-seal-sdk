@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- The same tests against the netstandard2.0 build of the library (DllImport, the code .NET Framework apps run). -->
+  <Import Project="../Tests.props" />
+  <ItemGroup>
+    <ProjectReference Include="../../src/CarchaLabs.Seal/CarchaLabs.Seal.csproj" SetTargetFramework="TargetFramework=netstandard2.0" />
+  </ItemGroup>
+</Project>
