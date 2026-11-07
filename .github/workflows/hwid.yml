@@ -6,9 +6,9 @@ name: hwid
 on:
   push:
     branches: [main]
-    paths: ["packages/hwid/**", "packages/lease/**", "packages/native/**", "packages/client/**", ".github/workflows/hwid.yml"]
+    paths: ["packages/hwid/**", "packages/lease/**", "packages/native/**", "packages/client/**", "packages/cpp/**", ".github/workflows/hwid.yml"]
   pull_request:
-    paths: ["packages/hwid/**", "packages/lease/**", "packages/native/**", "packages/client/**", ".github/workflows/hwid.yml"]
+    paths: ["packages/hwid/**", "packages/lease/**", "packages/native/**", "packages/client/**", "packages/cpp/**", ".github/workflows/hwid.yml"]
 
 permissions:
   contents: read
@@ -45,6 +45,9 @@ jobs:
         if: runner.os != 'Windows'
         working-directory: packages/native
         run: tests/c/run.sh
+      - name: C++ SDK (CMake builds the native library; every client scenario through seal.hpp)
+        working-directory: packages/cpp
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release && cmake --build build --config Release && ctest --test-dir build -C Release --output-on-failure
       - name: What this runner reads (kinds and hashes only)
         run: cargo run --release --example probe
       - name: Probe for running on a real Windows PC
