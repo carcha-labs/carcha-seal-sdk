@@ -2,3 +2,6 @@ bin/
 obj/
 # Native libraries put here for packing, and the packages made.
 artifacts/
+# The consumer test's package folders.
+tests/Consumer/.packages/
+tests/Consumer/packages/

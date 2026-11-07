@@ -20,8 +20,11 @@
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
   </PropertyGroup>
 
-  <!-- The library is built (all its target frameworks, Release) before the files are packed. -->
+  <!-- The library is restored and built (all its target frameworks, Release) before the files are packed. Restore
+       runs on its own, with a property no build has, so the build evaluates the project again with the restored
+       packages (as msbuild -restore does). -->
   <Target Name="SealBuildLibrary" BeforeTargets="_GetPackageFiles">
+    <MSBuild Projects="$(SealLibrary)CarchaLabs.Seal.csproj" Targets="Restore" Properties="Configuration=Release;MSBuildRestoreSessionId=$([System.Guid]::NewGuid())" />
     <MSBuild Projects="$(SealLibrary)CarchaLabs.Seal.csproj" Targets="Build" Properties="Configuration=Release" />
   </Target>
 </Project>

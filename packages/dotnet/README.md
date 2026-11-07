@@ -60,6 +60,8 @@ dotnet pack pack/CarchaLabs.Seal
 
 The packages are written to `artifacts/packages/`. A platform with no file in `artifacts/native/` is left out of them.
 
+CI (`.github/workflows/dotnet-packages.yml`) builds the native library for all seven platforms: on Windows with the C runtime linked in (`-C target-feature=+crt-static`), so the DLL needs no Visual C++ redistributable; on macOS for macOS 11 and later; on Linux on Ubuntu 22.04, so it needs no newer glibc than 22.04's. It packs them, checks every file in the packages, and runs `tests/Consumer`, an app that installs the packages: .NET 10 on Windows (x64, ARM64), macOS (Apple Silicon, Intel) and Linux (x64, ARM64; Ubuntu 22.04 and 24.04), and .NET Framework built for x86, x64, AnyCPU and ARM64 through PackageReference and packages.config, each checking that it loaded the copy for its CPU.
+
 ## Tests
 
 Needs the .NET 10 SDK and a Rust toolchain (the tests build `../native` with cargo).

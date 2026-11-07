@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- A PackageReference app that installs CarchaLabs.Seal from ../../artifacts/packages. net10.0 by default;
+       CI also builds it for net48 and net481 (-p:SealTfm=...; restore leaves a TargetFramework given on the command
+       line out) with each PlatformTarget. -->
+  <PropertyGroup>
+    <SealTfm Condition="'$(SealTfm)' == ''">net10.0</SealTfm>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>$(SealTfm)</TargetFramework>
+    <LangVersion>7.3</LangVersion>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Remove="Legacy/**" />
+    <!-- The version the pack projects write (../../pack/Pack.props). -->
+    <PackageReference Include="CarchaLabs.Seal" Version="0.1.0" />
+  </ItemGroup>
+</Project>
